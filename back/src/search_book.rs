@@ -1,5 +1,5 @@
 // 次にやること
-//
+//　エラーハンドリング
 
 use core::fmt;
 use std::fmt::Display;
@@ -64,6 +64,7 @@ async fn parse_json_to_attribute(json: reqwest::Response) -> BookAttribute {
     let str = json.text().await.unwrap();
     let vec: Value = serde_json::from_str(&str).unwrap();
     let attribute = &vec["items"][0]["volumeInfo"];
+    // todo: この辺でエラーハンドリング行うしかない
     let title = attribute["title"].as_str().unwrap().to_owned();
     let authors = attribute["authors"]
         .as_array()
