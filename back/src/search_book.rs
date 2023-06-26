@@ -20,7 +20,7 @@ impl Display for BookAttribute {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "title: {}, authors: {:?}, isbn: {}, pageCount: {}, imageURL: {}",
+            "title: {}\nauthors: {:?}\nisbn: {}\npageCount: {}\nimageURL: {}",
             self.title, self.authors, self.isbn, self.page, self.image_url
         )
     }
