@@ -4,8 +4,10 @@ use actix_web;
 
 #[actix_web::main]
 async fn main() {
-    input! {isbn: String};
-    let mut attribute = search_book::BookAttribute::default();
-    attribute.isbn = isbn;
-    attribute.search().await.unwrap();
+    loop {
+        input! {isbn: String};
+        let mut attribute = search_book::BookAttribute::default();
+        attribute.isbn = isbn;
+        attribute.search().await.unwrap();
+    }
 }

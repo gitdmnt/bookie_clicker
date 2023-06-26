@@ -264,6 +264,7 @@ dependencies = [
  "actix-web",
  "proconio",
  "reqwest",
+ "serde_json",
  "sqlx",
 ]
 
