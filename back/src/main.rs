@@ -8,6 +8,7 @@ async fn main() {
         input! {isbn: String};
         let mut attribute = search_book::BookAttribute::default();
         attribute.isbn = isbn;
-        attribute.search().await.unwrap();
+        attribute = attribute.search().await.unwrap();
+        println!("{}", attribute);
     }
 }

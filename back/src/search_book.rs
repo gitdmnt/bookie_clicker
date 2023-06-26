@@ -88,7 +88,6 @@ async fn parse_json_to_attribute(json: reqwest::Response) -> BookAttribute {
         page,
         image_url,
     };
-    println!("{}", attribute);
     attribute
 }
 
