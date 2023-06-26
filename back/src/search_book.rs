@@ -1,5 +1,5 @@
 // 次にやること
-// エラーの定義
+//
 
 use core::fmt;
 use std::fmt::Display;
