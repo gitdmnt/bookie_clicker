@@ -2,13 +2,14 @@
 // 日時の取得
 
 use actix_web;
+use chrono;
 use proconio::input;
 
 mod search_book;
 
 #[actix_web::main]
 async fn main() {
-    cli().await;
+    parse_date()
 }
 
 async fn cli() {
@@ -24,5 +25,12 @@ async fn cli() {
             Ok(a) => println!("{}", a),
             Err(e) => println!("{}", e),
         }
+    }
+}
+
+fn parse_date() {
+    match chrono::DateTime::parse_from_str("2020-01-01 00:00:00 +09:00", "%Y-%m-%d %H:%M:%S %z") {
+        Ok(a) => println!("{:?}", a),
+        Err(e) => println!("{}", e),
     }
 }
