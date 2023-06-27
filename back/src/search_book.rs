@@ -49,7 +49,7 @@ impl BookAttribute {
 async fn fetch_attribute_from_url(url: String) -> Result<BookAttribute, SearchError> {
     let attribute_json = reqwest::get(url).await;
     let attribute = match attribute_json {
-        Ok(json) => Ok(parse_json_to_attribute(json).await),
+        Ok(json) => parse_json_to_attribute(json).await,
         Err(e) => {
             println!("{}", e);
             Err(SearchError {
@@ -60,11 +60,14 @@ async fn fetch_attribute_from_url(url: String) -> Result<BookAttribute, SearchEr
     attribute
 }
 
-async fn parse_json_to_attribute(json: reqwest::Response) -> BookAttribute {
+async fn parse_json_to_attribute(json: reqwest::Response) -> Result<BookAttribute, SearchError> {
     let str = json.text().await.unwrap();
     let vec: Value = serde_json::from_str(&str).unwrap();
+    let total_item_count = vec["totalItems"].as_i64().unwrap();
+    if total_item_count == 0 {
+        return SearchError::no_items();
+    }
     let attribute = &vec["items"][0]["volumeInfo"];
-    // todo: この辺でエラーハンドリング行うしかない
     let title = attribute["title"].as_str().unwrap().to_owned();
     let authors = attribute["authors"]
         .as_array()
@@ -89,12 +92,20 @@ async fn parse_json_to_attribute(json: reqwest::Response) -> BookAttribute {
         page,
         image_url,
     };
-    attribute
+    Ok(attribute)
 }
 
 #[derive(Debug, Clone)]
 pub struct SearchError {
     e: String,
+}
+
+impl SearchError {
+    fn no_items<T>() -> Result<T, SearchError> {
+        let e = "Invalid ISBN!".to_owned();
+        let error = SearchError { e };
+        Err(error)
+    }
 }
 
 impl fmt::Display for SearchError {
