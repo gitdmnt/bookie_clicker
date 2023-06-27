@@ -1,5 +1,6 @@
 // 次にやること
-//　エラーハンドリング
+// 書名検索
+// 部分一致
 
 use core::fmt;
 use std::fmt::Display;
