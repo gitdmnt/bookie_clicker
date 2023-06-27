@@ -5,9 +5,16 @@ mod search_book;
 
 #[actix_web::main]
 async fn main() {
+    cli().await;
+}
+
+async fn cli() {
     loop {
-        println!("input isbn:");
+        print!("input isbn:");
         input! {isbn: String};
+        if &isbn == "" {
+            return;
+        }
         let mut attribute = search_book::BookAttribute::default();
         attribute.isbn = isbn;
         match attribute.search().await {
