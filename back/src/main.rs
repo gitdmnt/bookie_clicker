@@ -5,11 +5,12 @@ use actix_web;
 use chrono;
 use proconio::input;
 
+mod database;
 mod search_book;
 
 #[actix_web::main]
 async fn main() {
-    parse_date()
+    cli();
 }
 
 async fn cli() {
