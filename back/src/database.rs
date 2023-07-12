@@ -13,6 +13,7 @@ pub struct QueryData {
     status: i16,               // 状態。未読/読書中/読了
     progress: Vec<(i16, i16)>, // 読了区間A, B……について[(A開始, A終了), (B開始, B終了)……]
     category: i16,             // 本棚の通し番号
+    rating: i16,               // 5段階評価
     note: String,              // 感想とか
 }
 
