@@ -1,4 +1,10 @@
-use sqlx;
+use reqwest;
+
+const URL: &str = "ws://localhost:8000";
+const NAMESPACE: &str = "bookie_clicker";
+const DATABASE: &str = "database";
+const USER: &str = "root";
+const PASS: &str = "root";
 
 pub struct QueryData {
     user: i32,                 // 登録したユーザー
