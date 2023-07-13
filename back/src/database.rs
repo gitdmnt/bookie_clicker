@@ -1,4 +1,6 @@
-use reqwest;
+use surrealdb::engine::remote::ws::{Client, Ws};
+use surrealdb::opt::auth::Root;
+use surrealdb::{Result, Surreal};
 
 const URL: &str = "ws://localhost:8000";
 const NAMESPACE: &str = "bookie_clicker";
@@ -25,6 +27,17 @@ pub struct UserData {
     salt: String,            // ソルト
     categories: Vec<String>, // カテゴリー
     registered_date: String, // 登録年月日
+}
+
+async fn connect() -> Result<Surreal<Client>> {
+    let db = Surreal::new::<Ws>(URL).await?;
+    db.signin(Root {
+        username: USER,
+        password: PASS,
+    })
+    .await?;
+    db.use_ns(NAMESPACE).use_db(DATABASE).await?;
+    Ok(db)
 }
 
 async fn register() {
