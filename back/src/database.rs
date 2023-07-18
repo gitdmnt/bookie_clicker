@@ -40,6 +40,6 @@ async fn connect() -> Result<Surreal<Client>> {
     Ok(db)
 }
 
-async fn register() {
-    todo!()
+async fn register_book(db: Surreal<Client>, query: QueryData) -> Result<()> {
+    Ok(())
 }
