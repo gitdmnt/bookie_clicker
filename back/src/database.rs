@@ -1,3 +1,4 @@
+use serde::Serialize;
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::{Result, Surreal};
@@ -8,6 +9,7 @@ const DATABASE: &str = "database";
 const USER: &str = "root";
 const PASS: &str = "root";
 
+#[derive(Serialize)]
 pub struct QueryData {
     user: i32,                 // 登録したユーザー
     isbn: i64,                 // 本のISBN
@@ -41,5 +43,6 @@ async fn connect() -> Result<Surreal<Client>> {
 }
 
 async fn register_book(db: Surreal<Client>, query: QueryData) -> Result<()> {
+    db.set("test1", 0).await?;
     Ok(())
 }
