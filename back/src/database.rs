@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::{Result, Surreal};
@@ -9,7 +9,7 @@ const DATABASE: &str = "database";
 const USER: &str = "root";
 const PASS: &str = "root";
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct QueryData {
     user: i32,                 // 登録したユーザー
     isbn: i64,                 // 本のISBN
