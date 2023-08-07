@@ -60,19 +60,9 @@ struct Test {
 
 async fn register_book(db: Surreal<Client>, query: QueryData) -> Result<()> {
     println!("Registering");
-    match db
-        .set(
-            "book:test1",
-            Test {
-                s: "test".to_string(),
-                n: 10,
-            },
-        )
-        .await
-    {
-        Ok(_) => println!("Registered"),
-        Err(e) => println!("{}", e),
-    };
+    db.set("query", query).await?;
+    db.query("CREATE book SET data = $query").await?;
+    println!("Registered");
     Ok(())
 }
 
