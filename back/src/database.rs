@@ -3,8 +3,6 @@ use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::{Result, Surreal};
 
-// const
-
 const URL: &str = "ws://localhost:8000";
 const NAMESPACE: &str = "bookie_clicker";
 const DATABASE: &str = "database";
@@ -13,15 +11,23 @@ const PASS: &str = "root";
 
 #[derive(Serialize, Deserialize)]
 pub struct QueryData {
-    user: i32,                 // 登録したユーザー
-    isbn: i64,                 // 本のISBN
-    iter: i16,                 // 何周目か 1-indexed
-    status: i16,               // 状態。未読/読書中/読了
-    progress: Vec<(i16, i16)>, // 読了区間A, B……について[(A開始, A終了), (B開始, B終了)……]
-    category: i16,             // 本棚の通し番号
-    rating: i16,               // 5段階評価
-    note: String,              // 感想とか
+    user: i32,          // 登録したユーザー
+    isbn: i64,          // 本のISBN
+    iter: i16,          // 何周目か 1-indexed
+    status: ReadStatus, // 状態。未読/読書中/読了
+    category: i16,      // 本棚の通し番号
+    rating: i16,        // 5段階評価
+    note: String,       // 感想とか
 }
+
+#[derive(Serialize, Deserialize)]
+pub enum ReadStatus {
+    Read,
+    Reading(ReadProgress),
+    Unread,
+}
+
+pub type ReadProgress = Vec<(i16, i16)>; // 読了区間A, B……について[(A開始, A終了), (B開始, B終了)……]
 
 pub struct UserData {
     id: u32,                 // ユーザーID
@@ -46,5 +52,20 @@ async fn connect() -> Result<Surreal<Client>> {
 
 async fn register_book(db: Surreal<Client>, query: QueryData) -> Result<()> {
     db.set("test1", 0).await?;
+    Ok(())
+}
+
+pub async fn test_register_book() -> Result<()> {
+    let query = QueryData {
+        user: -1,
+        isbn: 9784588010590,
+        iter: 1,
+        status: ReadStatus::Read,
+        category: 0,
+        rating: 3,
+        note: "サイモン・クリッチリーゆるさん".to_string(),
+    };
+    let db = connect().await?;
+    register_book(db, query);
     Ok(())
 }
