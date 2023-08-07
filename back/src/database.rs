@@ -3,6 +3,8 @@ use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::{Result, Surreal};
 
+// const
+
 const URL: &str = "ws://localhost:8000";
 const NAMESPACE: &str = "bookie_clicker";
 const DATABASE: &str = "database";
