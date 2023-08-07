@@ -3,7 +3,7 @@ use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::{Result, Surreal};
 
-const URL: &str = "ws://localhost:8000";
+const URL: &str = "localhost:8000";
 const NAMESPACE: &str = "bookie_clicker";
 const DATABASE: &str = "database";
 const USER: &str = "root";
@@ -40,6 +40,7 @@ pub struct UserData {
 }
 
 async fn connect() -> Result<Surreal<Client>> {
+    println!("Connecting");
     let db = Surreal::new::<Ws>(URL).await?;
     db.signin(Root {
         username: USER,
@@ -47,11 +48,27 @@ async fn connect() -> Result<Surreal<Client>> {
     })
     .await?;
     db.use_ns(NAMESPACE).use_db(DATABASE).await?;
+    println!("Connected");
     Ok(db)
 }
 
+#[derive(Serialize, Deserialize)]
+struct Test {
+    s: String,
+    n: i32,
+}
+
 async fn register_book(db: Surreal<Client>, query: QueryData) -> Result<()> {
-    db.set("test1", 0).await?;
+    println!("Registering");
+    db.set(
+        "book:test1",
+        Test {
+            s: "test".to_string(),
+            n: 10,
+        },
+    )
+    .await?;
+    println!("Registered");
     Ok(())
 }
 
@@ -66,6 +83,6 @@ pub async fn test_register_book() -> Result<()> {
         note: "サイモン・クリッチリーゆるさん".to_string(),
     };
     let db = connect().await?;
-    register_book(db, query);
+    register_book(db, query).await?;
     Ok(())
 }

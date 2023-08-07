@@ -3,6 +3,7 @@
 
 use actix_web;
 use chrono;
+use database::{test_register_book, QueryData};
 use proconio::input;
 
 mod database;
@@ -10,7 +11,7 @@ mod search_book;
 
 #[actix_web::main]
 async fn main() {
-    cli();
+    test_register_book().await;
 }
 
 async fn cli() {
