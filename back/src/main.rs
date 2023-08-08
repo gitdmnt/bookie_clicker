@@ -11,7 +11,7 @@ mod search_book;
 
 #[actix_web::main]
 async fn main() {
-    test_register_book().await;
+    let _ = test_register_book().await;
 }
 
 async fn cli() {

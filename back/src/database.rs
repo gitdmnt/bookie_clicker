@@ -52,13 +52,7 @@ async fn connect() -> Result<Surreal<Client>> {
     Ok(db)
 }
 
-#[derive(Serialize, Deserialize)]
-struct Test {
-    s: String,
-    n: i32,
-}
-
-async fn register_book(db: Surreal<Client>, query: QueryData) -> Result<()> {
+async fn register_book(db: &Surreal<Client>, query: QueryData) -> Result<()> {
     println!("Registering");
     db.set("query", query).await?;
     db.query("CREATE book SET data = $query").await?;
@@ -66,17 +60,27 @@ async fn register_book(db: Surreal<Client>, query: QueryData) -> Result<()> {
     Ok(())
 }
 
+async fn save_db(db: &Surreal<Client>) -> Result<()> {
+    println!("Exporting");
+    match db.export("backup.sql").await {
+        Ok(_) => println!("Exported"),
+        Err(e) => println!("{}", e),
+    };
+    Ok(())
+}
+
 pub async fn test_register_book() -> Result<()> {
     let query = QueryData {
         user: -1,
         isbn: 9784588010590,
-        iter: 1,
+        iter: 2,
         status: ReadStatus::Read,
         category: 0,
         rating: 3,
-        note: "サイモン・クリッチリーゆるさん".to_string(),
+        note: "サイモン・クリッチリーゆるさんけどね　ガチで".to_string(),
     };
     let db = connect().await?;
-    register_book(db, query).await?;
+    register_book(&db, query).await?;
+    save_db(&db).await?;
     Ok(())
 }
