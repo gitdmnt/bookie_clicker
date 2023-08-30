@@ -1,5 +1,4 @@
 import React from 'react';
-import Test from './components/Test';
 import Register from './components/Register';
 import Booklist from './components/Booklist';
 import Analytics from './components/Analytics';
@@ -18,9 +17,10 @@ function App() {
       <Booklist />
       <Analytics />
 
-      <Test name="uda1" />
-      <Test name="uda2" />
-      <Test name="uda3" />
+      <div className='debug'>
+        <p>9784000078702</p>
+        <p>9784588010590</p>
+      </div>
     </div>
   );
 }
