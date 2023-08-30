@@ -9,7 +9,7 @@ type data = {
 
 const endpoint = "https://www.googleapis.com/books/v1/volumes?q="
 
-function Search() {
+function Register() {
     const [isbn, setIsbn] = useState('');
     const [bookData, setBookData] = useState({ title: "", subtitle: "", pageCount: 0 });
     const handleIsbnSubmit = (e: React.FormEvent) => {
@@ -85,4 +85,4 @@ function Search() {
     );
 }
 
-export default Search;
+export default Register;

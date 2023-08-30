@@ -1,6 +1,6 @@
 import React from 'react';
 import Test from './components/Test';
-import Search from './components/Search';
+import Register from './components/Register';
 import Booklist from './components/Booklist';
 import Analytics from './components/Analytics';
 
@@ -14,7 +14,7 @@ function App() {
           Bookie Clicker
         </p>
       </header>
-      <Search />
+      <Register />
       <Booklist />
       <Analytics />
 
