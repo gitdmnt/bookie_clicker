@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import axios from "axios";
 
+type data = {
+    title: string,
+    subtitle: string,
+    pageCount: number,
+}
+
 const endpoint = "https://www.googleapis.com/books/v1/volumes?q="
 
 function Search() {
     const [isbn, setIsbn] = useState('');
-    const [title, setTitle] = useState('');
-    const [subtitle, setSubtitle] = useState('');
-    const [pageCount, setPageCount] = useState(0);
+    const [bookData, setBookData] = useState({ title: "", subtitle: "", pageCount: 0 });
     const handleIsbnSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (isbn === "") {
@@ -16,15 +20,13 @@ function Search() {
         const url = endpoint + isbn;
         axios.get(url).then((res) => {
             if (res.data.totalItems !== 0) {
-                const bookData = res.data.items[0];
-                setTitle(bookData.volumeInfo.title);
-                setSubtitle(bookData.volumeInfo.subtitle);
-                setPageCount(bookData.volumeInfo.pageCount);
+                const item = res.data.items[0].volumeInfo;
+                const bookData: data = { title: item.title, subtitle: item.subtitle, pageCount: item.pageCount }
+                setBookData(bookData);
             }
             else {
-                setTitle("No Result");
-                setSubtitle("");
-                setPageCount(0);
+                const bookData: data = { title: "No Result", subtitle: "", pageCount: 0 }
+                setBookData(bookData);
             }
         });
 
@@ -52,11 +54,11 @@ function Search() {
             <div className='Bookdata'>
                 <div id='title'>
                     <span>タイトル: </span>
-                    <span>{title}<br />{subtitle}</span>
+                    <span>{bookData.title}<br />{bookData.subtitle}</span>
                 </div>
                 <div id='page-count'>
                     <span>ページ数: </span>
-                    <span>{pageCount}</span>
+                    <span>{bookData.pageCount}</span>
                 </div>
                 <input
                     className='input'
@@ -70,7 +72,7 @@ function Search() {
                 <input
                     className='input'
                     id='page-end'
-                    placeholder={pageCount.toString()}
+                    placeholder={bookData.pageCount.toString()}
                     name='end'
                     type='text'
                     autoComplete='off'
