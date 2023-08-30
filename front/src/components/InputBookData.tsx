@@ -2,20 +2,23 @@ import React, { useState } from 'react';
 
 export default function InputBookData(props: any) {
     const bookData = props.bookData;
-    const readPages = props.readPages[0];
-    const setReadPages = props.readPages[1];
+    const setReadPages = props.readPages;
+    const [readPagesStart, setReadPagesStart] = useState(1);
+    const [readPagesEnd, setReadPagesEnd] = useState(bookData.pageCount);
     const handleReadPages = (e: React.ChangeEvent<HTMLInputElement>, b: ("start" | "end")) => {
         const page = Number(e.target.value);
         if (Number.isNaN(page)) {
             return;
         }
         if (b === "start") {
-            setReadPages([page, readPages[1]]);
+            setReadPagesStart(page);
+            // ここのpageをreadPageStartに変えるとstate更新のタイミングかなんかのせいで挙動がおかしくなる　助けて
+            setReadPages([page, readPagesEnd]);
         }
         else {
-            setReadPages([readPages[0], page]);
+            setReadPagesEnd(page);
+            setReadPages([readPagesStart, page]);
         }
-
     };
     return (
         <div className='InputBookData'>

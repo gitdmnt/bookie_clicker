@@ -12,13 +12,13 @@ function Register() {
         if (readPages[1] === 0) {
             readPages[1] = bookData.pageCount;
         }
-        alert(readPages[0].toString() + ", " + readPages[1].toString());
+        alert(bookData.title + readPages[0].toString() + ", " + readPages[1].toString());
     };
     return (
         <div className='Register'>
             <Search handleBookData={setBookData} />
             <ShowBookData bookData={bookData} />
-            <InputBookData bookData={bookData} readPages={[readPages, setReadPages]} />
+            <InputBookData bookData={bookData} readPages={setReadPages} />
             <div className='SendBookData'>
                 <button className='Register-button button' onClick={(e => sendBookData(e))}>読了</button>
             </div>
