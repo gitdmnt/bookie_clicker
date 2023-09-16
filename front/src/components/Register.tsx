@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import Search from './Search';
 import ShowBookData from './ShowBookData';
 import InputBookData from './InputBookData';
+import axios from 'axios';
 
 function Register() {
-    const [bookData, setBookData] = useState({ title: "", subtitle: "", pageCount: 0 });
+    const URL = "http://127.0.0.1:3001/api/registerbook";
+
+    const [bookData, setBookData] = useState({ isbn: "", title: "", subtitle: "", pageCount: 0 });
     const [readPages, setReadPages] = useState([1, 0]);
 
     const sendBookData = (e: React.FormEvent) => {
@@ -13,6 +16,12 @@ function Register() {
             readPages[1] = bookData.pageCount;
         }
         alert(bookData.title + readPages[0].toString() + ", " + readPages[1].toString());
+        //なんかエラー吐く　今日はここでおしまい
+        axios.post(URL, {
+            user: 0,
+            isbn: "9784588010590",
+        });
+
     };
     return (
         <div className='Register'>

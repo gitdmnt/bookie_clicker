@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from "axios";
 
 type data = {
+    isbn: string,
     title: string,
     subtitle: string,
     pageCount: number,
@@ -21,11 +22,11 @@ export default function Search(props: any) {
         axios.get(url).then((res) => {
             if (res.data.totalItems !== 0) {
                 const item = res.data.items[0].volumeInfo;
-                const bookData: data = { title: item.title, subtitle: item.subtitle, pageCount: item.pageCount }
+                const bookData: data = { isbn: isbn, title: item.title, subtitle: item.subtitle, pageCount: item.pageCount }
                 setBookData(bookData);
             }
             else {
-                const bookData: data = { title: "No Result", subtitle: "", pageCount: 0 }
+                const bookData: data = { isbn: isbn, title: "No Result", subtitle: "", pageCount: 0 }
                 setBookData(bookData);
             }
         });
