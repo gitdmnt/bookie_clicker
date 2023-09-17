@@ -13,7 +13,7 @@ use std::net::SocketAddr;
 mod database;
 mod search_book;
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct RegisterBook {
     user: i32,
     isbn: String,

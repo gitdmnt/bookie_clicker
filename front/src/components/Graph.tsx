@@ -1,6 +1,6 @@
 import React from "react";
 
-function Graph() {
+function Graph(props: any) {
     return (
         <div className="Graph">
             ここにグラフが入る
