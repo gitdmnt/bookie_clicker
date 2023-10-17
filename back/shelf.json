@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "title": "dummy_book",
+      "isbn": "999",
+      "author": "udachaaaaan",
+      "page": 2
+    },
+    {
+      "title": "dummy_book",
+      "isbn": "1",
+      "author": "udachaaaaan",
+      "page": 2
+    },
+    {
+      "title": "dummy_book",
+      "isbn": "011",
+      "author": "udachaaaaan",
+      "page": 2
+    }
+  ]
+}
