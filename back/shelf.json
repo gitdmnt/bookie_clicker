@@ -2,21 +2,33 @@
   "items": [
     {
       "title": "dummy_book",
-      "isbn": "999",
-      "author": "udachaaaaan",
-      "page": 2
-    },
-    {
-      "title": "dummy_book",
       "isbn": "1",
       "author": "udachaaaaan",
-      "page": 2
+      "pages": {
+        "max": 200,
+        "num": 200,
+        "read_flags": "ffffffffffffffffffffffffffffffffffffffffffffffff"
+      },
+      "read_status": "Read",
+      "date": {
+        "date_start": "2023-09-22",
+        "date_end": "2023-09-30"
+      }
     },
     {
       "title": "dummy_book",
-      "isbn": "011",
+      "isbn": "2",
       "author": "udachaaaaan",
-      "page": 2
+      "pages": {
+        "max": 200,
+        "num": 11,
+        "read_flags": "0003ff800000000000000000000000000000000000000000"
+      },
+      "read_status": "Reading",
+      "date": {
+        "date_start": "2023-09-22",
+        "date_end": "2024-01-01"
+      }
     }
   ]
 }
