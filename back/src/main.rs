@@ -8,6 +8,8 @@ use std::fs::File;
 use std::io::{self, Write};
 use std::str::FromStr;
 
+mod lib;
+
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     main_cli().await
@@ -34,6 +36,7 @@ impl BookLib {
                 if attr_new.isbn != attr_exist.isbn {
                     break;
                 }
+                // フラグをデコードしてOR取って再エンコード
             }
         }
         // ナイーブな結合
