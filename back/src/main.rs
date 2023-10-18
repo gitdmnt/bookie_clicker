@@ -1,3 +1,5 @@
+// BookLibのマージ作業をやる　次は
+
 use chrono::{self, Local, NaiveDate};
 use reqwest::get;
 use serde::{Deserialize, Serialize};
@@ -20,7 +22,21 @@ impl BookLib {
     fn new() -> BookLib {
         BookLib { items: vec![] }
     }
+    fn len(&self) -> usize {
+        self.items.len()
+    }
     fn merge(&mut self, v: BookLib) {
+        // 同じ本が登録された時の処理
+        for i in 0..self.len() {
+            let attr_exist = &self.items[i];
+            for j in 0..v.len() {
+                let attr_new = &v.items[j];
+                if attr_new.isbn != attr_exist.isbn {
+                    break;
+                }
+            }
+        }
+        // ナイーブな結合
         self.items.extend(v.items);
     }
     fn push(&mut self, v: BookAttr) {
