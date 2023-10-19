@@ -1,63 +1,137 @@
 {
   "items": [
     {
-      "title": "dummy_book",
+      "title": "udachan no himitsu",
       "isbn": "1",
-      "author": "udachaaaaan",
-      "pages": {
-        "max": 200,
-        "num": 200,
-        "read_flags": "ffffffffffffffffffffffffffffffffffffffffffffffffff"
-      },
-      "read_status": "Read",
-      "date": {
-        "date_start": "2000-01-01",
-        "date_end": "2000-01-01"
+      "author": "udachan",
+      "page_max": 200,
+      "status": {
+        "read_status": "Read",
+        "read_page_num": 200,
+        "progresses": [
+          {
+            "date_start": "2002-09-22",
+            "date_end": "2002-09-22",
+            "flag": {
+              "str": "00000000000000000000000000000000000000000000000000"
+            }
+          }
+        ],
+        "flag_combined": {
+          "str": "ffffffffffffffffffffffffffffffffffffffffffffffffff"
+        }
       }
     },
     {
-      "title": "dummy_book",
+      "title": "udachan no himitsu",
       "isbn": "2",
-      "author": "udachaaaaan",
-      "pages": {
-        "max": 200,
-        "num": 11,
-        "read_flags": "00001ffffffffffffffffffffffffffffffffffffffffffffe"
-      },
-      "read_status": "Reading",
-      "date": {
-        "date_start": "2000-01-01",
-        "date_end": "2000-01-01"
+      "author": "udachan",
+      "page_max": 200,
+      "status": {
+        "read_status": "Reading",
+        "read_page_num": 20,
+        "progresses": [],
+        "flag_combined": {
+          "str": "fffff000000000000000000000000000000000000000000000"
+        }
       }
     },
     {
-      "title": "dummy_book",
+      "title": "udachan no himitsu",
       "isbn": "3",
-      "author": "udachaaaaan",
-      "pages": {
-        "max": 200,
-        "num": 11,
-        "read_flags": "007ff000000000000000000000000000000000000000000000"
-      },
-      "read_status": "Reading",
-      "date": {
-        "date_start": "2000-01-01",
-        "date_end": "2000-01-01"
+      "author": "udachan",
+      "page_max": 200,
+      "status": {
+        "read_status": "Unread",
+        "read_page_num": 1,
+        "progresses": [],
+        "flag_combined": {
+          "str": "00000000000000000000000000000000000000000000000000"
+        }
       }
     },
     {
-      "title": "dummy_book",
-      "isbn": "4",
-      "author": "udachaaaaan",
-      "pages": {
-        "max": 200,
-        "num": 20,
-        "read_flags": "fffff7fcffffc0000000000000000000000000000000000000"
-      },
-      "read_status": "Reading",
-      "date": {
-        "date_start": "2000-01-01",
-        "date_end": "2000-01-01"
+      "title": "udachan no himitsu",
+      "isbn": "9",
+      "author": "udachan",
+      "page_max": 200,
+      "status": {
+        "read_status": "Unread",
+        "read_page_num": 1,
+        "progresses": [],
+        "flag_combined": {
+          "str": "00000000000000000000000000000000000000000000000000"
+        }
+      }
+    },
+    {
+      "title": "udachan no himitsu",
+      "isbn": "10",
+      "author": "udachan",
+      "page_max": 200,
+      "status": {
+        "read_status": "Read",
+        "read_page_num": 200,
+        "progresses": [],
+        "flag_combined": {
+          "str": "ffffffffffffffffffffffffffffffffffffffffffffffffff"
+        }
+      }
+    },
+    {
+      "title": "udachan no himitsu",
+      "isbn": "11",
+      "author": "udachan",
+      "page_max": 200,
+      "status": {
+        "read_status": "Unread",
+        "read_page_num": 1,
+        "progresses": [],
+        "flag_combined": {
+          "str": "00000000000000000000000000000000000000000000000000"
+        }
+      }
+    },
+    {
+      "title": "udachan no himitsu",
+      "isbn": "12",
+      "author": "udachan",
+      "page_max": 200,
+      "status": {
+        "read_status": "Unread",
+        "read_page_num": 1,
+        "progresses": [],
+        "flag_combined": {
+          "str": "00000000000000000000000000000000000000000000000000"
+        }
+      }
+    },
+    {
+      "title": "udachan no himitsu",
+      "isbn": "13",
+      "author": "udachan",
+      "page_max": 200,
+      "status": {
+        "read_status": "Unread",
+        "read_page_num": 1,
+        "progresses": [],
+        "flag_combined": {
+          "str": "00000000000000000000000000000000000000000000000000"
+        }
+      }
+    },
+    {
+      "title": "udachan no himitsu",
+      "isbn": "14",
+      "author": "udachan",
+      "page_max": 200,
+      "status": {
+        "read_status": "Unread",
+        "read_page_num": 1,
+        "progresses": [],
+        "flag_combined": {
+          "str": "00000000000000000000000000000000000000000000000000"
+        }
       }
     }
   ]

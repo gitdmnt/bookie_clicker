@@ -1,27 +1,19 @@
-// BookLibのマージ作業をやる　次は
-// 今の実装だと新たに記録したやつのフラグが統合されるだけ
-// 問題点
-// - 日付が更新されない
-// - いつどこを読んだかわからない
-// - numを再計算してない
-// - Unreadの場合でも読み始めた日と読み終わった日を聞かれる
-// まずはBookAttrを改修する
-// フラグと日付をバラバラに載せるのではなく、読書期間とフラグが同時に載っている構造体のリストという形にする
-// dateとpageとread_statusを削除し、max_page, u32, status: Statusにする
-// struct Status { read_status: ReadStatus, read_page_num: u32, progresses: Vec<Progress>, read_flags_combined: String }
-// struct Progress { date_start, date_end, read_flags }
+/// 問題点
+/// - booklibのmerge時にread_page_numを計算してない
+/// - booklibのmerge時にflag_combinedを計算してない
+/// - booklibのmerge時にread_statusを計算してない
 
-use back::byte2hex;
-use chrono::{self, Local, NaiveDate};
-use lib::{bool2hex, hex2bool, hex2byte};
+// const PATH: &str = "shelf.json";
+const PATH: &str = "test_shelf.json";
+
+use chrono::NaiveDate;
 use reqwest::get;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs::File;
 use std::io::{self, Write};
+use std::ops::{Index, IndexMut};
 use std::str::FromStr;
-
-mod lib;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -40,51 +32,44 @@ impl BookLib {
     fn len(&self) -> usize {
         self.items.len()
     }
-    fn merge(&mut self, v: BookLib) {
-        // 同じ本が登録された時の処理
-        if self.len() == 0 {
-            self.items.extend(v.items);
-            return;
-        }
-        for i in 0..v.len() {
-            let attr_new = &v.items[i];
+
+    /// 2つのBookLibの重複をチェックしながら統合する。
+    fn merge(&mut self, client: BookLib) {
+        for i in 0..client.len() {
+            // selfに1つもない場合はclientLibの最初の1つをselfに入れないと重複チェックもクソもない
+            let attr = BookAttr::copy(&client[i]);
+
+            if self.len() == 0 {
+                self.push(attr);
+                continue;
+            }
             for j in 0..self.len() {
-                let attr_exist = &mut self.items[j];
-                if attr_new.isbn == attr_exist.isbn {
-                    // フラグをデコードしてOR取って再エンコード
-                    let read_flag_exist = hex2byte(&attr_exist.pages.read_flags);
-                    let read_flag_new = hex2byte(&attr_new.pages.read_flags);
-                    attr_exist.pages.read_flags = byte2hex(
-                        &read_flag_exist
-                            .into_iter()
-                            .enumerate()
-                            .map(|(i, f)| (f | read_flag_new[i]))
-                            .collect(),
-                    );
+                if attr.isbn == self[j].isbn {
+                    self[j].status.progresses.extend(attr.status.progresses);
                     break;
                 }
-
-                // 既存のと一致しなかったらコピーするコードだけど汚すぎて面白い
                 if j == self.len() - 1 {
-                    let attr = BookAttr {
-                        title: (&attr_new.title).to_owned(),
-                        isbn: (&attr_new.isbn).to_owned(),
-                        pages: Pages {
-                            max: attr_new.pages.max,
-                            num: attr_new.pages.num,
-                            read_flags: (&attr_new.pages.read_flags).to_owned(),
-                        },
-                        read_status: attr_new.read_status,
-                        author: (&attr_new.author).to_owned(),
-                        date: attr_new.date,
-                    };
                     self.push(attr);
+                    break;
                 }
             }
         }
     }
+
     fn push(&mut self, v: BookAttr) {
         self.items.push(v);
+    }
+}
+impl Index<usize> for BookLib {
+    type Output = BookAttr;
+
+    fn index(&self, i: usize) -> &Self::Output {
+        &self.items[i]
+    }
+}
+impl IndexMut<usize> for BookLib {
+    fn index_mut(&mut self, i: usize) -> &mut Self::Output {
+        &mut self.items[i]
     }
 }
 
@@ -94,21 +79,166 @@ struct BookAttr {
     title: String,
     isbn: String,
     author: String,
-    pages: Pages,
-    read_status: ReadStatus,
-    date: Date,
+    page_max: u32,
+    status: Status,
 }
-
 impl BookAttr {
     fn new() -> BookAttr {
         BookAttr {
             title: String::new(),
             isbn: String::new(),
             author: String::new(),
-            pages: Pages::new(0),
-            read_status: ReadStatus::Unread,
-            date: Date::new(),
+            page_max: 0,
+            status: Status {
+                read_status: ReadStatus::Unread,
+                read_page_num: 0,
+                progresses: vec![Progress::new()],
+                flag_combined: ReadFlag::new(),
+            },
         }
+    }
+    fn copy(attr: &BookAttr) -> BookAttr {
+        let mut progresses = vec![];
+        for p in &attr.status.progresses {
+            let progress = Progress {
+                date_start: p.date_start,
+                date_end: p.date_end,
+                flag: ReadFlag::from_str(&p.flag.str),
+            };
+            progresses.push(progress);
+        }
+        BookAttr {
+            title: attr.title.to_owned(),
+            isbn: attr.isbn.to_owned(),
+            author: attr.author.to_owned(),
+            page_max: attr.page_max,
+            status: Status {
+                read_status: attr.status.read_status,
+                read_page_num: attr.status.read_page_num,
+                progresses,
+                flag_combined: ReadFlag::from_str(&attr.status.flag_combined.str),
+            },
+        }
+    }
+}
+
+// その本の状態
+#[derive(Debug, Deserialize, Serialize)]
+struct Status {
+    read_status: ReadStatus,
+    read_page_num: u32,
+    progresses: Vec<Progress>,
+    flag_combined: ReadFlag,
+}
+
+// 読書進捗
+#[derive(Debug, Deserialize, Serialize)]
+struct Progress {
+    date_start: NaiveDate,
+    date_end: NaiveDate,
+    flag: ReadFlag,
+}
+impl Progress {
+    fn new() -> Progress {
+        let d = "2002-09-22".parse::<NaiveDate>().unwrap(); // my birthday! woo
+        Progress {
+            date_start: d,
+            date_end: d,
+            flag: ReadFlag::new(),
+        }
+    }
+    fn from(
+        page_max: u32,
+        page_start: u32,
+        page_end: u32,
+        date_start: NaiveDate,
+        date_end: NaiveDate,
+    ) -> Progress {
+        let mut flag = ReadFlag::new();
+        let flag_size = (((page_max + 7) / 8) * 2) as usize;
+        while flag.str.len() < flag_size {
+            flag.str += "0";
+        }
+
+        let mut bools = vec![false; (((page_max + 7) / 8) * 8) as usize];
+        // フラグを編集して読んだページ数を加算
+        if page_start > 0 {
+            for i in page_start..=page_end {
+                let i = i as usize - 1;
+                if !bools[i] {
+                    bools[i] = true;
+                }
+            }
+        }
+        // 16進文字列に圧縮
+        flag = ReadFlag::hex_from_bool(&bools);
+        Progress {
+            date_start,
+            date_end,
+            flag,
+        }
+    }
+}
+
+// 読んだページのフラグ
+#[derive(Debug, Serialize, Deserialize)]
+struct ReadFlag {
+    str: String,
+}
+impl ReadFlag {
+    fn new() -> ReadFlag {
+        ReadFlag { str: String::new() }
+    }
+    fn from_str(str: &str) -> ReadFlag {
+        let str = str.to_owned();
+        ReadFlag { str }
+    }
+    fn byte(&mut self) -> Vec<u8> {
+        let mut bytes = vec![];
+        if self.str.len() % 2 == 1 {
+            self.str += "0";
+        }
+        for i in (0..self.str.len()).step_by(2) {
+            let c = &self.str[i..i + 2];
+            let n = u8::from_str_radix(c, 16).unwrap();
+            bytes.push(n);
+        }
+        bytes
+    }
+    fn bool(&mut self) -> Vec<bool> {
+        ReadFlag::bool_from_byte(&self.byte())
+    }
+    fn hex_from_byte(bytes: &Vec<u8>) -> ReadFlag {
+        let mut hex = String::new();
+        for byte in bytes {
+            hex += &format!("{:02x}", byte);
+        }
+        ReadFlag { str: hex }
+    }
+    fn hex_from_bool(bools: &Vec<bool>) -> ReadFlag {
+        ReadFlag::hex_from_byte(&ReadFlag::byte_from_bool(&bools))
+    }
+    fn byte_from_bool(bools: &Vec<bool>) -> Vec<u8> {
+        let mut byte = vec![];
+        let mut bit: u8 = 0b0;
+        for i in 0..bools.len() {
+            bit <<= 1;
+            bit += if bools[i] { 1 } else { 0 };
+            if i % 8 == 7 {
+                byte.push(bit);
+                bit = 0b0;
+            }
+        }
+        byte
+    }
+    fn bool_from_byte(bytes: &Vec<u8>) -> Vec<bool> {
+        let mut bools = vec![];
+        for n in bytes.into_iter() {
+            for i in (0..8).rev() {
+                bools.push(n & 2_u8.pow(i) == 2_u8.pow(i));
+            }
+        }
+        bools
     }
 }
 
@@ -118,66 +248,6 @@ enum ReadStatus {
     Read,
     Reading,
     Unread,
-}
-
-/// ページ数に関する情報
-/// maxは本のページ数。
-/// numは現在読んだページ数の合計。
-/// read_flagsはページごとの読み終わったか否かのフラグを16進文字列にして格納したもの。ページ数が16の倍数でない場合は末尾に0を足して埋めている。
-#[derive(Debug, Deserialize, Serialize)]
-struct Pages {
-    max: u32,
-    num: u32,
-    read_flags: String,
-}
-
-impl Pages {
-    // 初期化のために最大ページ数を入力させている。
-    fn new(max: u32) -> Pages {
-        // nページの本には(n+3)/4文字のフラグ文字列だが、フラグ文字列は偶数である必要があるのでさらにそれを丸めて(((n+3)/4+1)/2)*2=((n+7)/8)*2文字
-        let flag_size = ((max + 7) / 8) * 2;
-        let mut read_flags = String::new();
-        for _i in 0..flag_size {
-            read_flags += "0";
-        }
-        Pages {
-            max,
-            num: 0,
-            read_flags,
-        }
-    }
-    // フラグ管理
-    fn set(&mut self, start: u32, end: u32) {
-        let mut read_flags = hex2bool(&self.read_flags);
-        // フラグを編集して読んだページ数を加算
-        if start > 0 {
-            for i in start..=end {
-                let i = i as usize - 1;
-                if !read_flags[i] {
-                    read_flags[i] = true;
-                    self.num += 1;
-                }
-            }
-        }
-        // 16進文字列に圧縮
-        self.read_flags = bool2hex(&read_flags);
-    }
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-struct Date {
-    date_start: NaiveDate,
-    date_end: NaiveDate,
-}
-
-impl Date {
-    fn new() -> Date {
-        let d = "2002-09-22".parse::<NaiveDate>().unwrap(); // my birthday! woo
-        Date {
-            date_start: d,
-            date_end: d,
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -194,6 +264,12 @@ async fn main_cli() -> Result<(), Error> {
         };
 
         // let book_details = fetch_book_attr(isbn).await?;
+        let mut book_details = BookAttr::new();
+        book_details.title = String::from("udachan no himitsu");
+        book_details.isbn = isbn;
+        book_details.author = String::from("udachan");
+        book_details.page_max = 200;
+        // デバッグ
 
         let read_status =
             match input::<u8>("Select read status\n1: Read\n2: Reading\n3: Unread").await {
@@ -204,26 +280,25 @@ async fn main_cli() -> Result<(), Error> {
                 },
                 None => break,
             };
-
-        let (date_start, date_end) = (
-            match input::<NaiveDate>("Input date you started reading as \"%Y-%m-%d\"").await {
-                Some(s) => s,
-                None => break,
-            },
-            match input::<NaiveDate>("Input date you finished reading as \"%Y-%m-%d\"").await {
-                Some(s) => s,
-                None => break,
-            },
-        );
-        let date = Date {
-            date_start,
-            date_end,
+        let (date_start, date_end) = if read_status == ReadStatus::Unread {
+            (
+                NaiveDate::parse_from_str("2002-09-22", "%Y-%m-%d").unwrap(),
+                NaiveDate::parse_from_str("2002-09-22", "%Y-%m-%d").unwrap(),
+            )
+        } else {
+            (
+                match input::<NaiveDate>("Input date you started reading as \"%Y-%m-%d\"").await {
+                    Some(s) => s,
+                    None => break,
+                },
+                match input::<NaiveDate>("Input date you finished reading as \"%Y-%m-%d\"").await {
+                    Some(s) => s,
+                    None => break,
+                },
+            )
         };
-
-        // let mut pages = &book_details.pages;
-        let mut pages = Pages::new(200);
         let (page_start, page_end) = if read_status == ReadStatus::Read {
-            (1, pages.max)
+            (1, book_details.page_max)
         } else if read_status == ReadStatus::Reading {
             (
                 match input::<u32>("Input page you started reading").await {
@@ -238,17 +313,20 @@ async fn main_cli() -> Result<(), Error> {
         } else {
             (0, 0)
         };
-        pages.set(page_start, page_end);
-
-        let book_details = BookAttr {
-            title: "dummy_book".to_owned(),
-            isbn,
-            author: "udachaaaaan".to_owned(),
-            pages,
+        let progress = Progress::from(
+            book_details.page_max,
+            page_start,
+            page_end,
+            date_start,
+            date_end,
+        );
+        let status = Status {
             read_status,
-            date,
+            read_page_num: page_end - page_start + 1,
+            flag_combined: ReadFlag::from_str(&progress.flag.str),
+            progresses: vec![progress],
         };
-        // デバッグ用ここまで
+        book_details.status = status;
         buf.push(book_details);
     }
     if let Err(e) = write_to_file(buf).await {
@@ -317,7 +395,7 @@ async fn parse_json_to_attribute(json: reqwest::Response) -> Result<BookAttr, Er
         .as_str()
         .unwrap()
         .to_owned();
-    let max = attr["pageCount"].as_i64().unwrap() as u32;
+    let page_max = attr["pageCount"].as_i64().unwrap() as u32;
     let image_url = attr["imageLinks"]["smallThumbnail"]
         .as_str()
         .unwrap()
@@ -326,12 +404,11 @@ async fn parse_json_to_attribute(json: reqwest::Response) -> Result<BookAttr, Er
     attr.isbn = isbn;
     attr.title = title;
     attr.author = author;
-    attr.pages.max = max;
+    attr.page_max = page_max;
     Ok(attr)
 }
 
 async fn write_to_file(buf: BookLib) -> Result<(), std::io::Error> {
-    const PATH: &str = "shelf.json";
     println!("data writing");
     let mut written = BookLib::new();
     if let Ok(_) = File::open(PATH) {
