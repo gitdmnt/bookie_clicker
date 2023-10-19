@@ -1,5 +1,6 @@
-pub fn hex2byte(mut hex: String) -> Vec<u8> {
+pub fn hex2byte(hex: &str) -> Vec<u8> {
     let mut bytes = vec![];
+    let mut hex = hex.to_owned();
     if hex.len() % 2 == 1 {
         hex += "0";
     }
@@ -11,7 +12,7 @@ pub fn hex2byte(mut hex: String) -> Vec<u8> {
     bytes
 }
 
-pub fn byte2bool(bytes: Vec<u8>) -> Vec<bool> {
+pub fn byte2bool(bytes: &Vec<u8>) -> Vec<bool> {
     let mut bools = vec![];
     for n in bytes.into_iter() {
         for i in (0..8).rev() {
@@ -21,7 +22,7 @@ pub fn byte2bool(bytes: Vec<u8>) -> Vec<bool> {
     bools
 }
 
-pub fn bool2byte(bools: Vec<bool>) -> Vec<u8> {
+pub fn bool2byte(bools: &Vec<bool>) -> Vec<u8> {
     let mut byte = vec![];
     let mut bit: u8 = 0b0;
     for i in 0..bools.len() {
@@ -35,7 +36,7 @@ pub fn bool2byte(bools: Vec<bool>) -> Vec<u8> {
     byte
 }
 
-pub fn byte2hex(bytes: Vec<u8>) -> String {
+pub fn byte2hex(bytes: &Vec<u8>) -> String {
     let mut hex = String::new();
     for byte in bytes {
         hex += &format!("{:02x}", byte);
@@ -43,10 +44,10 @@ pub fn byte2hex(bytes: Vec<u8>) -> String {
     hex
 }
 
-pub fn hex2bool(hex: String) -> Vec<bool> {
-    byte2bool(hex2byte(hex))
+pub fn hex2bool(hex: &str) -> Vec<bool> {
+    byte2bool(&hex2byte(&hex))
 }
 
-pub fn bool2hex(bools: Vec<bool>) -> String {
-    byte2hex(bool2byte(bools))
+pub fn bool2hex(bools: &Vec<bool>) -> String {
+    byte2hex(&bool2byte(&bools))
 }

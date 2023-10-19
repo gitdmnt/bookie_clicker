@@ -1,6 +1,19 @@
 // BookLibのマージ作業をやる　次は
+// 今の実装だと新たに記録したやつのフラグが統合されるだけ
+// 問題点
+// - 日付が更新されない
+// - いつどこを読んだかわからない
+// - numを再計算してない
+// - Unreadの場合でも読み始めた日と読み終わった日を聞かれる
+// まずはBookAttrを改修する
+// フラグと日付をバラバラに載せるのではなく、読書期間とフラグが同時に載っている構造体のリストという形にする
+// dateとpageとread_statusを削除し、max_page, u32, status: Statusにする
+// struct Status { read_status: ReadStatus, read_page_num: u32, progresses: Vec<Progress>, read_flags_combined: String }
+// struct Progress { date_start, date_end, read_flags }
 
+use back::byte2hex;
 use chrono::{self, Local, NaiveDate};
+use lib::{bool2hex, hex2bool, hex2byte};
 use reqwest::get;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -29,18 +42,46 @@ impl BookLib {
     }
     fn merge(&mut self, v: BookLib) {
         // 同じ本が登録された時の処理
-        for i in 0..self.len() {
-            let attr_exist = &self.items[i];
-            for j in 0..v.len() {
-                let attr_new = &v.items[j];
-                if attr_new.isbn != attr_exist.isbn {
+        if self.len() == 0 {
+            self.items.extend(v.items);
+            return;
+        }
+        for i in 0..v.len() {
+            let attr_new = &v.items[i];
+            for j in 0..self.len() {
+                let attr_exist = &mut self.items[j];
+                if attr_new.isbn == attr_exist.isbn {
+                    // フラグをデコードしてOR取って再エンコード
+                    let read_flag_exist = hex2byte(&attr_exist.pages.read_flags);
+                    let read_flag_new = hex2byte(&attr_new.pages.read_flags);
+                    attr_exist.pages.read_flags = byte2hex(
+                        &read_flag_exist
+                            .into_iter()
+                            .enumerate()
+                            .map(|(i, f)| (f | read_flag_new[i]))
+                            .collect(),
+                    );
                     break;
                 }
-                // フラグをデコードしてOR取って再エンコード
+
+                // 既存のと一致しなかったらコピーするコードだけど汚すぎて面白い
+                if j == self.len() - 1 {
+                    let attr = BookAttr {
+                        title: (&attr_new.title).to_owned(),
+                        isbn: (&attr_new.isbn).to_owned(),
+                        pages: Pages {
+                            max: attr_new.pages.max,
+                            num: attr_new.pages.num,
+                            read_flags: (&attr_new.pages.read_flags).to_owned(),
+                        },
+                        read_status: attr_new.read_status,
+                        author: (&attr_new.author).to_owned(),
+                        date: attr_new.date,
+                    };
+                    self.push(attr);
+                }
             }
         }
-        // ナイーブな結合
-        self.items.extend(v.items);
     }
     fn push(&mut self, v: BookAttr) {
         self.items.push(v);
@@ -72,7 +113,7 @@ impl BookAttr {
 }
 
 // 本の状態 読了/進行中/未読
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 enum ReadStatus {
     Read,
     Reading,
@@ -93,7 +134,8 @@ struct Pages {
 impl Pages {
     // 初期化のために最大ページ数を入力させている。
     fn new(max: u32) -> Pages {
-        let flag_size = max / 4 + 1;
+        // nページの本には(n+3)/4文字のフラグ文字列だが、フラグ文字列は偶数である必要があるのでさらにそれを丸めて(((n+3)/4+1)/2)*2=((n+7)/8)*2文字
+        let flag_size = ((max + 7) / 8) * 2;
         let mut read_flags = String::new();
         for _i in 0..flag_size {
             read_flags += "0";
@@ -106,21 +148,7 @@ impl Pages {
     }
     // フラグ管理
     fn set(&mut self, start: u32, end: u32) {
-        let mut read_flags = vec![];
-        // 16進文字列伸長
-        for i in 0..self.read_flags.len() {
-            let c = &self.read_flags[i..i + 1];
-            let n = u8::from_str_radix(c, 16).unwrap();
-            let bin_4bit = format!("{:04b}", n);
-            for c in bin_4bit.chars() {
-                if c == '0' {
-                    read_flags.push(false);
-                } else {
-                    read_flags.push(true);
-                }
-            }
-        }
-
+        let mut read_flags = hex2bool(&self.read_flags);
         // フラグを編集して読んだページ数を加算
         if start > 0 {
             for i in start..=end {
@@ -131,23 +159,12 @@ impl Pages {
                 }
             }
         }
-
         // 16進文字列に圧縮
-        let mut read_flags_str = String::new();
-        let mut bit: u16 = 0b0;
-        for i in 0..read_flags.len() {
-            bit <<= 1;
-            bit += if read_flags[i] { 1 } else { 0 };
-            if i % 16 == 15 {
-                read_flags_str += &format!("{:04x}", bit);
-                bit = 0b0;
-            }
-        }
-        self.read_flags = read_flags_str;
+        self.read_flags = bool2hex(&read_flags);
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 struct Date {
     date_start: NaiveDate,
     date_end: NaiveDate,
