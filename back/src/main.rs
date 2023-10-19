@@ -3,8 +3,8 @@
 /// - booklibのmerge時にflag_combinedを計算してない
 /// - booklibのmerge時にread_statusを計算してない
 
-// const PATH: &str = "shelf.json";
-const PATH: &str = "test_shelf.json";
+const PATH: &str = "shelf.json";
+// const PATH: &str = "test_shelf.json";
 
 use chrono::NaiveDate;
 use reqwest::get;
@@ -263,13 +263,9 @@ async fn main_cli() -> Result<(), Error> {
             None => break,
         };
 
-        // let book_details = fetch_book_attr(isbn).await?;
-        let mut book_details = BookAttr::new();
-        book_details.title = String::from("udachan no himitsu");
-        book_details.isbn = isbn;
-        book_details.author = String::from("udachan");
-        book_details.page_max = 200;
-        // デバッグ
+        let mut book_details = fetch_book_attr(isbn).await?;
+
+        println!("{} 『{}』", book_details.author, book_details.title);
 
         let read_status =
             match input::<u8>("Select read status\n1: Read\n2: Reading\n3: Unread").await {

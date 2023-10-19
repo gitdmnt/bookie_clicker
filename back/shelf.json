@@ -1,136 +1,53 @@
 {
   "items": [
     {
-      "title": "udachan no himitsu",
-      "isbn": "1",
-      "author": "udachan",
-      "page_max": 200,
+      "title": "秘密の花園",
+      "isbn": "9784101167541",
+      "author": "三浦しをん",
+      "page_max": 278,
       "status": {
         "read_status": "Read",
-        "read_page_num": 200,
+        "read_page_num": 278,
         "progresses": [
           {
-            "date_start": "2002-09-22",
-            "date_end": "2002-09-22",
+            "date_start": "2023-10-17",
+            "date_end": "2023-10-18",
             "flag": {
-              "str": "00000000000000000000000000000000000000000000000000"
+              "str": "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc"
             }
           }
         ],
         "flag_combined": {
-          "str": "ffffffffffffffffffffffffffffffffffffffffffffffffff"
+          "str": "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc"
         }
       }
     },
     {
-      "title": "udachan no himitsu",
-      "isbn": "2",
-      "author": "udachan",
-      "page_max": 200,
+      "title": "真理と実存",
+      "isbn": "9784409030585",
+      "author": "J‐P. サルトル",
+      "page_max": 212,
       "status": {
         "read_status": "Reading",
-        "read_page_num": 20,
-        "progresses": [],
+        "read_page_num": 29,
+        "progresses": [
+          {
+            "date_start": "2023-10-18",
+            "date_end": "2023-10-18",
+            "flag": {
+              "str": "fffffff80000000000000000000000000000000000000000000000"
+            }
+          },
+          {
+            "date_start": "2023-10-19",
+            "date_end": "2023-10-19",
+            "flag": {
+              "str": "000000040000000000000000000000000000000000000000000000"
+            }
+          }
+        ],
         "flag_combined": {
-          "str": "fffff000000000000000000000000000000000000000000000"
-        }
-      }
-    },
-    {
-      "title": "udachan no himitsu",
-      "isbn": "3",
-      "author": "udachan",
-      "page_max": 200,
-      "status": {
-        "read_status": "Unread",
-        "read_page_num": 1,
-        "progresses": [],
-        "flag_combined": {
-          "str": "00000000000000000000000000000000000000000000000000"
-        }
-      }
-    },
-    {
-      "title": "udachan no himitsu",
-      "isbn": "9",
-      "author": "udachan",
-      "page_max": 200,
-      "status": {
-        "read_status": "Unread",
-        "read_page_num": 1,
-        "progresses": [],
-        "flag_combined": {
-          "str": "00000000000000000000000000000000000000000000000000"
-        }
-      }
-    },
-    {
-      "title": "udachan no himitsu",
-      "isbn": "10",
-      "author": "udachan",
-      "page_max": 200,
-      "status": {
-        "read_status": "Read",
-        "read_page_num": 200,
-        "progresses": [],
-        "flag_combined": {
-          "str": "ffffffffffffffffffffffffffffffffffffffffffffffffff"
-        }
-      }
-    },
-    {
-      "title": "udachan no himitsu",
-      "isbn": "11",
-      "author": "udachan",
-      "page_max": 200,
-      "status": {
-        "read_status": "Unread",
-        "read_page_num": 1,
-        "progresses": [],
-        "flag_combined": {
-          "str": "00000000000000000000000000000000000000000000000000"
-        }
-      }
-    },
-    {
-      "title": "udachan no himitsu",
-      "isbn": "12",
-      "author": "udachan",
-      "page_max": 200,
-      "status": {
-        "read_status": "Unread",
-        "read_page_num": 1,
-        "progresses": [],
-        "flag_combined": {
-          "str": "00000000000000000000000000000000000000000000000000"
-        }
-      }
-    },
-    {
-      "title": "udachan no himitsu",
-      "isbn": "13",
-      "author": "udachan",
-      "page_max": 200,
-      "status": {
-        "read_status": "Unread",
-        "read_page_num": 1,
-        "progresses": [],
-        "flag_combined": {
-          "str": "00000000000000000000000000000000000000000000000000"
-        }
-      }
-    },
-    {
-      "title": "udachan no himitsu",
-      "isbn": "14",
-      "author": "udachan",
-      "page_max": 200,
-      "status": {
-        "read_status": "Unread",
-        "read_page_num": 1,
-        "progresses": [],
-        "flag_combined": {
-          "str": "00000000000000000000000000000000000000000000000000"
+          "str": "fffffff80000000000000000000000000000000000000000000000"
         }
       }
     }
