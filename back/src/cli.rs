@@ -23,12 +23,37 @@ impl BookLib {
     pub fn new() -> BookLib {
         BookLib { items: vec![] }
     }
-    pub fn len(&self) -> usize {
+    pub fn write(self, cfg: &Config) -> Result<(), std::io::Error> {
+        let path = String::from(&cfg.dir) + &cfg.shelf;
+        println!("data writing");
+        let mut written = BookLib::new();
+        if let Ok(_) = File::open(&path) {
+            let content = std::fs::read_to_string(&path)?;
+            written = match serde_json::from_str(&content) {
+                Ok(b) => b,
+                Err(e) => {
+                    println!("{}", e);
+                    written
+                }
+            };
+        }
+        written.merge(self);
+        if let Err(e) = std::fs::create_dir_all(&cfg.dir) {
+            println!("{}", e);
+        };
+        let mut file = File::create(&path)?;
+        let json = serde_json::to_string(&written)?;
+        write!(file, "{}", json)?;
+        file.flush()?;
+        println!("finished");
+        Ok(())
+    }
+    fn len(&self) -> usize {
         self.items.len()
     }
 
     /// 2つのBookLibの重複をチェックしながら統合する。
-    pub fn merge(&mut self, client: BookLib) {
+    fn merge(&mut self, client: BookLib) {
         for i in 0..client.len() {
             // selfに1つもない場合はclientLibの最初の1つをselfに入れないと重複チェックもクソもない
             let attr = BookAttr::copy(&client[i]);
@@ -49,7 +74,6 @@ impl BookLib {
             }
         }
     }
-
     pub fn push(&mut self, v: BookAttr) {
         self.items.push(v);
     }
@@ -91,7 +115,7 @@ impl BookAttr {
             },
         }
     }
-    pub fn from(
+    fn from(
         title: String,
         isbn: String,
         author: String,
@@ -106,7 +130,7 @@ impl BookAttr {
             status,
         }
     }
-    pub fn copy(attr: &BookAttr) -> BookAttr {
+    fn copy(attr: &BookAttr) -> BookAttr {
         let mut progresses = vec![];
         for p in &attr.status.progresses {
             let progress = Progress {
@@ -129,23 +153,102 @@ impl BookAttr {
             },
         }
     }
-    pub fn set_status(&mut self, status: Status) {
+    fn input_isbn() -> Result<String, String> {
+        match input::<String>("Input isbn") {
+            Some(s) => Ok(s),
+            None => Err(String::from("quit")),
+        }
+    }
+    pub async fn fetch_book_attr() -> Result<BookAttr, String> {
+        let isbn = BookAttr::input_isbn()?;
+        let url = format!(
+            "https://www.googleapis.com/books/v1/volumes?q=isbn:{}",
+            isbn
+        );
+        let attr = get(url).await;
+        let attr = match attr {
+            Ok(json) => parse_json_to_attribute(json).await,
+            Err(e) => {
+                println!("{}", e);
+                Err(String::from("No result"))
+            }
+        };
+
+        attr
+    }
+    pub fn debug_book_attr() -> Result<BookAttr, String> {
+        let isbn = BookAttr::input_isbn()?;
+        let status = Status::new();
+        let attr = BookAttr {
+            title: String::from("udachan books vol.1"),
+            isbn,
+            author: String::from("udachan"),
+            page_max: 99,
+            status,
+        };
+        Ok(attr)
+    }
+    pub fn set_status(&mut self) -> Result<(), String> {
+        let read_status = match input::<u8>("Select read status\n1: Read\n2: Reading\n3: Unread") {
+            Some(s) => match s {
+                1 => ReadStatus::Read,
+                2 => ReadStatus::Reading,
+                _ => ReadStatus::Unread,
+            },
+            None => return Err(String::from("quit")),
+        };
+        let (date_start, date_end) = if read_status == ReadStatus::Unread {
+            (
+                NaiveDate::parse_from_str("2002-09-22", "%Y-%m-%d").unwrap(),
+                NaiveDate::parse_from_str("2002-09-22", "%Y-%m-%d").unwrap(),
+            )
+        } else {
+            (
+                match input::<NaiveDate>("Input date you started reading as \"%Y-%m-%d\"") {
+                    Some(s) => s,
+                    None => return Err(String::from("quit")),
+                },
+                match input::<NaiveDate>("Input date you finished reading as \"%Y-%m-%d\"") {
+                    Some(s) => s,
+                    None => return Err(String::from("quit")),
+                },
+            )
+        };
+        let (page_start, page_end) = if read_status == ReadStatus::Read {
+            (1, self.page_max)
+        } else if read_status == ReadStatus::Reading {
+            (
+                match input::<u32>("Input page you started reading") {
+                    Some(s) => s,
+                    None => return Err(String::from("quit")),
+                },
+                match input::<u32>("Input page you finished reading") {
+                    Some(s) => s,
+                    None => return Err(String::from("quit")),
+                },
+            )
+        } else {
+            (0, 0)
+        };
+        let progress = Progress::from(self.page_max, page_start, page_end, date_start, date_end);
+        let flag_combined = progress.flag().copy();
+        let status = Status::from(
+            read_status,
+            page_end - page_start + 1,
+            vec![progress],
+            flag_combined,
+        );
         self.status = status;
+        Ok(())
     }
-    pub fn title(&self) -> &str {
-        &self.title
-    }
-    pub fn author(&self) -> &str {
-        &self.author
-    }
-    pub fn page_max(&self) -> u32 {
-        self.page_max
+    pub fn print_attr(&self) {
+        println!("{} 『{}』", self.author, self.title);
     }
 }
 
 // その本の状態
 #[derive(Debug, Deserialize, Serialize)]
-pub struct Status {
+struct Status {
     read_status: ReadStatus,
     read_page_num: u32,
     progresses: Vec<Progress>,
@@ -176,7 +279,7 @@ impl Status {
 }
 // 読書進捗
 #[derive(Debug, Deserialize, Serialize)]
-pub struct Progress {
+struct Progress {
     date_start: NaiveDate,
     date_end: NaiveDate,
     flag: ReadFlag,
@@ -299,10 +402,7 @@ pub enum ReadStatus {
     Unread,
 }
 
-#[derive(Debug)]
-pub struct Error;
-
-pub fn input<T>(msg: &str) -> Option<T>
+fn input<T>(msg: &str) -> Option<T>
 where
     T: FromStr,
     <T as FromStr>::Err: std::fmt::Debug + std::fmt::Display,
@@ -325,28 +425,12 @@ where
     }
 }
 
-pub async fn fetch_book_attr(isbn: String) -> Result<BookAttr, Error> {
-    let url = format!(
-        "https://www.googleapis.com/books/v1/volumes?q=isbn:{}",
-        isbn
-    );
-    let attr = get(url).await;
-    let attr = match attr {
-        Ok(json) => parse_json_to_attribute(json).await,
-        Err(e) => {
-            println!("{}", e);
-            Err(Error)
-        }
-    };
-    attr
-}
-
-pub async fn parse_json_to_attribute(json: reqwest::Response) -> Result<BookAttr, Error> {
+async fn parse_json_to_attribute(json: reqwest::Response) -> Result<BookAttr, String> {
     let str = json.text().await.unwrap();
     let vec: Value = serde_json::from_str(&str).unwrap();
     let total_item_count = vec["totalItems"].as_i64().unwrap();
     if total_item_count == 0 {
-        return Err(Error);
+        return Err(String::from("No result"));
     }
     let attr = &vec["items"][0]["volumeInfo"];
     let title = attr["title"].as_str().unwrap().to_owned();
@@ -367,36 +451,6 @@ pub async fn parse_json_to_attribute(json: reqwest::Response) -> Result<BookAttr
         .as_str()
         .unwrap()
         .to_owned();
-    let mut attr = BookAttr::new();
-    attr.isbn = isbn;
-    attr.title = title;
-    attr.author = author;
-    attr.page_max = page_max;
+    let attr = BookAttr::from(title, isbn, author, page_max, Status::new());
     Ok(attr)
-}
-
-pub fn write_to_file(cfg: &Config, buf: BookLib) -> Result<(), std::io::Error> {
-    let path = String::from(&cfg.dir) + &cfg.shelf;
-    println!("data writing");
-    let mut written = BookLib::new();
-    if let Ok(_) = File::open(&path) {
-        let content = std::fs::read_to_string(&path)?;
-        written = match serde_json::from_str(&content) {
-            Ok(b) => b,
-            Err(e) => {
-                println!("{}", e);
-                written
-            }
-        };
-    }
-    written.merge(buf);
-    if let Err(e) = std::fs::create_dir_all(&cfg.dir) {
-        println!("{}", e);
-    };
-    let mut file = File::create(&path)?;
-    let json = serde_json::to_string(&written)?;
-    write!(file, "{}", json)?;
-    file.flush()?;
-    println!("finished");
-    Ok(())
 }
