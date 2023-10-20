@@ -1,7 +1,6 @@
 use back::cli::{
     config::{Config, Mode},
-    fetch_book_attr, input, write_to_file, BookAttr, BookLib, Error, Progress, ReadFlag,
-    ReadStatus, Status,
+    fetch_book_attr, input, write_to_file, BookAttr, BookLib, Error, Progress, ReadStatus, Status,
 };
 use chrono::NaiveDate;
 
@@ -15,7 +14,7 @@ async fn main() -> Result<(), Error> {
     }
 }
 
-pub async fn main_cli(cfg: Config) -> Result<(), Error> {
+async fn main_cli(cfg: Config) -> Result<(), Error> {
     let mut buf = BookLib::new();
 
     // データ入力
