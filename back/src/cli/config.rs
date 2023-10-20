@@ -5,7 +5,7 @@ use std::io::{Error, Write};
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
     pub debug: bool,
-    pub mode: Mode,
+    mode: Mode,
     pub dir: String,
     pub shelf: String,
 }
@@ -43,6 +43,9 @@ impl Config {
             }
         };
         Ok(config)
+    }
+    pub fn mode(&self) -> &Mode {
+        &self.mode
     }
 }
 
