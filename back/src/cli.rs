@@ -277,6 +277,7 @@ impl Status {
         }
     }
 }
+
 // 読書進捗
 #[derive(Debug, Deserialize, Serialize)]
 struct Progress {
