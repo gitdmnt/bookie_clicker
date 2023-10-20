@@ -3,11 +3,11 @@
 /// - booklibのmerge時にflag_combinedを計算してない
 /// - booklibのmerge時にread_statusを計算してない
 use chrono::NaiveDate;
-use config::{Config, Mode};
+use config::Config;
 use reqwest::get;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::fs::{self, File};
+use std::fs::File;
 use std::io::{self, Write};
 use std::ops::{Index, IndexMut};
 use std::str::FromStr;

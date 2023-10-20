@@ -2,8 +2,7 @@
 /// - booklibのmerge時にread_page_numを計算してない
 /// - booklibのmerge時にflag_combinedを計算してない
 /// - booklibのmerge時にread_statusを計算してない
-mod cli;
-use cli::{
+use back::cli::{
     config::{Config, Mode},
     main_cli, Error,
 };
