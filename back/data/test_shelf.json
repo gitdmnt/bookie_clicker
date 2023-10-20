@@ -1,10 +1,10 @@
 {
   "items": [
     {
-      "title": "udachan no himitsu",
-      "isbn": "978-000-000-000-0",
+      "title": "udachan books vol.1",
+      "isbn": "1",
       "author": "udachan",
-      "page_max": 200,
+      "page_max": 99,
       "status": {
         "read_status": "Unread",
         "read_page_num": 1,
@@ -13,12 +13,12 @@
             "date_start": "2002-09-22",
             "date_end": "2002-09-22",
             "flag": {
-              "str": "00000000000000000000000000000000000000000000000000"
+              "str": "00000000000000000000000000"
             }
           }
         ],
         "flag_combined": {
-          "str": "00000000000000000000000000000000000000000000000000"
+          "str": "00000000000000000000000000"
         }
       }
     }

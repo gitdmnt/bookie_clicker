@@ -2,22 +2,26 @@
 /// - booklibのmerge時にread_page_numを計算してない
 /// - booklibのmerge時にflag_combinedを計算してない
 /// - booklibのmerge時にread_statusを計算してない
-
-const PATH: &str = "shelf.json";
-// const PATH: &str = "test_shelf.json";
-
 use chrono::NaiveDate;
+use config::{Config, Mode};
 use reqwest::get;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{self, Write};
 use std::ops::{Index, IndexMut};
 use std::str::FromStr;
 
+mod config;
+
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    main_cli().await
+    let cfg: Config = load_config().unwrap();
+    match cfg.mode {
+        Mode::Cli => main_cli(cfg).await,
+        Mode::Gui => Ok(()),
+        _ => Ok(()),
+    }
 }
 
 // 1書庫の単位
@@ -253,29 +257,43 @@ enum ReadStatus {
 #[derive(Debug)]
 struct Error;
 
-async fn main_cli() -> Result<(), Error> {
+async fn main_cli(cfg: Config) -> Result<(), Error> {
     let mut buf = BookLib::new();
 
     // データ入力
     loop {
-        let isbn = match input::<String>("Input isbn").await {
+        let isbn = match input::<String>("Input isbn") {
             Some(s) => s,
             None => break,
         };
 
-        let mut book_details = fetch_book_attr(isbn).await?;
+        let mut book_details = if cfg.debug {
+            BookAttr {
+                title: String::from("udachan books vol.1"),
+                isbn,
+                author: String::from("udachan"),
+                page_max: 99,
+                status: Status {
+                    read_status: ReadStatus::Unread,
+                    read_page_num: 0,
+                    progresses: vec![Progress::new()],
+                    flag_combined: ReadFlag::from_str("00"),
+                },
+            }
+        } else {
+            fetch_book_attr(isbn).await?
+        };
 
         println!("{} 『{}』", book_details.author, book_details.title);
 
-        let read_status =
-            match input::<u8>("Select read status\n1: Read\n2: Reading\n3: Unread").await {
-                Some(s) => match s {
-                    1 => ReadStatus::Read,
-                    2 => ReadStatus::Reading,
-                    _ => ReadStatus::Unread,
-                },
-                None => break,
-            };
+        let read_status = match input::<u8>("Select read status\n1: Read\n2: Reading\n3: Unread") {
+            Some(s) => match s {
+                1 => ReadStatus::Read,
+                2 => ReadStatus::Reading,
+                _ => ReadStatus::Unread,
+            },
+            None => break,
+        };
         let (date_start, date_end) = if read_status == ReadStatus::Unread {
             (
                 NaiveDate::parse_from_str("2002-09-22", "%Y-%m-%d").unwrap(),
@@ -283,11 +301,11 @@ async fn main_cli() -> Result<(), Error> {
             )
         } else {
             (
-                match input::<NaiveDate>("Input date you started reading as \"%Y-%m-%d\"").await {
+                match input::<NaiveDate>("Input date you started reading as \"%Y-%m-%d\"") {
                     Some(s) => s,
                     None => break,
                 },
-                match input::<NaiveDate>("Input date you finished reading as \"%Y-%m-%d\"").await {
+                match input::<NaiveDate>("Input date you finished reading as \"%Y-%m-%d\"") {
                     Some(s) => s,
                     None => break,
                 },
@@ -297,11 +315,11 @@ async fn main_cli() -> Result<(), Error> {
             (1, book_details.page_max)
         } else if read_status == ReadStatus::Reading {
             (
-                match input::<u32>("Input page you started reading").await {
+                match input::<u32>("Input page you started reading") {
                     Some(s) => s,
                     None => break,
                 },
-                match input::<u32>("Input page you finished reading").await {
+                match input::<u32>("Input page you finished reading") {
                     Some(s) => s,
                     None => break,
                 },
@@ -325,13 +343,13 @@ async fn main_cli() -> Result<(), Error> {
         book_details.status = status;
         buf.push(book_details);
     }
-    if let Err(e) = write_to_file(buf).await {
+    if let Err(e) = write_to_file(&cfg, buf) {
         println!("{}", e);
     };
     Ok(())
 }
 
-async fn input<T>(msg: &str) -> Option<T>
+fn input<T>(msg: &str) -> Option<T>
 where
     T: FromStr,
     <T as FromStr>::Err: std::fmt::Debug + std::fmt::Display,
@@ -404,11 +422,12 @@ async fn parse_json_to_attribute(json: reqwest::Response) -> Result<BookAttr, Er
     Ok(attr)
 }
 
-async fn write_to_file(buf: BookLib) -> Result<(), std::io::Error> {
+fn write_to_file(cfg: &Config, buf: BookLib) -> Result<(), std::io::Error> {
+    let path = String::from(&cfg.dir) + &cfg.shelf;
     println!("data writing");
     let mut written = BookLib::new();
-    if let Ok(_) = File::open(PATH) {
-        let content = std::fs::read_to_string(PATH)?;
+    if let Ok(_) = File::open(&path) {
+        let content = std::fs::read_to_string(&path)?;
         written = match serde_json::from_str(&content) {
             Ok(b) => b,
             Err(e) => {
@@ -418,10 +437,39 @@ async fn write_to_file(buf: BookLib) -> Result<(), std::io::Error> {
         };
     }
     written.merge(buf);
-    let mut file = File::create(PATH)?;
+    if let Err(e) = std::fs::create_dir_all(&cfg.dir) {
+        println!("{}", e);
+    };
+    let mut file = File::create(&path)?;
     let json = serde_json::to_string(&written)?;
     write!(file, "{}", json)?;
     file.flush()?;
     println!("finished");
     Ok(())
+}
+
+fn load_config() -> Result<Config, std::io::Error> {
+    let path = "config.json";
+    if let Err(e) = File::open(path) {
+        println!("{}", e);
+        let mut file = File::create(path)?;
+        let new_cfg = serde_json::to_string(&Config::new())?;
+        write!(file, "{}", new_cfg)?;
+        file.flush()?;
+    };
+    let content = std::fs::read_to_string(path)?;
+    let config: Config = match serde_json::from_str(&content) {
+        Ok(b) => b,
+        Err(e) => {
+            println!("{}", e);
+            println!("Loading default config");
+            let cfg = Config::new();
+            let mut file = File::create(path)?;
+            let new_cfg = serde_json::to_string(&cfg)?;
+            write!(file, "{}", new_cfg)?;
+            file.flush()?;
+            cfg
+        }
+    };
+    Ok(config)
 }
