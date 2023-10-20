@@ -19,9 +19,21 @@ async fn main_cli(cfg: Config) -> Result<(), String> {
     // データ入力
     loop {
         let mut book_details = if cfg.debug {
-            BookAttr::debug_book_attr()?
+            match BookAttr::debug_book_attr() {
+                Ok(attr) => attr,
+                Err(e) => {
+                    println!("{}", e);
+                    break;
+                }
+            }
         } else {
-            BookAttr::fetch_book_attr().await?
+            match BookAttr::fetch_book_attr().await {
+                Ok(attr) => attr,
+                Err(e) => {
+                    println!("{}", e);
+                    break;
+                }
+            }
         };
         book_details.print_attr();
         match book_details.set_status() {

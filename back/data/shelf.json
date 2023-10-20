@@ -50,6 +50,28 @@
           "str": "fffffff80000000000000000000000000000000000000000000000"
         }
       }
+    },
+    {
+      "title": "戦闘美少女の精神分析",
+      "isbn": "9784480422163",
+      "author": "斎藤環",
+      "page_max": 366,
+      "status": {
+        "read_status": "Reading",
+        "read_page_num": 176,
+        "progresses": [
+          {
+            "date_start": "2023-10-16",
+            "date_end": "2023-10-20",
+            "flag": {
+              "str": "ffffffffffffffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000"
+            }
+          }
+        ],
+        "flag_combined": {
+          "str": "ffffffffffffffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000"
+        }
+      }
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
-  "debug": true,
+  "debug": false,
   "mode": "Cli",
   "dir": "data/",
-  "shelf": "test_shelf.json"
+  "shelf": "shelf.json"
 }
