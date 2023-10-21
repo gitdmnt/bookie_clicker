@@ -6,8 +6,8 @@
       "author": "udachan",
       "page_max": 99,
       "status": {
-        "read_status": "Unread",
-        "read_page_num": 1,
+        "read_status": "Reading",
+        "read_page_num": 90,
         "progresses": [
           {
             "date_start": "2002-09-22",
@@ -15,10 +15,31 @@
             "flag": {
               "str": "00000000000000000000000000"
             }
+          },
+          {
+            "date_start": "2002-09-22",
+            "date_end": "2002-09-22",
+            "flag": {
+              "str": "00000000000000000000000000"
+            }
+          },
+          {
+            "date_start": "2000-01-01",
+            "date_end": "2000-09-09",
+            "flag": {
+              "str": "fffffffc000000000000000000"
+            }
+          },
+          {
+            "date_start": "2000-09-09",
+            "date_end": "2000-12-12",
+            "flag": {
+              "str": "0000000001ffffffffffffffe0"
+            }
           }
         ],
         "flag_combined": {
-          "str": "00000000000000000000000000"
+          "str": "fffffffc01ffffffffffffffe0"
         }
       }
     },
