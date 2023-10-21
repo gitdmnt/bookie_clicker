@@ -433,7 +433,7 @@ where
         if buf == "q\n" {
             return None;
         }
-        match buf[..buf.len() - 1].parse::<T>() {
+        match buf.trim().parse::<T>() {
             Ok(s) => {
                 return Some(s);
             }
