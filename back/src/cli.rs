@@ -1,7 +1,3 @@
-/// 問題点
-/// - booklibのmerge時にread_page_numを計算してない
-/// - booklibのmerge時にflag_combinedを計算してない
-/// - booklibのmerge時にread_statusを計算してない
 use chrono::NaiveDate;
 use config::Config;
 use reqwest::get;
@@ -65,6 +61,29 @@ impl BookLib {
             for j in 0..self.len() {
                 if attr.isbn == self[j].isbn {
                     self[j].status.progresses.extend(attr.status.progresses);
+                    // progressを参照してstatusを更新する
+                    let mut flag_combined = self[j].status.flag_combined.byte();
+                    for p in &self[j].status.progresses {
+                        let f = p.flag.byte();
+                        for k in 0..f.len() {
+                            flag_combined[k] |= f[k];
+                        }
+                    }
+                    let read_page_num = ReadFlag::bool_from_byte(&flag_combined)
+                        .into_iter()
+                        .filter(|b| *b)
+                        .count() as u32;
+                    let page_max = self[j].page_max;
+                    let read_status = if page_max == read_page_num {
+                        ReadStatus::Read
+                    } else if read_page_num == 0 {
+                        ReadStatus::Unread
+                    } else {
+                        ReadStatus::Reading
+                    };
+                    self[j].status.flag_combined = ReadFlag::hex_from_byte(&flag_combined);
+                    self[j].status.read_page_num = read_page_num;
+                    self[j].status.read_status = read_status;
                     break;
                 }
                 if j == self.len() - 1 {
@@ -346,11 +365,8 @@ impl ReadFlag {
     pub fn copy(&self) -> ReadFlag {
         ReadFlag::from_str(&self.str)
     }
-    pub fn byte(&mut self) -> Vec<u8> {
+    pub fn byte(&self) -> Vec<u8> {
         let mut bytes = vec![];
-        if self.str.len() % 2 == 1 {
-            self.str += "0";
-        }
         for i in (0..self.str.len()).step_by(2) {
             let c = &self.str[i..i + 2];
             let n = u8::from_str_radix(c, 16).unwrap();
@@ -358,7 +374,7 @@ impl ReadFlag {
         }
         bytes
     }
-    pub fn bool(&mut self) -> Vec<bool> {
+    pub fn bool(&self) -> Vec<bool> {
         ReadFlag::bool_from_byte(&self.byte())
     }
     fn hex_from_byte(bytes: &Vec<u8>) -> ReadFlag {
