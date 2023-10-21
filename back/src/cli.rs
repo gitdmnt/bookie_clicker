@@ -155,7 +155,7 @@ impl BookAttr {
             let progress = Progress {
                 date_start: p.date_start,
                 date_end: p.date_end,
-                flag: ReadFlag::from_str(&p.flag.str),
+                flag: (&p.flag.str).parse().unwrap(),
             };
             progresses.push(progress);
         }
@@ -168,7 +168,7 @@ impl BookAttr {
                 read_status: attr.status.read_status,
                 read_page_num: attr.status.read_page_num,
                 progresses,
-                flag_combined: ReadFlag::from_str(&attr.status.flag_combined.str),
+                flag_combined: (&attr.status.flag_combined.str).parse().unwrap(),
             },
         }
     }
@@ -358,12 +358,8 @@ impl ReadFlag {
     pub fn new() -> ReadFlag {
         ReadFlag { str: String::new() }
     }
-    pub fn from_str(str: &str) -> ReadFlag {
-        let str = str.to_owned();
-        ReadFlag { str }
-    }
     pub fn copy(&self) -> ReadFlag {
-        ReadFlag::from_str(&self.str)
+        (&self.str).parse().unwrap()
     }
     pub fn byte(&self) -> Vec<u8> {
         let mut bytes = vec![];
@@ -408,6 +404,20 @@ impl ReadFlag {
             }
         }
         bools
+    }
+}
+impl FromStr for ReadFlag {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.to_owned();
+        for c in s.chars() {
+            match c {
+                '0'..='9' => (),
+                'a'..='f' => (),
+                _ => return Err(String::from("Not a flag")),
+            }
+        }
+        Ok(ReadFlag { str: s })
     }
 }
 
