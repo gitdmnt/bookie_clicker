@@ -1,5 +1,5 @@
+use crate::config::Config;
 use chrono::NaiveDate;
-use config::Config;
 use reqwest::get;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -7,8 +7,6 @@ use std::fs::File;
 use std::io::{self, Write};
 use std::ops::{Index, IndexMut};
 use std::str::FromStr;
-
-pub mod config;
 
 // 1書庫の単位
 #[derive(Debug, Deserialize, Serialize)]

@@ -1,6 +1,6 @@
-use back::cli::{
+use back::{
+    cli::{BookAttr, BookLib},
     config::{Config, Mode},
-    BookAttr, BookLib,
 };
 
 #[tokio::main]
