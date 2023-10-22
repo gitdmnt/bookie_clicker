@@ -1,5 +1,5 @@
+use crate::config::Config;
 use chrono::NaiveDate;
-use config::Config;
 use reqwest::get;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -7,8 +7,6 @@ use std::fs::File;
 use std::io::{self, Write};
 use std::ops::{Index, IndexMut};
 use std::str::FromStr;
-
-pub mod config;
 
 // 1書庫の単位
 #[derive(Debug, Deserialize, Serialize)]
@@ -155,7 +153,7 @@ impl BookAttr {
             let progress = Progress {
                 date_start: p.date_start,
                 date_end: p.date_end,
-                flag: ReadFlag::from_str(&p.flag.str),
+                flag: (&p.flag.str).parse().unwrap(),
             };
             progresses.push(progress);
         }
@@ -168,7 +166,7 @@ impl BookAttr {
                 read_status: attr.status.read_status,
                 read_page_num: attr.status.read_page_num,
                 progresses,
-                flag_combined: ReadFlag::from_str(&attr.status.flag_combined.str),
+                flag_combined: (&attr.status.flag_combined.str).parse().unwrap(),
             },
         }
     }
@@ -358,12 +356,8 @@ impl ReadFlag {
     pub fn new() -> ReadFlag {
         ReadFlag { str: String::new() }
     }
-    pub fn from_str(str: &str) -> ReadFlag {
-        let str = str.to_owned();
-        ReadFlag { str }
-    }
     pub fn copy(&self) -> ReadFlag {
-        ReadFlag::from_str(&self.str)
+        (&self.str).parse().unwrap()
     }
     pub fn byte(&self) -> Vec<u8> {
         let mut bytes = vec![];
@@ -410,6 +404,20 @@ impl ReadFlag {
         bools
     }
 }
+impl FromStr for ReadFlag {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.to_owned();
+        for c in s.chars() {
+            match c {
+                '0'..='9' => (),
+                'a'..='f' => (),
+                _ => return Err(String::from("Not a flag")),
+            }
+        }
+        Ok(ReadFlag { str: s })
+    }
+}
 
 // 本の状態 読了/進行中/未読
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
@@ -433,7 +441,7 @@ where
         if buf == "q\n" {
             return None;
         }
-        match buf[..buf.len() - 1].parse::<T>() {
+        match buf.trim().parse::<T>() {
             Ok(s) => {
                 return Some(s);
             }
