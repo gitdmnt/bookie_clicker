@@ -1,8 +1,9 @@
 # back
 
-/back/target
+/cli/target
 /target
-/back/database
+/cli/data
+/cli/database
 /.vscode
 
 # front
