@@ -1,36 +1,38 @@
 import React, { useState } from 'react';
-import axios from "axios";
+import { invoke } from "@tauri-apps/api/tauri";
 
-type data = {
+type attr = {
     isbn: string,
     title: string,
     subtitle: string,
+    authors: string[],
     pageCount: number,
+};
+
+type prop = {
+    handleBookData: React.Dispatch<React.SetStateAction<attr>>,
 }
 
-const endpoint = "https://www.googleapis.com/books/v1/volumes?q="
-
-export default function Search(props: any) {
+export default function Search(props: prop) {
     const [isbn, setIsbn] = useState('');
+    const [bookAttr, setBookAttr] = useState('');
     const setBookData = props.handleBookData;
+
+    async function getBookAttr(isbn: string) {
+        setBookAttr(await invoke("set_book_attr", { isbn }));
+    }
+
+    async function debug(msg: string) {
+        await invoke("debug_print", { msg });
+    }
+
     const handleIsbnSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (isbn === "") {
             return;
         }
-        const url = endpoint + isbn;
-        axios.get(url).then((res) => {
-            if (res.data.totalItems !== 0) {
-                const item = res.data.items[0].volumeInfo;
-                const bookData: data = { isbn: isbn, title: item.title, subtitle: item.subtitle, pageCount: item.pageCount }
-                setBookData(bookData);
-            }
-            else {
-                const bookData: data = { isbn: isbn, title: "No Result", subtitle: "", pageCount: 0 }
-                setBookData(bookData);
-            }
-        });
-
+        getBookAttr(isbn);
+        debug(bookAttr);
     };
     return (
         <div className='Seach'>

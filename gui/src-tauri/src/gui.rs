@@ -4,7 +4,15 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Books {
-    items: BookAttr,
+    items: Record,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Record {
+    attr: BookAttr,
+    read_status: ReadStatus,
+    combined_flag: ReadFlag,
+    progresses: Vec<Progress>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -13,15 +21,7 @@ pub struct BookAttr {
     title: String,
     subtitle: String,
     authors: Vec<String>,
-    total_page_num: u32,
-    record: ReadRecord,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct ReadRecord {
-    read_status: ReadStatus,
-    combined_flag: ReadFlag,
-    progresses: Vec<Progress>,
+    total_page_count: u32,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
