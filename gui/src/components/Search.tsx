@@ -6,7 +6,8 @@ type attr = {
     title: string,
     subtitle: string,
     authors: string[],
-    pageCount: number,
+    imageUrl: string,
+    totalPageCount: number,
 };
 
 type prop = {
@@ -15,7 +16,7 @@ type prop = {
 
 export default function Search(props: prop) {
     const [isbn, setIsbn] = useState('');
-    const [bookAttr, setBookAttr] = useState('');
+    const [bookAttr, setBookAttr] = useState<attr>();
     const setBookData = props.handleBookData;
 
     async function getBookAttr(isbn: string) {
@@ -32,10 +33,9 @@ export default function Search(props: prop) {
             return;
         }
         getBookAttr(isbn);
-        debug(bookAttr);
     };
     return (
-        <div className='Seach'>
+        <div className='Search'>
             <form onSubmit={handleIsbnSubmit}>
                 <p>本を検索</p>
                 <input
@@ -49,6 +49,7 @@ export default function Search(props: prop) {
                 />
                 <button className='Search-button button' type='submit'>検索</button>
             </form>
+            {bookAttr?.title}
         </div>
     );
 }
