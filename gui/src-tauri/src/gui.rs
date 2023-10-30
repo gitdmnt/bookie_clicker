@@ -13,9 +13,7 @@ pub struct Books {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Record {
     attr: BookAttr,
-    read_status: ReadStatus,
-    combined_flag: ReadFlag,
-    progresses: Vec<Progress>,
+    status: Status,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -99,6 +97,21 @@ impl BookAttr {
             total_page_count: 99,
         })
     }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Status {
+    read_status: ReadStatus,
+    combined_flag: ReadFlag,
+    progresses: Vec<Progress>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Activity {
+    read_status: ReadStatus,
+    page_range: [u32; 2],
+    date_range: [NaiveDate; 2],
+    memo: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
