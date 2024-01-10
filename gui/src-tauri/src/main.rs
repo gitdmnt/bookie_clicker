@@ -19,8 +19,8 @@ async fn set_book_attr(isbn: &str) -> Result<BookAttr, String> {
 }
 
 #[tauri::command]
-fn set_record(attr: BookAttr, activity: Activity) {
-    println!("attr: {:?}\nactivity: {:?}", attr, activity);
+fn set_record(bookAttr: BookAttr, activity: Activity) {
+    println!("attr: {:?}\nactivity: {:?}", bookAttr, activity);
     // dbを読み出す
     // 一致するattrを探す
     // activityをstatusに合成

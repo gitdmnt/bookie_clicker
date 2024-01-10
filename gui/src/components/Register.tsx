@@ -41,7 +41,7 @@ function Register() {
             setBookAttr(await invoke("set_book_attr", { isbn }));
         }
     };
-    const handleActivitySubmit = (e: React.FormEvent) => {
+    const handleActivitySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const target = e.target as typeof e.target & {
             readStatus: { value: "Read" | "Reading" | "Unread" },
@@ -53,6 +53,7 @@ function Register() {
         const term = [Temporal.PlainDate.from((termStart ?? new Date()).toISOString().slice(0, 10)), Temporal.PlainDate.from((termEnd ?? new Date()).toISOString().slice(0, 10))];
         const activity: activity = { readStatus: target.readStatus.value, pageRange: pageRange, term: term, memo: target.memo.value };
         setActivity(activity);
+        await invoke("set_record", { bookAttr, activity });
     };
 
     async function debug(msg: string) {
