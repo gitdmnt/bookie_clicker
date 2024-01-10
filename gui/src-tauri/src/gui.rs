@@ -3,7 +3,6 @@ use chrono::NaiveDate;
 use reqwest::get;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tauri::plugin::Plugin;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Books {
@@ -14,6 +13,11 @@ pub struct Books {
 pub struct Record {
     attr: BookAttr,
     status: Status,
+}
+impl Record {
+    pub fn from_activity(attr: BookAttr, activity: Activity) -> Record {
+        todo!()
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -101,16 +105,20 @@ impl BookAttr {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Status {
+    #[serde(rename = "readStatus")]
     read_status: ReadStatus,
+    #[serde(rename = "combinedFlag")]
     combined_flag: ReadFlag,
     progresses: Vec<Progress>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Activity {
+    #[serde(rename = "readStatus")]
     read_status: ReadStatus,
+    #[serde(rename = "pageRange")]
     page_range: [u32; 2],
-    date_range: [NaiveDate; 2],
+    term: [NaiveDate; 2],
     memo: String,
 }
 
@@ -123,8 +131,10 @@ enum ReadStatus {
 
 #[derive(Debug, Deserialize, Serialize)]
 struct Progress {
-    date_start: NaiveDate,
-    date_end: NaiveDate,
+    #[serde(rename = "termStart")]
+    term_start: NaiveDate,
+    #[serde(rename = "termEnd")]
+    term_end: NaiveDate,
     flag: ReadFlag,
     memo: String,
 }

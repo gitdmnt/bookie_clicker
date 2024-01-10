@@ -5,7 +5,7 @@ function Booklist() {
     const booklist = [];
     for (let i = 0; i < 10; i++) {
         booklist.push(
-            <li>
+            <li key={"a"}>
                 <Bookdata
                     title={"a"}
                     isbn={3939241084}

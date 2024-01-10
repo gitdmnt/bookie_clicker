@@ -17,7 +17,7 @@ function Analytics() {
 
     return (
         <div className='Analytics'>
-            <p className='SetTerm'>
+            <div className='SetTerm'>
                 <DatePicker
                     id='term-start'
                     dateFormat='yyyy/MM/dd'
@@ -34,7 +34,7 @@ function Analytics() {
                     onChange={d => { setTermEnd(d || today) }}
                 />
                 まで
-            </p>
+            </div>
             <Graph term={term} />
             <Statistics term={term} />
         </div>

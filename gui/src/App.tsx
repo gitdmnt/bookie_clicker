@@ -3,7 +3,7 @@ import Register from './components/Register';
 import Booklist from './components/Booklist';
 import Analytics from './components/Analytics';
 
-function App() {
+export default function App() {
   return (
     <div className="App">
       <header className="App-header">
@@ -22,5 +22,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
