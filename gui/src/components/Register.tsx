@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css"
 import { Temporal } from 'temporal-polyfill';
+import { match } from 'ts-pattern';
 
 import { invoke } from "@tauri-apps/api/tauri";
 
@@ -44,14 +45,34 @@ function Register() {
     const handleActivitySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const target = e.target as typeof e.target & {
-            readStatus: { value: "Read" | "Reading" | "Unread" },
+            readStatus: { value: "Read" | "Reading" | "Unread" | null },
             pageStart: { value: string },
             pageEnd: { value: string },
             memo: { value: string },
         }
-        const pageRange = [Number(target.pageStart.value), Number(target.pageEnd.value)];
+
+        const pageRange = match(target.readStatus.value)
+            .with("Read", () => [1, bookAttr.totalPageCount])
+            .with("Reading", () => [Number(target.pageStart.value), Number(target.pageEnd.value)])
+            .with("Unread", () => [0, 0]).otherwise(() => [0, 0]);
+
+        const readStatus = (() => {
+            if (pageRange[1] - pageRange[0] + 1 === bookAttr.totalPageCount) {
+                return "Read";
+            }
+            else if (pageRange[0] === 0 && pageRange[1] === 0) {
+                return "Unread";
+            }
+            else if (pageRange[0] !== 0 && pageRange[1] !== 0) {
+                return "Reading";
+            }
+            else {
+                return "Unread";
+            }
+        })();
+
         const term = [Temporal.PlainDate.from((termStart ?? new Date()).toISOString().slice(0, 10)), Temporal.PlainDate.from((termEnd ?? new Date()).toISOString().slice(0, 10))];
-        const activity: activity = { readStatus: target.readStatus.value, pageRange: pageRange, term: term, memo: target.memo.value };
+        const activity: activity = { readStatus: readStatus, pageRange: pageRange, term: term, memo: target.memo.value };
         setActivity(activity);
         await invoke("set_record", { bookAttr, activity });
     };

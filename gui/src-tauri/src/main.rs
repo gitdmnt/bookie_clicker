@@ -19,13 +19,13 @@ async fn set_book_attr(isbn: &str) -> Result<BookAttr, String> {
 }
 
 #[tauri::command]
-fn set_record(bookAttr: BookAttr, activity: Activity) {
-    println!("attr: {:?}\nactivity: {:?}", bookAttr, activity);
+fn set_record(suteto: tauri::State<KouiuState>, book_attr: BookAttr, activity: Activity) {
+    println!("attr: {:?}\nactivity: {:?}", book_attr, activity);
+    println!("jsonをもらうのよ{:?}", suteto.waaa);
     // dbを読み出す
     // 一致するattrを探す
     // activityをstatusに合成
     // dbに書き込み
-    todo!()
 }
 
 #[tauri::command]
@@ -34,8 +34,16 @@ fn debug_print(msg: &str) -> Result<(), String> {
     Ok(())
 }
 
+struct KouiuState {
+    waaa: String,
+}
+
 fn main() {
+    let suteto = KouiuState {
+        waaa: "pien".to_owned(),
+    };
     tauri::Builder::default()
+        .manage(suteto)
         .invoke_handler(tauri::generate_handler![
             set_book_attr,
             set_record,
