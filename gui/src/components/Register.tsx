@@ -50,7 +50,7 @@ function Register() {
             memo: { value: string },
         }
         const pageRange = [Number(target.pageStart.value), Number(target.pageEnd.value)];
-        const term = [Temporal.PlainDate.from((termStart ?? new Date()).toISOString()), Temporal.PlainDate.from((termEnd ?? new Date()).toISOString())];
+        const term = [Temporal.PlainDate.from((termStart ?? new Date()).toISOString().slice(0, 10)), Temporal.PlainDate.from((termEnd ?? new Date()).toISOString().slice(0, 10))];
         const activity: activity = { readStatus: target.readStatus.value, pageRange: pageRange, term: term, memo: target.memo.value };
         setActivity(activity);
     };
