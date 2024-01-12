@@ -53,8 +53,9 @@ function Register() {
 
         const pageRange = match(target.readStatus.value)
             .with("Read", () => [1, bookAttr.totalPageCount])
-            .with("Reading", () => [Number(target.pageStart.value), Number(target.pageEnd.value)])
-            .with("Unread", () => [0, 0]).otherwise(() => [0, 0]);
+            .with("Reading", () => [Number(target.pageStart.value) === 0 ? 1 : Number(target.pageStart.value), Number(target.pageEnd.value) === 0 ? 1 : Number(target.pageEnd.value)])
+            .with("Unread", () => [0, 0])
+            .otherwise(() => [Number(target.pageStart.value) === 0 ? 1 : Number(target.pageStart.value), Number(target.pageEnd.value) === 0 ? bookAttr.totalPageCount : Number(target.pageEnd.value)]);
 
         const readStatus = (() => {
             if (pageRange[1] - pageRange[0] + 1 === bookAttr.totalPageCount) {
@@ -67,7 +68,7 @@ function Register() {
                 return "Reading";
             }
             else {
-                return "Unread";
+                return target.readStatus.value ?? "Read";
             }
         })();
 
