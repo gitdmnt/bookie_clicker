@@ -4,11 +4,7 @@
 use bookie_clicker::gui::{Activity, BookAttr, Books, Record};
 use dirs;
 use serde::{Deserialize, Serialize};
-use std::{
-    fs,
-    io::Write,
-    path::{Path, PathBuf},
-};
+use std::{fs, io::Write, path::PathBuf};
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 #[tauri::command]
