@@ -53,16 +53,6 @@ pub struct BookAttr {
 }
 
 impl BookAttr {
-    fn new() -> BookAttr {
-        BookAttr {
-            isbn: String::new(),
-            title: String::new(),
-            subtitle: String::new(),
-            authors: vec![],
-            image_url: String::new(),
-            total_page_count: 0,
-        }
-    }
     pub async fn from(isbn: &str) -> Result<BookAttr, String> {
         // Google Books APIにリクエスト
         let url = format!(

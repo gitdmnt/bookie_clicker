@@ -71,6 +71,9 @@ impl ConfigManager {
         self.config.lock().unwrap()
     }
     pub fn load(config_path: &PathBuf) -> ConfigManager {
-        Self::from(Config::load(config_path))
+        println!("Loading config");
+        let c = Self::from(Config::load(config_path));
+        println!("Loaded: {:?}", c.get());
+        c
     }
 }
