@@ -1,15 +1,18 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use bookie_clicker::config::ConfigManager;
 use bookie_clicker::gui::{Activity, BookAttr, Books, Record};
 use dirs;
-use serde::{Deserialize, Serialize};
 use std::{fs, io::Write, path::PathBuf};
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 #[tauri::command]
-async fn set_book_attr(cfg: tauri::State<'_, Config>, isbn: String) -> Result<BookAttr, String> {
-    let debug = cfg.debug;
+async fn set_book_attr(
+    cfg: tauri::State<'_, ConfigManager>,
+    isbn: String,
+) -> Result<BookAttr, String> {
+    let debug = cfg.get().debug;
 
     println!("fetching isbn: {}", isbn);
     let attr = if debug {
@@ -22,13 +25,16 @@ async fn set_book_attr(cfg: tauri::State<'_, Config>, isbn: String) -> Result<Bo
 }
 
 #[tauri::command]
-fn set_record(cfg: tauri::State<'_, Config>, book_attr: BookAttr, activity: Activity) {
+fn set_record<'a>(cfg: tauri::State<'_, ConfigManager>, book_attr: BookAttr, activity: Activity) {
     // println!("attr: {:?}\nactivity: {:?}\n", book_attr, activity);
-    let lib_path = cfg.dir_path.join("lib.json");
+    let cfg = cfg.get();
+    let path = PathBuf::from("../");
+    let dir_path: &PathBuf = if cfg.debug { &path } else { &cfg.dir_path };
+    let lib_path = dir_path.join("lib.json");
     let lib = match fs::read_to_string(&lib_path) {
         Ok(str) => str,
         Err(_) => {
-            fs::create_dir_all(&cfg.dir_path).unwrap_or_else(|why| {
+            fs::create_dir_all(dir_path).unwrap_or_else(|why| {
                 println!("! {:?}", why.kind());
             });
             fs::File::create(&lib_path).unwrap();
@@ -56,59 +62,26 @@ fn debug_print(msg: &str) -> Result<(), String> {
     Ok(())
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Config {
-    debug: bool,
-    dir_path: PathBuf,
-}
-
-impl Config {
-    pub fn new() -> Config {
-        Config {
-            debug: false,
-            dir_path: dirs::config_dir().unwrap().join(".bookie_clicker"),
-        }
-    }
+#[tauri::command]
+fn reload_config(cfg: tauri::State<'_, ConfigManager>) {
+    let dir_path: PathBuf = dirs::config_dir().unwrap().join(".bookie_clicker");
+    let config_path = dir_path.join("config.json");
+    let state = ConfigManager::load(&config_path);
+    println!("{:?}", state);
+    cfg.edit(state);
 }
 
 fn main() {
     let dir_path: PathBuf = dirs::config_dir().unwrap().join(".bookie_clicker");
     let config_path = dir_path.join("config.json");
-
-    let state = match fs::read_to_string(&config_path) {
-        Ok(str) => {
-            let config: Config = match serde_json::from_str(&str) {
-                Ok(config) => config,
-                Err(_) => {
-                    let mut file = fs::File::create(&config_path).unwrap();
-                    let default_config = Config::new();
-                    let json: String = serde_json::to_string(&default_config).unwrap();
-                    file.write_all(json.as_bytes()).unwrap();
-                    default_config
-                }
-            };
-            config
-        }
-        Err(_) => {
-            // dirを作る
-            fs::create_dir_all(dir_path).unwrap_or_else(|why| {
-                println!("! {:?}", why.kind());
-            });
-            // configファイルを作ってデフォルトをセットする
-            let mut file = fs::File::create(&config_path).unwrap();
-            let default_config = Config::new();
-            let json: String = serde_json::to_string(&default_config).unwrap();
-            file.write_all(json.as_bytes()).unwrap();
-            default_config
-        }
-    };
-
+    let state = ConfigManager::load(&config_path);
     tauri::Builder::default()
         .manage(state)
         .invoke_handler(tauri::generate_handler![
             set_book_attr,
             set_record,
-            debug_print
+            debug_print,
+            reload_config
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

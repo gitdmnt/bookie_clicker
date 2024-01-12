@@ -1,7 +1,7 @@
 import Register from './components/Register';
 import Booklist from './components/Booklist';
 import Analytics from './components/Analytics';
-
+import { invoke } from "@tauri-apps/api/tauri";
 export default function App() {
   return (
     <div className="App">
@@ -10,6 +10,9 @@ export default function App() {
           Bookie Clicker
         </p>
       </header>
+      <button onClick={async () => { await invoke("reload_config") }}>
+        設定読み込み
+      </button>
       <Register />
       <Booklist />
       <Analytics />

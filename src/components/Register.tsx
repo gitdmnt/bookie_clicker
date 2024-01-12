@@ -28,6 +28,7 @@ function Register() {
 
     const [termStart, setTermStart] = useState<Date | null>(new Date());
     const [termEnd, setTermEnd] = useState<Date | null>(new Date());
+    const [termAtOnce, setTermAtOnce] = useState<Date | null>(new Date());
 
     const handleIsbnSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -72,7 +73,10 @@ function Register() {
             }
         })();
 
-        const term = [Temporal.PlainDate.from((termStart ?? new Date()).toISOString().slice(0, 10)), Temporal.PlainDate.from((termEnd ?? new Date()).toISOString().slice(0, 10))];
+        const term = [
+            Temporal.PlainDate.from(((termAtOnce ?? termStart) ?? new Date()).toISOString().slice(0, 10)),
+            Temporal.PlainDate.from(((termAtOnce ?? termEnd) ?? new Date()).toISOString().slice(0, 10))
+        ];
         const activity: activity = { readStatus: readStatus, pageRange: pageRange, term: term, memo: target.memo.value };
         setActivity(activity);
         await invoke("set_record", { bookAttr, activity });
@@ -168,6 +172,15 @@ function Register() {
                             onChange={(d) => { setTermEnd(d) }}
                         />
                         まで
+                    </div>
+                    <div className='SetTermAtOnce'>
+                        <DatePicker
+                            id='term-at-once'
+                            dateFormat='yyyy-MM-dd'
+                            selected={termAtOnce}
+                            name='term-at-once'
+                            onChange={(d) => { setTermAtOnce(d) }}
+                        />
                     </div>
                     <textarea name="memo"></textarea>
                     <button className='Register-button button' type='submit'>登録</button>
