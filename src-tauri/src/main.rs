@@ -3,7 +3,9 @@
 
 use bookie_clicker::config::ConfigManager;
 use bookie_clicker::gui::{Activity, BookAttr, Books, Record};
+use chrono::NaiveDate;
 use dirs;
+use serde::{Deserialize, Serialize};
 use std::{fs, io::Write, path::PathBuf};
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
@@ -63,6 +65,17 @@ fn reload_config(cfg: tauri::State<'_, ConfigManager>) {
     let config_path = dir_path.join("config.json");
     let state = ConfigManager::load(&config_path);
     cfg.edit(state);
+}
+
+#[derive(Serialize, Deserialize)]
+struct Term {
+    start: NaiveDate,
+    end: NaiveDate,
+}
+
+#[tauri::command]
+fn fetch_record(cfg: tauri::State<'_, ConfigManager>, term: Term) -> Books {
+    todo!()
 }
 
 fn main() {
