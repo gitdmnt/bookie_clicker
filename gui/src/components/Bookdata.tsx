@@ -1,5 +1,3 @@
-import React from "react";
-
 type prop = {
     title: string,
     isbn: number,

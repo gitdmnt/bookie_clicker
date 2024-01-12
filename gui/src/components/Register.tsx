@@ -77,10 +77,11 @@ function Register() {
         setActivity(activity);
         await invoke("set_record", { bookAttr, activity });
     };
-
+    /*
     async function debug(msg: string) {
         await invoke("debug_print", { msg });
     }
+    */
     return (
         <div className='Register'>
             <div className='Search'>

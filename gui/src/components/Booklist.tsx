@@ -1,4 +1,3 @@
-import React from 'react';
 import Bookdata from './Bookdata';
 
 function Booklist() {

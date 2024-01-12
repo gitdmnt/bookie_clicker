@@ -1,0 +1,33 @@
+{
+  "items": [
+    {
+      "attr": {
+        "isbn": "a",
+        "title": "あらゆるもののすべて",
+        "subtitle": "4歳児編",
+        "authors": [
+          "小野田マシンガン",
+          "豚汁大手 大谷商社"
+        ],
+        "imageUrl": "https://github.com/gitdmnt/gitdmnt.github.io/blob/main/public/favicon.png",
+        "totalPageCount": 99
+      },
+      "status": {
+        "readStatus": "Read",
+        "combinedFlag": {
+          "hex": "ffffffffffffffffffffffffe0"
+        },
+        "progresses": [
+          {
+            "termStart": "2024-01-12",
+            "termEnd": "2024-01-12",
+            "flag": {
+              "hex": "ffffffffffffffffffffffffe0"
+            },
+            "memo": ""
+          }
+        ]
+      }
+    }
+  ]
+}

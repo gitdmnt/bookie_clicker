@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Graph from './Graph';
 import Statistics from './Statistics';
 import DatePicker from 'react-datepicker';

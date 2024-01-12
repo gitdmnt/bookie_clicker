@@ -1,4 +1,3 @@
-import React from 'react';
 import Register from './components/Register';
 import Booklist from './components/Booklist';
 import Analytics from './components/Analytics';
