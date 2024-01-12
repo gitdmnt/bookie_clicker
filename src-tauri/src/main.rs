@@ -2,11 +2,13 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use bookie_clicker::gui::{Activity, BookAttr, Books, Record};
+use dirs;
 use serde::{Deserialize, Serialize};
-use std::{fs, io::Write};
-
-const CONFIG_PATH: &str = ".bookie_clicker/config.json";
-
+use std::{
+    fs,
+    io::Write,
+    path::{Path, PathBuf},
+};
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 #[tauri::command]
@@ -26,7 +28,7 @@ async fn set_book_attr(cfg: tauri::State<'_, Config>, isbn: String) -> Result<Bo
 #[tauri::command]
 fn set_record(cfg: tauri::State<'_, Config>, book_attr: BookAttr, activity: Activity) {
     // println!("attr: {:?}\nactivity: {:?}\n", book_attr, activity);
-    let lib_path = format!("{}/{}", &cfg.dir_path, "lib.json");
+    let lib_path = cfg.dir_path.join("lib.json");
     let lib = match fs::read_to_string(&lib_path) {
         Ok(str) => str,
         Err(_) => {
@@ -47,14 +49,9 @@ fn set_record(cfg: tauri::State<'_, Config>, book_attr: BookAttr, activity: Acti
     lib.add(rec);
     // println!("lib: {:?}", lib);
     let lib: String = serde_json::to_string(&lib).unwrap();
-    println!("{}", lib_path);
+    // println!("{:?}", lib_path);
     let mut file = fs::File::create(&lib_path).unwrap();
     file.write_all(lib.as_bytes()).unwrap();
-
-    // dbを読み出す
-    // 一致するattrを探す
-    // activityをstatusに合成
-    // dbに書き込み
 }
 
 #[tauri::command]
@@ -66,27 +63,28 @@ fn debug_print(msg: &str) -> Result<(), String> {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
     debug: bool,
-    dir_path: String,
+    dir_path: PathBuf,
 }
 
 impl Config {
     pub fn new() -> Config {
         Config {
             debug: false,
-            dir_path: ".bookie_clicker".to_owned(),
+            dir_path: dirs::config_dir().unwrap().join(".bookie_clicker"),
         }
     }
 }
 
 fn main() {
-    let dir = "..";
-    let path = format!("{}/{}", dir, CONFIG_PATH);
-    let state = match fs::read_to_string(&path) {
+    let dir_path: PathBuf = dirs::config_dir().unwrap().join(".bookie_clicker");
+    let config_path = dir_path.join("config.json");
+
+    let state = match fs::read_to_string(&config_path) {
         Ok(str) => {
             let config: Config = match serde_json::from_str(&str) {
                 Ok(config) => config,
                 Err(_) => {
-                    let mut file = fs::File::create(&path).unwrap();
+                    let mut file = fs::File::create(&config_path).unwrap();
                     let default_config = Config::new();
                     let json: String = serde_json::to_string(&default_config).unwrap();
                     file.write_all(json.as_bytes()).unwrap();
@@ -97,12 +95,11 @@ fn main() {
         }
         Err(_) => {
             // dirを作る
-            let dir_path = format!("{}/{}", dir, ".bookie_clicker");
-            fs::create_dir_all(&dir_path).unwrap_or_else(|why| {
+            fs::create_dir_all(dir_path).unwrap_or_else(|why| {
                 println!("! {:?}", why.kind());
             });
             // configファイルを作ってデフォルトをセットする
-            let mut file = fs::File::create(&path).unwrap();
+            let mut file = fs::File::create(&config_path).unwrap();
             let default_config = Config::new();
             let json: String = serde_json::to_string(&default_config).unwrap();
             file.write_all(json.as_bytes()).unwrap();

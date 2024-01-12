@@ -13,7 +13,6 @@ export default function App() {
       <Register />
       <Booklist />
       <Analytics />
-
       <div className='debug'>
         <p>9784000078702</p>
         <p>9784588010590</p>
