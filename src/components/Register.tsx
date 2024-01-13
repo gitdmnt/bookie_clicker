@@ -52,27 +52,8 @@ function Register() {
             memo: { value: string },
         }
 
-        const pageRange = match(target.readStatus.value)
-            .with("Read", () => [1, bookAttr.totalPageCount])
-            .with("Reading", () => [Number(target.pageStart.value) === 0 ? 1 : Number(target.pageStart.value), Number(target.pageEnd.value) === 0 ? 1 : Number(target.pageEnd.value)])
-            .with("Unread", () => [0, 0])
-            .otherwise(() => [Number(target.pageStart.value) === 0 ? 1 : Number(target.pageStart.value), Number(target.pageEnd.value) === 0 ? bookAttr.totalPageCount : Number(target.pageEnd.value)]);
-
-        const readStatus = (() => {
-            if (pageRange[1] - pageRange[0] + 1 === bookAttr.totalPageCount) {
-                return "Read";
-            }
-            else if (pageRange[0] === 0 && pageRange[1] === 0) {
-                return "Unread";
-            }
-            else if (pageRange[0] !== 0 && pageRange[1] !== 0) {
-                return "Reading";
-            }
-            else {
-                return target.readStatus.value ?? "Read";
-            }
-        })();
-
+        const pageRange = [Number(target.pageStart.value), Number(target.pageEnd.value)];
+        const readStatus = target.readStatus.value ?? "Read";
         const term = [
             Temporal.PlainDate.from(((termAtOnce ?? termStart) ?? new Date()).toISOString().slice(0, 10)),
             Temporal.PlainDate.from(((termAtOnce ?? termEnd) ?? new Date()).toISOString().slice(0, 10))
