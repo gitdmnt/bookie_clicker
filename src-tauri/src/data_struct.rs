@@ -1,8 +1,11 @@
+use std::path::PathBuf;
+
 // use crate::cli::ReadFlag;
 use chrono::NaiveDate;
 use reqwest::get;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::fs;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Books {
@@ -23,6 +26,24 @@ impl Books {
         }
         self.items.push(new);
     }
+    pub fn load(path: &PathBuf) -> Books {
+        let lib = match fs::read_to_string(path) {
+            Ok(str) => str,
+            Err(_) => {
+                fs::create_dir_all(path.parent().unwrap()).unwrap_or_else(|why| {
+                    println!("! {:?}", why.kind());
+                });
+                fs::File::create(path).unwrap();
+
+                String::new()
+            }
+        };
+        let lib: Books = match serde_json::from_str(&lib) {
+            Ok(lib) => lib,
+            Err(_) => Books::new(),
+        };
+        lib
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -32,6 +53,7 @@ pub struct Record {
 }
 impl Record {
     pub fn from(attr: BookAttr, activity: Activity) -> Record {
+        activity.normalize();
         let status = Status::from(&attr, activity);
         Record { attr, status }
     }

@@ -2,7 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use bookie_clicker::config::ConfigManager;
-use bookie_clicker::gui::{Activity, BookAttr, Books, Record};
+use bookie_clicker::data_struct::{Activity, BookAttr, Books, Record};
 use chrono::NaiveDate;
 use dirs;
 use serde::{Deserialize, Serialize};
@@ -27,26 +27,20 @@ async fn set_book_attr(
 
 #[tauri::command]
 fn set_record(cfg: tauri::State<'_, ConfigManager>, book_attr: BookAttr, activity: Activity) {
-    let cfg = cfg.get();
-    let path = PathBuf::from("../");
-    let dir_path: &PathBuf = if cfg.debug { &path } else { &cfg.dir_path };
-    let lib_path = dir_path.join("lib.json");
-    let lib = match fs::read_to_string(&lib_path) {
-        Ok(str) => str,
-        Err(_) => {
-            fs::create_dir_all(dir_path).unwrap_or_else(|why| {
-                println!("! {:?}", why.kind());
-            });
-            fs::File::create(&lib_path).unwrap();
+    // 今渡されたactivityは雑なデータになっているので、それを正規化したい
+    // どこで正規化しようかなあ
+    // recになってから正規化する？　いやあ
+    // 正規化にbook_attrの情報がいるのがマジでカスかも
 
-            String::new()
-        }
+    let mut rec = Record::from(book_attr, activity);
+    let cfg = cfg.get();
+    let lib_path = if cfg.debug {
+        PathBuf::from("../lib.json")
+    } else {
+        cfg.dir_path.join("lib.json")
     };
-    let mut lib: Books = match serde_json::from_str(&lib) {
-        Ok(lib) => lib,
-        Err(_) => Books::new(),
-    };
-    let rec = Record::from(book_attr, activity);
+    let mut lib = Books::load(&lib_path);
+
     lib.add(rec);
     let lib: String = serde_json::to_string(&lib).unwrap();
     let mut file = fs::File::create(&lib_path).unwrap();
