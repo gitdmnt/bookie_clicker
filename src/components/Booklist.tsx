@@ -1,10 +1,10 @@
 import Bookdata from './Bookdata';
-// import { invoke } from '@tauri-apps/api';
-// import { Temporal } from 'temporal-polyfill';
+//import { invoke } from '@tauri-apps/api';
+//import { Temporal } from 'temporal-polyfill';
 
 function Booklist() {
-    // const term = [Temporal.PlainDate.from("2024-01-01"), Temporal.PlainDate.from("2024-01-31")];
-    // const books = (async () => { await invoke("fetch_record", { term }) })();
+    //const term = { start: Temporal.PlainDate.from("2024-01-01"), end: Temporal.PlainDate.from("2024-01-31") };
+    //const books = (async () => { await invoke("fetch_record", { term }) })();
     const booklist = [];
     for (let i = 0; i < 10; i++) {
         booklist.push(

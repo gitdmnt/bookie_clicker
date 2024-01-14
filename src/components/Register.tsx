@@ -23,12 +23,11 @@ type activity = {
 
 function Register() {
     const [bookAttr, setBookAttr] = useState<attr>({ isbn: "", title: "", subtitle: "", authors: [""], imageUrl: "", totalPageCount: 0 });
-    const [activity, setActivity] = useState<activity>({ readStatus: "Unread", pageRange: [0, 0], term: [Temporal.PlainDate.from("1970-01-01"), Temporal.PlainDate.from("1970-01-01")], memo: "" });
+    //   const [activity, setActivity] = useState<activity>({ readStatus: "Unread", pageRange: [0, 0], term: [Temporal.PlainDate.from("1970-01-01"), Temporal.PlainDate.from("1970-01-01")], memo: "" });
 
     const [readStatus, setReadStatus] = useState<"Read" | "Unread">("Read");
     const [termStart, setTermStart] = useState<Date | null>(new Date());
     const [termEnd, setTermEnd] = useState<Date | null>(new Date());
-    const [termAtOnce, setTermAtOnce] = useState<Date | null>(new Date());
 
     const handleIsbnSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -52,11 +51,11 @@ function Register() {
         }
         const pageRange = [Number(target.pageStart.value), Number(target.pageEnd.value)];
         const term = [
-            Temporal.PlainDate.from(((termAtOnce ?? termStart) ?? new Date()).toISOString().slice(0, 10)),
-            Temporal.PlainDate.from(((termAtOnce ?? termEnd) ?? new Date()).toISOString().slice(0, 10))
+            Temporal.PlainDate.from((termStart ?? new Date()).toISOString().slice(0, 10)),
+            Temporal.PlainDate.from((termEnd ?? new Date()).toISOString().slice(0, 10))
         ];
         const activity: activity = { readStatus: readStatus, pageRange: pageRange, term: term, memo: target.memo.value };
-        setActivity(activity);
+        //        setActivity(activity);
         await invoke("set_record", { bookAttr, activity });
     };
     /*
@@ -129,15 +128,16 @@ function Register() {
                         <DatePicker
                             id='term-at-once'
                             dateFormat='yyyy-MM-dd'
-                            selected={termAtOnce}
+                            selected={termStart}
                             name='term-at-once'
-                            onChange={(d) => { setTermAtOnce(d) }}
+                            onChange={d => { setTermStart(d); setTermEnd(d); }}
                         />
                     </div>
                     <textarea name="memo"></textarea>
                     <button className='Register-button' type='submit' onClick={() => { setReadStatus("Read") }}>読んだ</button>
                     <button className='Register-button' type='submit' onClick={() => { setReadStatus("Unread") }}>読みたい</button>
                 </form>
+                {/*
                 <div className='Activity'>
                     <ul>
                         <li>読了状態: {activity.readStatus}</li>
@@ -146,6 +146,7 @@ function Register() {
                         <li>コメント: {activity.memo}</li>
                     </ul>
                 </div>
+                    */}
             </div>
         </div>
     );

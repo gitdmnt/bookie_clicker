@@ -67,6 +67,9 @@ struct Term {
 
 #[tauri::command]
 fn fetch_record(cfg: tauri::State<'_, ConfigManager>, term: Term) -> Books {
+    let lib_path = cfg.get().dir_path.join("lib.json");
+    let mut lib = Books::load(&lib_path);
+
     todo!()
 }
 
