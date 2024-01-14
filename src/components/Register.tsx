@@ -19,6 +19,7 @@ type activity = {
     pageRange: number[],
     term: Temporal.PlainDate[],
     memo: string,
+    star: number,
 }
 
 function Register() {
@@ -48,13 +49,14 @@ function Register() {
             pageStart: { value: string },
             pageEnd: { value: string },
             memo: { value: string },
+            star: { value: number },
         }
         const pageRange = [Number(target.pageStart.value), Number(target.pageEnd.value)];
         const term = [
             Temporal.PlainDate.from((termStart ?? new Date()).toISOString().slice(0, 10)),
             Temporal.PlainDate.from((termEnd ?? new Date()).toISOString().slice(0, 10))
         ];
-        const activity: activity = { readStatus: readStatus, pageRange: pageRange, term: term, memo: target.memo.value };
+        const activity: activity = { readStatus: readStatus, pageRange: pageRange, term: term, memo: target.memo.value, star: target.star.value };
         //        setActivity(activity);
         await invoke("set_record", { bookAttr, activity });
     };
@@ -134,6 +136,7 @@ function Register() {
                         />
                     </div>
                     <textarea name="memo"></textarea>
+                    <input type="range" name='star' min="1" max="5" step="1"></input>
                     <button className='Register-button' type='submit' onClick={() => { setReadStatus("Read") }}>読んだ</button>
                     <button className='Register-button' type='submit' onClick={() => { setReadStatus("Unread") }}>読みたい</button>
                 </form>

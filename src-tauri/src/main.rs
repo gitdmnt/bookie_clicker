@@ -7,13 +7,9 @@ use bookie_clicker::config::{Config, ConfigManager};
 use bookie_clicker::data_struct::{Activity, BookAttr, Books, Record};
 use bookie_clicker::library::Library;
 
-use tauri::async_runtime::block_on;
-
 use chrono::NaiveDate;
 use dirs;
 use serde::{Deserialize, Serialize};
-use surrealdb::engine::local::{Db, Mem};
-use surrealdb::Surreal;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 #[tauri::command]

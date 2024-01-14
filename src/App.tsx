@@ -12,7 +12,6 @@ export default function App() {
         </p>
       </header>
       <Config />
-
       <Register />
       <Booklist />
       <Analytics />

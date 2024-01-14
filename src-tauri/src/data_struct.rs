@@ -152,6 +152,7 @@ struct Status {
     #[serde(rename = "combinedFlag")]
     combined_flag: ReadFlag,
     progresses: Vec<Progress>,
+    star: u32,
 }
 
 impl Status {
@@ -162,11 +163,13 @@ impl Status {
             &activity.page_range,
             activity.term,
             activity.memo,
+            activity.star,
         )];
         Status {
             read_status: activity.read_status,
             combined_flag: read_flag,
             progresses: progress,
+            star: activity.star,
         }
     }
     fn merge(&mut self, new: Status) {
@@ -180,6 +183,7 @@ impl Status {
         };
         self.combined_flag.merge(new.combined_flag);
         self.progresses.extend(new.progresses);
+        self.star = new.star;
     }
 }
 
@@ -191,6 +195,7 @@ pub struct Activity {
     page_range: [u32; 2],
     term: [NaiveDate; 2],
     memo: String,
+    star: u32,
 }
 
 impl Activity {
@@ -234,6 +239,7 @@ struct Progress {
     term_end: NaiveDate,
     flag: ReadFlag,
     memo: String,
+    star: u32,
 }
 
 impl Progress {
@@ -242,12 +248,14 @@ impl Progress {
         page_range: &[u32; 2],
         term: [NaiveDate; 2],
         memo: String,
+        star: u32,
     ) -> Progress {
         Progress {
             term_start: term[0],
             term_end: term[1],
             flag: ReadFlag::from(attr.total_page_count, page_range),
             memo: memo,
+            star,
         }
     }
 }
