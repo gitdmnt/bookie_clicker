@@ -47,9 +47,17 @@ impl Books {
     }
 }
 
+impl IntoIterator for Books {
+    type Item = Record;
+    type IntoIter = <Vec<Record> as IntoIterator>::IntoIter;
+    fn into_iter(self) -> Self::IntoIter {
+        self.items.into_iter()
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Record {
-    attr: BookAttr,
+    pub attr: BookAttr,
     status: Status,
 }
 impl Record {
@@ -66,7 +74,7 @@ impl Record {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BookAttr {
-    isbn: String,
+    pub isbn: String,
     title: String,
     subtitle: String,
     authors: Vec<String>,

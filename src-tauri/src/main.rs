@@ -1,12 +1,19 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::{fs, io::Write, path::PathBuf};
+
 use bookie_clicker::config::{Config, ConfigManager};
 use bookie_clicker::data_struct::{Activity, BookAttr, Books, Record};
+use bookie_clicker::library::Library;
+
+use tauri::async_runtime::block_on;
+
 use chrono::NaiveDate;
 use dirs;
 use serde::{Deserialize, Serialize};
-use std::{fs, io::Write, path::PathBuf};
+use surrealdb::engine::local::{Db, Mem};
+use surrealdb::Surreal;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 #[tauri::command]
@@ -55,8 +62,10 @@ fn fetch_config(cfg: tauri::State<'_, ConfigManager>) -> Config {
 
 #[tauri::command]
 fn set_config(cfg: tauri::State<'_, ConfigManager>, config: Config) {
+    let dir_path: PathBuf = dirs::config_dir().unwrap().join(".bookie_clicker");
+    let config_path = dir_path.join("config.json");
     println!("{:?}", config);
-    cfg.set(config)
+    cfg.set(&config_path, config);
 }
 
 #[derive(Serialize, Deserialize)]
@@ -76,9 +85,11 @@ fn fetch_record(cfg: tauri::State<'_, ConfigManager>, term: Term) -> Books {
 fn main() {
     let dir_path: PathBuf = dirs::config_dir().unwrap().join(".bookie_clicker");
     let config_path = dir_path.join("config.json");
-    let state = ConfigManager::load(&config_path);
+    let cfg = ConfigManager::load(&config_path);
+    let lib = Library::load(&cfg.get().dir_path.join("lib.json"));
     tauri::Builder::default()
-        .manage(state)
+        .manage(cfg)
+        .manage(lib)
         .invoke_handler(tauri::generate_handler![
             set_book_attr,
             set_record,

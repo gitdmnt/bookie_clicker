@@ -19,6 +19,12 @@ impl Config {
         }
     }
 
+    fn set(path: &PathBuf, c: Config) {
+        let mut f = fs::File::create(path).unwrap();
+        let j: String = serde_json::to_string(&c).unwrap();
+        f.write_all(j.as_bytes()).unwrap();
+    }
+
     fn set_default(config_path: &PathBuf) -> Config {
         let mut file = fs::File::create(&config_path).unwrap();
         let default_config = Config::new();
@@ -63,10 +69,11 @@ impl ConfigManager {
         }
     }
 
-    pub fn set(&self, c: Config) {
+    pub fn set(&self, path: &PathBuf, c: Config) {
         let mut old = self.get();
         old.debug = c.debug;
-        old.dir_path = c.dir_path;
+        old.dir_path = c.dir_path.clone();
+        Config::set(path, c);
     }
 
     pub fn edit(&self, c: ConfigManager) {
