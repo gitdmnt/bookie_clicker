@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css"
 import { Temporal } from 'temporal-polyfill';
-import { match } from 'ts-pattern';
 
 import { invoke } from "@tauri-apps/api/tauri";
 
@@ -16,7 +15,7 @@ type attr = {
 };
 
 type activity = {
-    readStatus: "Read" | "Reading" | "Unread",
+    readStatus: "Read" | "Unread",
     pageRange: number[],
     term: Temporal.PlainDate[],
     memo: string,
@@ -26,6 +25,7 @@ function Register() {
     const [bookAttr, setBookAttr] = useState<attr>({ isbn: "", title: "", subtitle: "", authors: [""], imageUrl: "", totalPageCount: 0 });
     const [activity, setActivity] = useState<activity>({ readStatus: "Unread", pageRange: [0, 0], term: [Temporal.PlainDate.from("1970-01-01"), Temporal.PlainDate.from("1970-01-01")], memo: "" });
 
+    const [readStatus, setReadStatus] = useState<"Read" | "Unread">("Read");
     const [termStart, setTermStart] = useState<Date | null>(new Date());
     const [termEnd, setTermEnd] = useState<Date | null>(new Date());
     const [termAtOnce, setTermAtOnce] = useState<Date | null>(new Date());
@@ -46,14 +46,11 @@ function Register() {
     const handleActivitySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const target = e.target as typeof e.target & {
-            readStatus: { value: "Read" | "Reading" | "Unread" | null },
             pageStart: { value: string },
             pageEnd: { value: string },
             memo: { value: string },
         }
-
         const pageRange = [Number(target.pageStart.value), Number(target.pageEnd.value)];
-        const readStatus = target.readStatus.value ?? "Read";
         const term = [
             Temporal.PlainDate.from(((termAtOnce ?? termStart) ?? new Date()).toISOString().slice(0, 10)),
             Temporal.PlainDate.from(((termAtOnce ?? termEnd) ?? new Date()).toISOString().slice(0, 10))
@@ -94,32 +91,6 @@ function Register() {
             <div className='InputActivity'>
                 {/* アクティビティを入力し、activityにセットする。 */}
                 <form onSubmit={handleActivitySubmit}>
-                    <div>
-                        <input
-                            className='readStatus-input'
-                            type='radio'
-                            name='readStatus'
-                            id='read'
-                            value={"Read"}
-                        />
-                        <label htmlFor='read'>読了</label>
-                        <input
-                            className='readStatus-input'
-                            type='radio'
-                            name='readStatus'
-                            id='reading'
-                            value={"Reading"}
-                        />
-                        <label htmlFor='reading'>読書中</label>
-                        <input
-                            className='readStatus-input'
-                            type='radio'
-                            name='readStatus'
-                            id='unread'
-                            value={"Unread"}
-                        />
-                        <label htmlFor='unread'>未読</label>
-                    </div>
                     <input
                         className='page-input'
                         placeholder='1'
@@ -164,7 +135,8 @@ function Register() {
                         />
                     </div>
                     <textarea name="memo"></textarea>
-                    <button className='Register-button button' type='submit'>登録</button>
+                    <button className='Register-button' type='submit' onClick={() => { setReadStatus("Read") }}>読んだ</button>
+                    <button className='Register-button' type='submit' onClick={() => { setReadStatus("Unread") }}>読みたい</button>
                 </form>
                 <div className='Activity'>
                     <ul>

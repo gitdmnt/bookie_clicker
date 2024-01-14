@@ -52,8 +52,9 @@ pub struct Record {
     status: Status,
 }
 impl Record {
-    pub fn from(attr: BookAttr, activity: Activity) -> Record {
-        activity.normalize();
+    pub fn from(attr: BookAttr, mut activity: Activity) -> Record {
+        // ぐちゃぐちゃの入力データを直す会
+        activity.normalize(&attr);
         let status = Status::from(&attr, activity);
         Record { attr, status }
     }
@@ -181,6 +182,32 @@ pub struct Activity {
     page_range: [u32; 2],
     term: [NaiveDate; 2],
     memo: String,
+}
+
+impl Activity {
+    fn normalize(&mut self, attr: &BookAttr) {
+        let max = attr.total_page_count;
+        self.page_range[0] = match self.read_status {
+            ReadStatus::Read => match self.page_range[0] {
+                0 => 1,
+                _ => self.page_range[0],
+            },
+            ReadStatus::Reading => self.page_range[0],
+            ReadStatus::Unread => 0,
+        };
+        self.page_range[1] = match self.read_status {
+            ReadStatus::Read => {
+                if self.page_range[1] == 0 || self.page_range[1] == max {
+                    max
+                } else {
+                    self.read_status = ReadStatus::Reading;
+                    self.page_range[1]
+                }
+            }
+            ReadStatus::Reading => self.page_range[1],
+            ReadStatus::Unread => 0,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]

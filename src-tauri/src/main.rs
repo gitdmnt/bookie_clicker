@@ -32,7 +32,7 @@ fn set_record(cfg: tauri::State<'_, ConfigManager>, book_attr: BookAttr, activit
     // recになってから正規化する？　いやあ
     // 正規化にbook_attrの情報がいるのがマジでカスかも
 
-    let mut rec = Record::from(book_attr, activity);
+    let rec = Record::from(book_attr, activity);
     let cfg = cfg.get();
     let lib_path = if cfg.debug {
         PathBuf::from("../lib.json")
