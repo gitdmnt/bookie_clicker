@@ -25,6 +25,7 @@ async fn set_book_attr(
     } else {
         BookAttr::from(&isbn).await
     };
+    println!("{:?}", attr);
     attr
 }
 
@@ -38,7 +39,7 @@ fn set_record(cfg: tauri::State<'_, ConfigManager>, book_attr: BookAttr, activit
         cfg.dir_path.join("lib.json")
     };
     let mut lib = Books::load(&lib_path);
-
+    println!("{:?}", rec);
     lib.add(rec);
     let lib: String = serde_json::to_string(&lib).unwrap();
     let mut file = fs::File::create(&lib_path).unwrap();
@@ -53,13 +54,16 @@ fn debug_print(msg: &str) -> Result<(), String> {
 
 #[tauri::command]
 fn fetch_config(cfg: tauri::State<'_, ConfigManager>) -> Config {
-    cfg.fetch()
+    let mut config = cfg.fetch();
+    config.dir_path = config.dir_path.join("lib.json");
+    config
 }
 
 #[tauri::command]
-fn set_config(cfg: tauri::State<'_, ConfigManager>, config: Config) {
+fn set_config(cfg: tauri::State<'_, ConfigManager>, mut config: Config) {
     let dir_path: PathBuf = dirs::config_dir().unwrap().join(".bookie_clicker");
     let config_path = dir_path.join("config.json");
+    config.dir_path = config.dir_path.parent().unwrap().to_path_buf();
     println!("{:?}", config);
     cfg.set(&config_path, config);
 }
