@@ -27,11 +27,6 @@ async fn set_book_attr(
 
 #[tauri::command]
 fn set_record(cfg: tauri::State<'_, ConfigManager>, book_attr: BookAttr, activity: Activity) {
-    // 今渡されたactivityは雑なデータになっているので、それを正規化したい
-    // どこで正規化しようかなあ
-    // recになってから正規化する？　いやあ
-    // 正規化にbook_attrの情報がいるのがマジでカスかも
-
     let rec = Record::from(book_attr, activity);
     let cfg = cfg.get();
     let lib_path = if cfg.debug {

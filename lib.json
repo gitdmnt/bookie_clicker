@@ -15,38 +15,14 @@
             "status": {
                 "readStatus": "Read",
                 "combinedFlag": {
-                    "hex": "ffffffffffffffffffffffffe0"
+                    "b64": "////////////////4A=="
                 },
                 "progresses": [
                     {
                         "termStart": "2024-01-14",
                         "termEnd": "2024-01-14",
                         "flag": {
-                            "hex": "ffffffffffffffffffffffffe0"
-                        },
-                        "memo": ""
-                    },
-                    {
-                        "termStart": "2024-01-14",
-                        "termEnd": "2024-01-14",
-                        "flag": {
-                            "hex": "ffc00000000000000000000000"
-                        },
-                        "memo": ""
-                    },
-                    {
-                        "termStart": "2024-01-14",
-                        "termEnd": "2024-01-14",
-                        "flag": {
-                            "hex": "7fc00000000000000000000000"
-                        },
-                        "memo": ""
-                    },
-                    {
-                        "termStart": "2024-01-14",
-                        "termEnd": "2024-01-14",
-                        "flag": {
-                            "hex": "00000000000000000000000000"
+                            "b64": "////////////////4A=="
                         },
                         "memo": ""
                     }
@@ -55,7 +31,7 @@
         },
         {
             "attr": {
-                "isbn": "D",
+                "isbn": "B",
                 "title": "あらゆるもののすべて",
                 "subtitle": "4歳児編",
                 "authors": [
@@ -68,14 +44,30 @@
             "status": {
                 "readStatus": "Reading",
                 "combinedFlag": {
-                    "hex": "7fc00000000000000000000000"
+                    "b64": "///wAAAAAAAAAAAAAA=="
                 },
                 "progresses": [
                     {
                         "termStart": "2024-01-14",
                         "termEnd": "2024-01-14",
                         "flag": {
-                            "hex": "7fc00000000000000000000000"
+                            "b64": "/8AAAAAAAAAAAAAAAA=="
+                        },
+                        "memo": ""
+                    },
+                    {
+                        "termStart": "2024-01-14",
+                        "termEnd": "2024-01-14",
+                        "flag": {
+                            "b64": "AAPwAAAAAAAAAAAAAA=="
+                        },
+                        "memo": ""
+                    },
+                    {
+                        "termStart": "2024-01-14",
+                        "termEnd": "2024-01-14",
+                        "flag": {
+                            "b64": "AH4AAAAAAAAAAAAAAA=="
                         },
                         "memo": ""
                     }

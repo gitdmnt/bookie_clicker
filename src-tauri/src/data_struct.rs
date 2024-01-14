@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use base64ct::{Base64, Encoding};
 // use crate::cli::ReadFlag;
 use chrono::NaiveDate;
 use reqwest::get;
@@ -245,7 +246,7 @@ impl Progress {
 
 #[derive(Debug, Deserialize, Serialize)]
 struct ReadFlag {
-    hex: String,
+    b64: String,
 }
 
 impl ReadFlag {
@@ -261,8 +262,9 @@ impl ReadFlag {
         let flag_byte = ReadFlag::bools_to_bytes(flag_bool);
 
         // 記録のために文字列化
-        let flag_hex = ReadFlag::bytes_to_hex(flag_byte);
-        ReadFlag { hex: flag_hex }
+        let flag_b64 = Base64::encode_string(&flag_byte);
+
+        ReadFlag { b64: flag_b64 }
     }
     fn range_to_bools(len: usize, page_range: &[u32; 2]) -> Vec<bool> {
         let mut flag_bool = vec![false; len];
@@ -305,13 +307,13 @@ impl ReadFlag {
         bytes
     }
     fn merge(&mut self, new: ReadFlag) {
-        let old = ReadFlag::hex_to_bytes(&self.hex);
-        let new = ReadFlag::hex_to_bytes(&new.hex);
+        let old = Base64::decode_vec(&self.b64).unwrap();
+        let new = Base64::decode_vec(&new.b64).unwrap();
         let mut newer = vec![];
         for i in 0..old.len() {
             newer.push(old[i] | new[i]);
         }
-        let hex = ReadFlag::bytes_to_hex(newer);
-        self.hex = hex;
+        let b64 = Base64::encode_string(&newer);
+        self.b64 = b64;
     }
 }
