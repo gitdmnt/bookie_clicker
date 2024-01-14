@@ -73,6 +73,34 @@
                     }
                 ]
             }
+        },
+        {
+            "attr": {
+                "isbn": "9784122044289",
+                "title": "スカイ・クロラ",
+                "subtitle": "",
+                "authors": [
+                    "森博嗣"
+                ],
+                "imageUrl": "http://books.google.com/books/content?id=Zr0gNwAACAAJ&printsec=frontcover&img=1&zoom=5&source=gbs_api",
+                "totalPageCount": 333
+            },
+            "status": {
+                "readStatus": "Read",
+                "combinedFlag": {
+                    "b64": "///////////////////////////////////////////////////////4"
+                },
+                "progresses": [
+                    {
+                        "termStart": "2024-01-14",
+                        "termEnd": "2024-01-14",
+                        "flag": {
+                            "b64": "///////////////////////////////////////////////////////4"
+                        },
+                        "memo": ""
+                    }
+                ]
+            }
         }
     ]
 }

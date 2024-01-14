@@ -7,6 +7,7 @@ use std::sync::{Mutex, MutexGuard};
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
     pub debug: bool,
+    #[serde(rename = "dirPath")]
     pub dir_path: PathBuf,
 }
 
@@ -61,6 +62,13 @@ impl ConfigManager {
             config: Mutex::from(c),
         }
     }
+
+    pub fn set(&self, c: Config) {
+        let mut old = self.get();
+        old.debug = c.debug;
+        old.dir_path = c.dir_path;
+    }
+
     pub fn edit(&self, c: ConfigManager) {
         let mut old = self.get();
         let c = c.get();
@@ -75,5 +83,11 @@ impl ConfigManager {
         let c = Self::from(Config::load(config_path));
         println!("Loaded: {:?}", c.get());
         c
+    }
+
+    pub fn fetch(&self) -> Config {
+        let dir_path: PathBuf = dirs::config_dir().unwrap().join(".bookie_clicker");
+        let config_path = dir_path.join("config.json");
+        Config::load(&config_path)
     }
 }

@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use bookie_clicker::config::ConfigManager;
+use bookie_clicker::config::{Config, ConfigManager};
 use bookie_clicker::data_struct::{Activity, BookAttr, Books, Record};
 use chrono::NaiveDate;
 use dirs;
@@ -49,11 +49,14 @@ fn debug_print(msg: &str) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn reload_config(cfg: tauri::State<'_, ConfigManager>) {
-    let dir_path: PathBuf = dirs::config_dir().unwrap().join(".bookie_clicker");
-    let config_path = dir_path.join("config.json");
-    let state = ConfigManager::load(&config_path);
-    cfg.edit(state);
+fn fetch_config(cfg: tauri::State<'_, ConfigManager>) -> Config {
+    cfg.fetch()
+}
+
+#[tauri::command]
+fn set_config(cfg: tauri::State<'_, ConfigManager>, config: Config) {
+    println!("{:?}", config);
+    cfg.set(config)
 }
 
 #[derive(Serialize, Deserialize)]
@@ -77,7 +80,8 @@ fn main() {
             set_book_attr,
             set_record,
             debug_print,
-            reload_config
+            set_config,
+            fetch_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
