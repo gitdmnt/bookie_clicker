@@ -15,20 +15,19 @@ use base64ct::{Base64, Encoding};
 use chrono::NaiveDate;
 use reqwest::get;
 
+// jsonのデータをDBに入れて扱いやすくしている。
+// 将来的には普通にファイルとしてのDBで保存しておいて、たまにjsonに書き出せるようにすべきなのかも？
 pub struct Library {
     db: Mutex<Surreal<Db>>,
 }
 
 impl Library {
-    // 一回だけ実行する
     // jsonを読み込んでstructに包んで返す
     pub fn load(path: &PathBuf) -> Library {
         let db = block_on(async { Surreal::new::<Mem>(()).await.unwrap() });
         block_on(async {
             db.use_ns("namespace").use_db("database").await.unwrap();
-
             let books = Books::load(path);
-
             for b in books {
                 let _: Option<Record> = db.create(("book", &b.attr.isbn)).content(b).await.unwrap();
             }
@@ -84,7 +83,7 @@ pub struct Books {
     items: Vec<Record>,
 }
 
-// 基本的にliburary.rsから呼び出されてるだけ
+// 基本的にliburary.rsから呼び出されてるだけ。Recordの配列。jsonに記録するのはこれ
 impl Books {
     fn new() -> Books {
         Books { items: Vec::new() }
@@ -146,6 +145,7 @@ impl IntoIterator for Books {
     }
 }
 
+// 本の情報とそれに関する行動の履歴をまとめておくコンテナ
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Record {
     pub attr: BookAttr,
@@ -164,6 +164,7 @@ impl Record {
     }
 }
 
+// 本の情報
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BookAttr {
     pub isbn: String,
@@ -177,7 +178,7 @@ pub struct BookAttr {
 }
 
 impl BookAttr {
-    pub async fn from(isbn: &str) -> Result<BookAttr, String> {
+    pub async fn from_isbn(isbn: &str) -> Result<BookAttr, String> {
         // Google Books APIにリクエスト
         let url = format!(
             "https://www.googleapis.com/books/v1/volumes?q=isbn:{}",
@@ -237,6 +238,7 @@ impl BookAttr {
     }
 }
 
+// ある本に関するユーザーの行動内容
 #[derive(Debug, Deserialize, Serialize)]
 struct Status {
     #[serde(rename = "readStatus")]
@@ -279,6 +281,7 @@ impl Status {
     }
 }
 
+// 読書情報をフロントエンドから運んでくるためのコンテナ
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Activity {
     #[serde(rename = "readStatus")]
@@ -324,6 +327,7 @@ enum ReadStatus {
     Unread,
 }
 
+// これ正直Activityと何が違うのかわからない　よりDBに記録しておきたい形なのかもね
 #[derive(Debug, Deserialize, Serialize)]
 struct Progress {
     #[serde(rename = "termStart")]
@@ -353,6 +357,7 @@ impl Progress {
     }
 }
 
+// 読んだページのフラグ
 #[derive(Debug, Deserialize, Serialize)]
 struct ReadFlag {
     b64: String,

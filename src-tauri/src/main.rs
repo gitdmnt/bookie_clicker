@@ -11,6 +11,7 @@ use dirs;
 use serde::{Deserialize, Serialize};
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
+// 本の情報をAPIを叩いて検索して返す
 #[tauri::command]
 async fn set_book_attr(
     cfg: tauri::State<'_, ConfigManager>,
@@ -22,12 +23,13 @@ async fn set_book_attr(
     let attr = if debug {
         BookAttr::fake(&isbn)
     } else {
-        BookAttr::from(&isbn).await
+        BookAttr::from_isbn(&isbn).await
     };
     println!("{:?}", attr);
     attr
 }
 
+// 保存する
 #[tauri::command]
 fn set_record(cfg: tauri::State<'_, ConfigManager>, book_attr: BookAttr, activity: Activity) {
     let rec = Record::from(book_attr, activity);
@@ -43,12 +45,14 @@ fn set_record(cfg: tauri::State<'_, ConfigManager>, book_attr: BookAttr, activit
     lib.save(&lib_path)
 }
 
+// ゴミ　これいらなくね？
 #[tauri::command]
 fn debug_print(msg: &str) -> Result<(), String> {
     println!("{}", msg);
     Ok(())
 }
 
+// configを読み込み
 #[tauri::command]
 fn fetch_config(cfg: tauri::State<'_, ConfigManager>) -> Config {
     let mut config = cfg.fetch();
@@ -56,6 +60,7 @@ fn fetch_config(cfg: tauri::State<'_, ConfigManager>) -> Config {
     config
 }
 
+// configに書き込み
 #[tauri::command]
 fn set_config(cfg: tauri::State<'_, ConfigManager>, mut config: Config) {
     let dir_path: PathBuf = dirs::config_dir().unwrap().join(".bookie_clicker");
@@ -65,14 +70,9 @@ fn set_config(cfg: tauri::State<'_, ConfigManager>, mut config: Config) {
     cfg.set(&config_path, config);
 }
 
-#[derive(Serialize, Deserialize)]
-struct Term {
-    start: NaiveDate,
-    end: NaiveDate,
-}
-
+// DBからレコードを読みたい
 #[tauri::command]
-fn fetch_record(cfg: tauri::State<'_, ConfigManager>, term: Term) -> Books {
+fn fetch_record(cfg: tauri::State<'_, ConfigManager>, term: [NaiveDate; 2]) -> Books {
     todo!()
 }
 
