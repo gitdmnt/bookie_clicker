@@ -38,12 +38,10 @@ fn set_record(cfg: tauri::State<'_, ConfigManager>, book_attr: BookAttr, activit
     } else {
         cfg.dir_path.join("lib.json")
     };
-    let mut lib = Books::load(&lib_path);
+    let mut lib = Library::load(&lib_path);
     println!("{:?}", rec);
     lib.add(rec);
-    let lib: String = serde_json::to_string(&lib).unwrap();
-    let mut file = fs::File::create(&lib_path).unwrap();
-    file.write_all(lib.as_bytes()).unwrap();
+    lib.save(&lib_path)
 }
 
 #[tauri::command]
@@ -86,7 +84,10 @@ fn main() {
     let dir_path: PathBuf = dirs::config_dir().unwrap().join(".bookie_clicker");
     let config_path = dir_path.join("config.json");
     let cfg = ConfigManager::load(&config_path);
-    let lib = Library::load(&cfg.get().dir_path.join("lib.json"));
+
+    let lib_path = &cfg.get().dir_path.join("lib.json");
+    let lib = Library::load(lib_path);
+
     tauri::Builder::default()
         .manage(cfg)
         .manage(lib)

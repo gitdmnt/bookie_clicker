@@ -7,6 +7,7 @@ use reqwest::get;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
+use std::io::Write;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Books {
@@ -16,6 +17,9 @@ pub struct Books {
 impl Books {
     pub fn new() -> Books {
         Books { items: Vec::new() }
+    }
+    pub fn from(items: Vec<Record>) -> Books {
+        Books { items }
     }
     pub fn add(&mut self, new: Record) {
         for i in 0..self.items.len() {
@@ -28,6 +32,7 @@ impl Books {
         self.items.push(new);
     }
     pub fn load(path: &PathBuf) -> Books {
+        println!("Loading lib.json path: {:?}", path);
         let lib = match fs::read_to_string(path) {
             Ok(str) => str,
             Err(_) => {
@@ -39,11 +44,25 @@ impl Books {
                 String::new()
             }
         };
+        // println!("Parsing lib.json: {}", lib);
         let lib: Books = match serde_json::from_str(&lib) {
-            Ok(lib) => lib,
-            Err(_) => Books::new(),
+            Ok(lib) => {
+                println!("Load lib.json successfully");
+                lib
+            }
+            Err(e) => {
+                println!("{e}");
+                Books::new()
+            }
         };
+        // println!("Parsed lib.json: {:?}", lib);
         lib
+    }
+    pub fn save(&self, path: &PathBuf) {
+        println!("Saving on {:?}", path);
+        let lib: String = serde_json::to_string(self).unwrap();
+        let mut file = fs::File::create(path).unwrap();
+        file.write_all(lib.as_bytes()).unwrap();
     }
 }
 
@@ -67,7 +86,7 @@ impl Record {
         let status = Status::from(&attr, activity);
         Record { attr, status }
     }
-    fn merge(&mut self, new: Record) {
+    pub fn merge(&mut self, new: Record) {
         self.status.merge(new.status);
     }
 }
