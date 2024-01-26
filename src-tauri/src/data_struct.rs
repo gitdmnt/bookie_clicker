@@ -1,21 +1,23 @@
+use std::fs;
+use std::io::Write;
 use std::path::PathBuf;
 
-use base64ct::{Base64, Encoding};
 // use crate::cli::ReadFlag;
+
+use base64ct::{Base64, Encoding};
 use chrono::NaiveDate;
 use reqwest::get;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::fs;
-use std::io::Write;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Books {
     items: Vec<Record>,
 }
 
+// 基本的にliburary.rsから呼び出されてるだけ
 impl Books {
-    pub fn new() -> Books {
+    fn new() -> Books {
         Books { items: Vec::new() }
     }
     pub fn from(items: Vec<Record>) -> Books {
@@ -66,6 +68,7 @@ impl Books {
     }
 }
 
+// for book in booksがやりたいだけ
 impl IntoIterator for Books {
     type Item = Record;
     type IntoIter = <Vec<Record> as IntoIterator>::IntoIter;
@@ -79,6 +82,7 @@ pub struct Record {
     pub attr: BookAttr,
     status: Status,
 }
+
 impl Record {
     pub fn from(attr: BookAttr, mut activity: Activity) -> Record {
         // ぐちゃぐちゃの入力データを直す会
@@ -218,6 +222,7 @@ pub struct Activity {
 }
 
 impl Activity {
+    // read_statusからpage_rangeを復元したり、その逆をやったりしているz
     fn normalize(&mut self, attr: &BookAttr) {
         let max = attr.total_page_count;
         self.page_range[0] = match self.read_status {
