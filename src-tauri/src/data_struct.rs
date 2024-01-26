@@ -325,22 +325,6 @@ impl ReadFlag {
         }
         flag_byte
     }
-    fn bytes_to_hex(flag_byte: Vec<u8>) -> String {
-        let mut flag_hex = String::new();
-        for b in flag_byte {
-            flag_hex += &format!("{:02x}", b);
-        }
-        flag_hex
-    }
-    fn hex_to_bytes(flag_hex: &str) -> Vec<u8> {
-        let mut bytes = vec![];
-        for i in (0..flag_hex.len()).step_by(2) {
-            let c = &flag_hex[i..i + 2];
-            let n = u8::from_str_radix(c, 16).unwrap();
-            bytes.push(n);
-        }
-        bytes
-    }
     fn merge(&mut self, new: ReadFlag) {
         let old = Base64::decode_vec(&self.b64).unwrap();
         let new = Base64::decode_vec(&new.b64).unwrap();

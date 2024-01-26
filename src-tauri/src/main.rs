@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs, io::Write, path::PathBuf};
+use std::path::PathBuf;
 
 use bookie_clicker::config::{Config, ConfigManager};
 use bookie_clicker::data_struct::{Activity, BookAttr, Books, Record};
@@ -38,7 +38,7 @@ fn set_record(cfg: tauri::State<'_, ConfigManager>, book_attr: BookAttr, activit
     } else {
         cfg.dir_path.join("lib.json")
     };
-    let mut lib = Library::load(&lib_path);
+    let lib = Library::load(&lib_path);
     println!("{:?}", rec);
     lib.add(rec);
     lib.save(&lib_path)
@@ -75,7 +75,7 @@ struct Term {
 #[tauri::command]
 fn fetch_record(cfg: tauri::State<'_, ConfigManager>, term: Term) -> Books {
     let lib_path = cfg.get().dir_path.join("lib.json");
-    let mut lib = Books::load(&lib_path);
+    let lib = Books::load(&lib_path);
 
     todo!()
 }
