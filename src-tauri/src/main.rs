@@ -1,17 +1,17 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs, io::Write, path::PathBuf};
+use std::path::PathBuf;
 
 use bookie_clicker::config::{Config, ConfigManager};
-use bookie_clicker::data_struct::{Activity, BookAttr, Books, Record};
-use bookie_clicker::library::Library;
+use bookie_clicker::database::{Activity, BookAttr, Books, Library, Record};
 
 use chrono::NaiveDate;
 use dirs;
 use serde::{Deserialize, Serialize};
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
+// 本の情報をAPIを叩いて検索して返す
 #[tauri::command]
 async fn set_book_attr(
     cfg: tauri::State<'_, ConfigManager>,
@@ -23,12 +23,13 @@ async fn set_book_attr(
     let attr = if debug {
         BookAttr::fake(&isbn)
     } else {
-        BookAttr::from(&isbn).await
+        BookAttr::from_isbn(&isbn).await
     };
     println!("{:?}", attr);
     attr
 }
 
+// 保存する
 #[tauri::command]
 fn set_record(cfg: tauri::State<'_, ConfigManager>, book_attr: BookAttr, activity: Activity) {
     let rec = Record::from(book_attr, activity);
@@ -38,20 +39,20 @@ fn set_record(cfg: tauri::State<'_, ConfigManager>, book_attr: BookAttr, activit
     } else {
         cfg.dir_path.join("lib.json")
     };
-    let mut lib = Books::load(&lib_path);
+    let lib = Library::load(&lib_path);
     println!("{:?}", rec);
     lib.add(rec);
-    let lib: String = serde_json::to_string(&lib).unwrap();
-    let mut file = fs::File::create(&lib_path).unwrap();
-    file.write_all(lib.as_bytes()).unwrap();
+    lib.save(&lib_path)
 }
 
+// ゴミ　これいらなくね？
 #[tauri::command]
 fn debug_print(msg: &str) -> Result<(), String> {
     println!("{}", msg);
     Ok(())
 }
 
+// configを読み込み
 #[tauri::command]
 fn fetch_config(cfg: tauri::State<'_, ConfigManager>) -> Config {
     let mut config = cfg.fetch();
@@ -59,6 +60,7 @@ fn fetch_config(cfg: tauri::State<'_, ConfigManager>) -> Config {
     config
 }
 
+// configに書き込み
 #[tauri::command]
 fn set_config(cfg: tauri::State<'_, ConfigManager>, mut config: Config) {
     let dir_path: PathBuf = dirs::config_dir().unwrap().join(".bookie_clicker");
@@ -68,17 +70,9 @@ fn set_config(cfg: tauri::State<'_, ConfigManager>, mut config: Config) {
     cfg.set(&config_path, config);
 }
 
-#[derive(Serialize, Deserialize)]
-struct Term {
-    start: NaiveDate,
-    end: NaiveDate,
-}
-
+// DBからレコードを読みたい
 #[tauri::command]
-fn fetch_record(cfg: tauri::State<'_, ConfigManager>, term: Term) -> Books {
-    let lib_path = cfg.get().dir_path.join("lib.json");
-    let mut lib = Books::load(&lib_path);
-
+fn fetch_record(cfg: tauri::State<'_, ConfigManager>, term: [NaiveDate; 2]) -> Books {
     todo!()
 }
 
@@ -86,7 +80,10 @@ fn main() {
     let dir_path: PathBuf = dirs::config_dir().unwrap().join(".bookie_clicker");
     let config_path = dir_path.join("config.json");
     let cfg = ConfigManager::load(&config_path);
-    let lib = Library::load(&cfg.get().dir_path.join("lib.json"));
+
+    let lib_path = &cfg.get().dir_path.join("lib.json");
+    let lib = Library::load(lib_path);
+
     tauri::Builder::default()
         .manage(cfg)
         .manage(lib)
