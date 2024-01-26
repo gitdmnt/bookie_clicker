@@ -4,8 +4,7 @@
 use std::path::PathBuf;
 
 use bookie_clicker::config::{Config, ConfigManager};
-use bookie_clicker::data_struct::{Activity, BookAttr, Books, Record};
-use bookie_clicker::library::Library;
+use bookie_clicker::database::{Activity, BookAttr, Books, Library, Record};
 
 use chrono::NaiveDate;
 use dirs;
@@ -74,9 +73,6 @@ struct Term {
 
 #[tauri::command]
 fn fetch_record(cfg: tauri::State<'_, ConfigManager>, term: Term) -> Books {
-    let lib_path = cfg.get().dir_path.join("lib.json");
-    let lib = Books::load(&lib_path);
-
     todo!()
 }
 
