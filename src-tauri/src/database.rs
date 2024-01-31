@@ -53,19 +53,26 @@ impl Library {
     pub fn add(&self, new: Record) {
         let db = self.db.lock().unwrap();
         let select_task = async {
-            db.query("select * from book were attr.isbn = ?")
-                .bind(&new.attr.isbn)
+            db.query("select * from book where attr.isbn = $isbn")
+                .bind(("isbn", &new.attr.isbn))
                 .await
                 .unwrap()
-                .take(0)
+                .take::<Vec<Record>>(0)
                 .unwrap()
         };
-        let mut rec: Vec<Record> = block_on(select_task);
-        rec[0].merge(new);
+        let mut rec = block_on(select_task);
+        let rec = match rec.get_mut(0) {
+            Some(r) => {
+                r.merge(new);
+                r
+            }
+            None => &new,
+        };
+
         let update_task = async {
             let _: Option<Record> = db
-                .update(("book", &rec[0].attr.isbn))
-                .content(&rec[0])
+                .update(("book", &rec.attr.isbn))
+                .content(rec)
                 .await
                 .unwrap();
         };

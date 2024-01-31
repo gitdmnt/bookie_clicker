@@ -8,7 +8,6 @@ use bookie_clicker::database::{Activity, BookAttr, Books, Library, Record};
 
 use chrono::NaiveDate;
 use dirs;
-use serde::{Deserialize, Serialize};
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 // 本の情報をAPIを叩いて検索して返す
