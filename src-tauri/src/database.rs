@@ -92,7 +92,7 @@ impl Library {
     }
 
     // 最新のデータをn件取得する。
-    pub fn fetch_new(&self, n: u32) {
+    pub fn fetch_new(&self, n: u32) -> Books {
         let db = self.db.lock().unwrap();
         let select_task = async {
             db.query("SELECT * FROM book ORDER BY status.last_read DESC LIMIT $limit")
@@ -105,12 +105,12 @@ impl Library {
         let rec = Books {
             items: block_on(select_task),
         };
-        println!("{:?}", rec);
+        rec
     }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Books {
+pub struct Books {
     items: Vec<Record>,
 }
 
@@ -261,6 +261,7 @@ struct Status {
     #[serde(rename = "combinedFlag")]
     combined_flag: ReadFlag,
     progresses: Vec<Progress>,
+    #[serde(rename = "lastRead")]
     last_read: NaiveDate,
     star: u32,
 }

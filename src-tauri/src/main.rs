@@ -4,7 +4,7 @@
 use std::path::PathBuf;
 
 use bookie_clicker::config::{Config, ConfigManager};
-use bookie_clicker::database::{Activity, BookAttr, Library, Record};
+use bookie_clicker::database::{Activity, BookAttr, Books, Library, Record};
 
 use dirs;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
@@ -70,8 +70,10 @@ fn set_config(cfg: tauri::State<'_, ConfigManager>, mut config: Config) {
 
 // DBからレコードを読みたい
 #[tauri::command]
-fn fetch_record(lib: tauri::State<'_, Library>) {
-    lib.fetch_new(10);
+fn fetch_new(lib: tauri::State<'_, Library>) -> Books {
+    // 今は返す型を適当にしてるけど、いずれもっと最適化した型で返したい
+    let rec = lib.fetch_new(10);
+    rec
 }
 
 fn main() {
@@ -91,7 +93,7 @@ fn main() {
             debug_print,
             set_config,
             fetch_config,
-            fetch_record,
+            fetch_new,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

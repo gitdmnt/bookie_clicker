@@ -1,24 +1,19 @@
-import Register from './components/Register';
-import Booklist from './components/Booklist';
-import Analytics from './components/Analytics';
-import { Config } from './components/Config';
+import Register from "./components/Register";
+import Analytics from "./components/Analytics";
+import BookList from "./components/BookList";
+import { Config } from "./components/Config";
 
 export default function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <p className="Title">
-          Bookie Clicker
-        </p>
+        <h1 className="Title">Bookie Clicker</h1>
       </header>
       <Config />
       <Register />
-      <Booklist />
+      <BookList />
       <Analytics />
-      <div className='debug'>
-        <p>9784000078702</p>
-        <p>9784588010590</p>
-      </div>
     </div>
   );
 }
+
