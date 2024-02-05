@@ -42,6 +42,9 @@ function Booklist() {
   const [bookList, setBookList] = useState(defaultBookList);
   const fetchBook = async () => {
     const books: Books = await invoke("fetch_new");
+    books.items.sort(
+      (a, b) => Date.parse(b.status.lastRead) - Date.parse(a.status.lastRead)
+    );
     const tempList = [];
     for (let i = 0; i < books.items.length; i++) {
       const book = books.items[i];
