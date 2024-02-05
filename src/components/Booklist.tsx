@@ -1,10 +1,10 @@
 import Bookdata from './Bookdata';
-//import { invoke } from '@tauri-apps/api';
+import { invoke } from '@tauri-apps/api';
 //import { Temporal } from 'temporal-polyfill';
 
 function Booklist() {
     //const term = { start: Temporal.PlainDate.from("2024-01-01"), end: Temporal.PlainDate.from("2024-01-31") };
-    //const books = (async () => { await invoke("fetch_record", { term }) })();
+    const fetchBook = async () => { await invoke("fetch_record") };
     const booklist = [];
     for (let i = 0; i < 10; i++) {
         booklist.push(
@@ -21,6 +21,7 @@ function Booklist() {
     return (
         <div className='Booklist'>
             <p>読んだ本の一覧</p>
+            <button onClick={()=>fetchBook()}>あああ</button>
             <ul>
                 {booklist}
             </ul>

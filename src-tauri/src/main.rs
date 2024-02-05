@@ -4,9 +4,8 @@
 use std::path::PathBuf;
 
 use bookie_clicker::config::{Config, ConfigManager};
-use bookie_clicker::database::{Activity, BookAttr, Books, Library, Record};
+use bookie_clicker::database::{Activity, BookAttr, Library, Record};
 
-use chrono::NaiveDate;
 use dirs;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
@@ -71,8 +70,8 @@ fn set_config(cfg: tauri::State<'_, ConfigManager>, mut config: Config) {
 
 // DBからレコードを読みたい
 #[tauri::command]
-fn fetch_record(cfg: tauri::State<'_, ConfigManager>, term: [NaiveDate; 2]) -> Books {
-    todo!()
+fn fetch_record(lib: tauri::State<'_, Library>) {
+    lib.fetch_new(10);
 }
 
 fn main() {
@@ -92,6 +91,7 @@ fn main() {
             debug_print,
             set_config,
             fetch_config,
+            fetch_record,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
