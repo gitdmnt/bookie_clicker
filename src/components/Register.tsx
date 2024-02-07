@@ -107,9 +107,8 @@ function Register() {
             <button type="submit">検索</button>
           </form>
         </div>
-
-        <div className="showAttr" css={bookAttr.isbn === "" && style.none}>
-          <ul>
+        <div className="showAttr">
+          <ul css={bookAttr.isbn === "" && style.none}>
             <li className="title">
               『
               {[bookAttr.title, bookAttr.subtitle]
@@ -119,14 +118,16 @@ function Register() {
             </li>
             <li className="author">著者: {bookAttr.authors.join(", ")}</li>
           </ul>
-          <img src={bookAttr.imageUrl} />
+          <img
+            src={bookAttr.imageUrl}
+            css={bookAttr.isbn === "" && style.none}
+          />
         </div>
       </div>
 
       <div className="inputActivity">
-        <h2>アクティビティ</h2>
         <form onSubmit={handleActivitySubmit}>
-          <div className="inputPage">
+          <div className="page">
             <h3>読んだページ</h3>
             <div className="input pageStart">
               <input
@@ -149,13 +150,15 @@ function Register() {
               <label htmlFor="pageEnd">ページまで</label>
             </div>
           </div>
-          <div className="inputDate">
+          <div className="term">
             <h3>読んだ日</h3>
-            <Toggle
-              labelLeft="日跨ぎモード"
+            <input
+              name="termMode"
+              type="checkbox"
               checked={termMode}
               onChange={() => setTermMode(!termMode)}
-            />
+            ></input>
+            <label htmlFor="termMode">日を跨いだ</label>
             <div className="setTerm" css={!termMode && style.none}>
               <div className="input termStart">
                 <DatePicker
@@ -212,7 +215,7 @@ function Register() {
               defaultValue={5}
             ></input>
           </div>
-          <div className="set-activity-button">
+          <div className="submit">
             <button
               className="button registerButton"
               type="submit"
@@ -245,22 +248,25 @@ const style = {
     display: none;
   `,
   container: css`
+    display: grid;
+    place-items: center center;
+    grid-gap: 1rem;
+    min-height: 100dvh;
     .inputAttr {
       display: grid;
       grid-template-rows: auto auto;
       place-items: start center;
+      grid-gap: 1rem;
 
-      margin: 2rem 2rem;
+      margin: 0;
+      width: 80%;
 
       .searchBook {
         justify-self: center;
-        margin: 1rem;
-
+        margin: 0;
+        white-space: nowrap;
         label {
-          margin-inline-end: 1rem;
-          padding: 0.2rem 0;
-          font-size: 10pt;
-          color: ${color.text_accent};
+          margin-inline: 0 1rem;
           border-block-end: 1px solid ${color.text_accent};
         }
         input {
@@ -276,9 +282,11 @@ const style = {
         display: grid;
         grid-template-columns: 1fr auto;
 
-        margin: 1rem 0;
+        margin: 0;
 
-        width: 80%;
+        width: 100%;
+        height: calc(100px + 4rem);
+
         border: 2px dashed ${color.border_primary};
         border-radius: 2rem;
 
@@ -288,6 +296,7 @@ const style = {
           margin: 2rem 2rem;
           padding: 0;
           list-style: none;
+          height: 10px;
           .title {
             font-size: 18pt;
           }
@@ -298,13 +307,55 @@ const style = {
         img {
           margin: 1rem 0;
           padding: 1rem 2rem;
+          height: 100px;
           border-inline-start: 2px dashed ${color.border_component};
         }
       }
     }
 
     .inputActivity {
-      margin: 1rem;
+      margin: 0;
+      width: 80%;
+
+      form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 2fr 1fr 1fr;
+        place-items: start start;
+        width: 100%;
+        white-space: nowrap;
+        h3 {
+          margin: 0 0.5rem;
+          padding: 0;
+
+          font-size: 12pt;
+          font-weight: normal;
+        }
+        .page {
+          grid-area: 1/1/2/2;
+        }
+        .term {
+          grid-area: 2/1/4/2;
+          h3 {
+            display: inline;
+          }
+        }
+        .memo {
+          justify-self: end;
+          grid-area: 1/2/2/3;
+        }
+        .star {
+          justify-self: end;
+          grid-area: 2/2/3/3;
+        }
+        .submit {
+          justify-self: end;
+          grid-area: 3/2/4/3;
+          width: 13rem;
+          display: grid;
+          grid-template-columns: auto auto;
+        }
+      }
     }
   `,
 };

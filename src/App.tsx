@@ -147,16 +147,17 @@ const global = {
     }
 
     input {
-      margin: 0.5rem;
-      padding: 0.5rem;
-
-      width: 10rem;
-
       box-sizing: border-box;
       border: 1px solid ${color.input_border};
 
-      border-radius: 0.5rem;
       background-color: ${color.input_bg};
+    }
+    input[type="text"] {
+      margin: 0.5rem;
+      padding: 0.5rem;
+      width: 10rem;
+
+      border-radius: 0.5rem;
       &:active,
       &:focus,
       &:focus-visible {
@@ -165,12 +166,41 @@ const global = {
         outline: none;
       }
     }
+
+    input[type="checkbox"] {
+      appearance: none;
+      margin: 0 0.2rem;
+      padding: 0;
+      width: 0.8rem;
+      height: 0.8rem;
+      border-radius: 0.2rem;
+      vertical-align: -0.05rem;
+      &:checked {
+        background-color: ${color.input_border};
+      }
+    }
+    input[type="checkbox"] + label {
+      vertical-align: 0.05rem;
+    }
+
+    input[type="range"] {
+      margin: 0 0.5rem;
+      width: 12rem;
+    }
+
+    label {
+      padding: 0.2rem 0;
+      font-size: 10pt;
+      color: ${color.text_accent};
+      white-space: nowrap;
+    }
     textarea {
+      display: block;
       margin: 0.5rem;
       padding: 0.5rem;
 
-      width: 10rem;
-      min-height: 4rem;
+      width: 12rem;
+      min-height: 5rem;
       form-sizing: content;
       resize: none;
 
