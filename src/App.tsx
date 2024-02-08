@@ -139,9 +139,11 @@ const global = {
       min-width: 4rem;
 
       box-sizing: border-box;
-      border: 1px solid transparent;
+      border: 1px solid ${color.button_border};
       border-radius: 0.5rem;
-      font-weight: bold;
+      line-height: 1rem;
+      font-weight: normal;
+      font-size: 10pt;
       color: ${color.button_text};
       background-color: ${color.button_bg};
     }
@@ -150,11 +152,15 @@ const global = {
       box-sizing: border-box;
       border: 1px solid ${color.input_border};
 
+      line-height: 1rem;
+      font-size: 10pt;
+
       background-color: ${color.input_bg};
     }
     input[type="text"] {
       margin: 0.5rem;
       padding: 0.5rem;
+
       width: 10rem;
 
       border-radius: 0.5rem;
@@ -219,4 +225,3 @@ const global = {
     }
   `,
 };
-

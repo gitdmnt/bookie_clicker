@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Temporal } from "temporal-polyfill";
-import Toggle from "react-styled-toggle";
 import { css } from "@emotion/react";
 
 import { invoke } from "@tauri-apps/api/tauri";
@@ -267,14 +266,14 @@ const style = {
         white-space: nowrap;
         label {
           margin-inline: 0 1rem;
-          border-block-end: 1px solid ${color.text_accent};
+          border-block-end: 1px dashed ${color.text_accent};
         }
         input {
           margin: 0;
           border-radius: 0.5rem 0 0 0.5rem;
         }
         button {
-          margin: 0%;
+          margin: 0;
           border-radius: 0 0.5rem 0.5rem 0;
         }
       }
@@ -359,4 +358,3 @@ const style = {
     }
   `,
 };
-

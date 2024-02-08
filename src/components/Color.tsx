@@ -38,6 +38,7 @@ export const color = {
 
   /* component */
   // button
+  button_border: base.normal,
   button_text: base.white,
   button_bg: base.normal,
 
@@ -46,4 +47,3 @@ export const color = {
   input_border_active: primary.normal,
   input_bg: base.white,
 };
-
