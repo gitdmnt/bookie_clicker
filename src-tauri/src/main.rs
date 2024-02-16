@@ -47,13 +47,6 @@ fn set_record(
     lib.save(&lib_path)
 }
 
-// ゴミ　これいらなくね？
-#[tauri::command]
-fn debug_print(msg: &str) -> Result<(), String> {
-    println!("{}", msg);
-    Ok(())
-}
-
 // configを読み込み
 #[tauri::command]
 fn fetch_config(cfg: tauri::State<'_, ConfigManager>) -> Config {
@@ -94,7 +87,6 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             set_book_attr,
             set_record,
-            debug_print,
             set_config,
             fetch_config,
             fetch_new,
