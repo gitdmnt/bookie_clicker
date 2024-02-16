@@ -109,12 +109,12 @@ impl Library {
     }
 }
 
+// 基本的にliburary.rsから呼び出されてるだけ。Recordの配列。jsonに記録するのはこれ
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Books {
     items: Vec<Record>,
 }
 
-// 基本的にliburary.rsから呼び出されてるだけ。Recordの配列。jsonに記録するのはこれ
 impl Books {
     fn load(path: &PathBuf) -> Books {
         println!("Loading lib.json path: {:?}", path);
