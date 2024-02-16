@@ -195,6 +195,8 @@ pub struct BookAttr {
 impl BookAttr {
     pub async fn from_isbn(isbn: &str) -> Result<BookAttr, String> {
         // Google Books APIにリクエスト
+        let mut isbn = isbn.to_owned();
+        isbn.retain(|c| "0123456789".contains(c));
         let url = format!(
             "https://www.googleapis.com/books/v1/volumes?q=isbn:{}",
             isbn

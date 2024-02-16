@@ -29,7 +29,12 @@ async fn set_book_attr(
 
 // 保存する
 #[tauri::command]
-fn set_record(cfg: tauri::State<'_, ConfigManager>, book_attr: BookAttr, activity: Activity) {
+fn set_record(
+    cfg: tauri::State<'_, ConfigManager>,
+    lib: tauri::State<'_, Library>,
+    book_attr: BookAttr,
+    activity: Activity,
+) {
     let rec = Record::from(book_attr, activity);
     let cfg = cfg.get();
     let lib_path = if cfg.debug {
@@ -37,7 +42,6 @@ fn set_record(cfg: tauri::State<'_, ConfigManager>, book_attr: BookAttr, activit
     } else {
         cfg.dir_path.join("lib.json")
     };
-    let lib = Library::load(&lib_path);
     println!("{:?}", rec);
     lib.add(rec);
     lib.save(&lib_path)
