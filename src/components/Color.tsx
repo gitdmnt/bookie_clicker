@@ -4,7 +4,7 @@ const primary = {
   normal: "hsl(30, 100%, 50%)",
 };
 
-const secondary = {};
+// const secondary = {};
 
 const base = {
   white: "white",
@@ -47,3 +47,4 @@ export const color = {
   input_border_active: primary.normal,
   input_bg: base.white,
 };
+
