@@ -40,6 +40,7 @@ function Register() {
   const [termStart, setTermStart] = useState<Date | null>(new Date());
   const [termEnd, setTermEnd] = useState<Date | null>(new Date());
   const [termMode, setTermMode] = useState(false);
+  const [memo, setMemo] = useState("");
 
   const handleIsbnSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +90,7 @@ function Register() {
     };
     //        setActivity(activity);
     await invoke("set_record", { bookAttr, activity });
+    setMemo("");
   };
 
   return (
@@ -201,7 +203,11 @@ function Register() {
           </div>
           <div className="memo">
             <h3>メモ</h3>
-            <textarea name="memo"></textarea>
+            <textarea
+              name="memo"
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+            ></textarea>
           </div>
           <div className="star">
             <h3>評価</h3>
@@ -318,13 +324,13 @@ const style = {
 
       form {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: auto 1fr;
         grid-template-rows: 2fr 1fr 1fr;
         place-items: start start;
         width: 100%;
         white-space: nowrap;
         h3 {
-          margin: 0 0.5rem;
+          margin: 0.5rem;
           padding: 0;
 
           font-size: 12pt;
@@ -341,11 +347,17 @@ const style = {
         }
         .memo {
           justify-self: end;
-          grid-area: 1/2/2/3;
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+          height: 100%;
+          grid-area: 1/2/3/3;
+          textarea {
+            flex-grow: 1;
+          }
         }
         .star {
-          justify-self: end;
-          grid-area: 2/2/3/3;
+          grid-area: 3/1/4/2;
         }
         .submit {
           justify-self: end;
@@ -358,3 +370,4 @@ const style = {
     }
   `,
 };
+

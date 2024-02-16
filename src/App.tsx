@@ -205,7 +205,7 @@ const global = {
       margin: 0.5rem;
       padding: 0.5rem;
 
-      width: 12rem;
+      min-width: 12rem;
       min-height: 5rem;
       form-sizing: content;
       resize: none;
@@ -225,3 +225,4 @@ const global = {
     }
   `,
 };
+
