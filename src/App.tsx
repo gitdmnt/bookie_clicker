@@ -140,7 +140,8 @@ const global = {
 
       box-sizing: border-box;
       border: 1px solid ${color.button_border};
-      border-radius: 0.5rem;
+      border-radius: 99rem;
+
       line-height: 1rem;
       font-weight: normal;
       font-size: 10pt;
@@ -222,6 +223,15 @@ const global = {
         box-shadow: none;
         outline: none;
       }
+    }
+
+    ul {
+      list-style: none;
+    }
+
+    .button {
+      //box-shadow: 1px 2px 1px 0px ${color.button_shadow},
+      //  0px 0px 1px 1px ${color.button_shadow};
     }
   `,
 };

@@ -99,13 +99,15 @@ function Register() {
         <div className="searchBook">
           <form onSubmit={handleIsbnSubmit}>
             <label htmlFor="isbn">ISBNから検索</label>
-            <input
-              placeholder="ISBNを入力"
-              name="isbn"
-              type="text"
-              autoComplete="off"
-            />
-            <button type="submit">検索</button>
+            <div className="button">
+              <input
+                placeholder="ISBNを入力"
+                name="isbn"
+                type="text"
+                autoComplete="off"
+              />
+              <button type="submit">検索</button>
+            </div>
           </form>
         </div>
         <div className="showAttr">
@@ -222,7 +224,7 @@ function Register() {
           </div>
           <div className="submit">
             <button
-              className="button registerButton"
+              className="button"
               type="submit"
               onClick={() => {
                 setReadStatus("Read");
@@ -231,7 +233,7 @@ function Register() {
               読んだ
             </button>
             <button
-              className="button registerButton"
+              className="button"
               type="submit"
               onClick={() => {
                 setReadStatus("Unread");
@@ -268,19 +270,27 @@ const style = {
 
       .searchBook {
         justify-self: center;
-        margin: 0;
+        margin: 0.5rem;
         white-space: nowrap;
-        label {
-          margin-inline: 0 1rem;
-          border-block-end: 1px dashed ${color.text_accent};
-        }
-        input {
-          margin: 0;
-          border-radius: 0.5rem 0 0 0.5rem;
-        }
-        button {
-          margin: 0;
-          border-radius: 0 0.5rem 0.5rem 0;
+        form {
+          display: flex;
+          place-items: center center;
+          div {
+            border-radius: 0.5rem;
+            input {
+              margin: 0;
+              border-radius: 0.5rem 0 0 0.5rem;
+            }
+            button {
+              margin: 0;
+              border-radius: 0 0.5rem 0.5rem 0;
+              box-shadow: none;
+            }
+          }
+          label {
+            margin-inline: 0 1rem;
+            border-block-end: 1px dashed ${color.text_accent};
+          }
         }
       }
       .showAttr {

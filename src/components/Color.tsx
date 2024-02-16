@@ -15,6 +15,7 @@ const base = {
   dark: "hsl(186, 50%, 30%)",
   darker: "hsl(186, 50%, 20%)",
   black: "hsl(186, 50%, 10%)",
+  shadow: "hsla(186, 50%, 10%, 0.1)",
 };
 
 export const color = {
@@ -41,10 +42,15 @@ export const color = {
   button_border: base.normal,
   button_text: base.white,
   button_bg: base.normal,
+  button_shadow: base.shadow,
 
   // input
   input_border: base.normal,
   input_border_active: primary.normal,
   input_bg: base.white,
+
+  // progress bar
+  progressbar_bg: base.white,
+  progressbar_bar: primary.normal,
 };
 
