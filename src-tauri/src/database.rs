@@ -22,17 +22,29 @@ pub struct Library {
 }
 
 impl Library {
-    // jsonを読み込んでstructに包んで返す
-    pub fn load(path: &PathBuf) -> Library {
-        let db = block_on(async { Surreal::new::<Mem>(()).await.unwrap() });
-        block_on(async {
+    // on-memのDBをMutexに包んで返す
+    fn new() -> Library {
+        let create_new_db = async {
+            let db = Surreal::new::<Mem>(()).await.unwrap();
             db.use_ns("namespace").use_db("database").await.unwrap();
+            db
+        };
+        let db = block_on(create_new_db);
+        Library { db: Mutex::new(db) }
+    }
+
+    // on-memのDBにjsonを移して返す
+    pub fn load(path: &PathBuf) -> Library {
+        let lib = Library::new();
+        let copy_json_to_db = async {
+            let db = lib.db.lock().unwrap();
             let books = Books::load(path);
             for b in books {
                 let _: Option<Record> = db.create(("book", &b.attr.isbn)).content(b).await.unwrap();
             }
-        });
-        Library { db: Mutex::new(db) }
+        };
+        block_on(copy_json_to_db);
+        lib
     }
 
     // on-memのDBをjsonに保存する。
@@ -45,7 +57,7 @@ impl Library {
                 .take(0)
                 .unwrap()
         });
-        let books = Books::from(books);
+        let books = Books { items: books };
         books.save(path);
     }
 
@@ -53,28 +65,47 @@ impl Library {
     pub fn add(&self, new: Record) {
         let db = self.db.lock().unwrap();
         let select_task = async {
-            db.query("select * from book were attr.isbn = ?")
-                .bind(&new.attr.isbn)
+            db.query("select * from book where attr.isbn = $isbn")
+                .bind(("isbn", &new.attr.isbn))
                 .await
                 .unwrap()
-                .take(0)
+                .take::<Vec<Record>>(0)
                 .unwrap()
         };
-        let mut rec: Vec<Record> = block_on(select_task);
-        rec[0].merge(new);
+        let mut rec = block_on(select_task);
+        let rec = match rec.get_mut(0) {
+            Some(r) => {
+                r.merge(new);
+                r
+            }
+            None => &new,
+        };
+
         let update_task = async {
             let _: Option<Record> = db
-                .update(("book", &rec[0].attr.isbn))
-                .content(&rec[0])
+                .update(("book", &rec.attr.isbn))
+                .content(rec)
                 .await
                 .unwrap();
         };
         block_on(update_task);
     }
 
-    fn search_from_term(&self) {
-        //未定
-        todo!()
+    // 最新のデータをn件取得する。
+    pub fn fetch_new(&self, n: u32) -> Books {
+        let db = self.db.lock().unwrap();
+        let select_task = async {
+            db.query("SELECT * FROM book ORDER BY status.last_read DESC LIMIT $limit")
+                .bind(("limit", n))
+                .await
+                .unwrap()
+                .take::<Vec<Record>>(0)
+                .unwrap()
+        };
+        let rec = Books {
+            items: block_on(select_task),
+        };
+        rec
     }
 }
 
@@ -85,22 +116,6 @@ pub struct Books {
 
 // 基本的にliburary.rsから呼び出されてるだけ。Recordの配列。jsonに記録するのはこれ
 impl Books {
-    fn new() -> Books {
-        Books { items: Vec::new() }
-    }
-    fn from(items: Vec<Record>) -> Books {
-        Books { items }
-    }
-    fn add(&mut self, new: Record) {
-        for i in 0..self.items.len() {
-            if self.items[i].attr.isbn == new.attr.isbn {
-                self.items[i].merge(new);
-                println!("{:?}", self);
-                return;
-            }
-        }
-        self.items.push(new);
-    }
     fn load(path: &PathBuf) -> Books {
         println!("Loading lib.json path: {:?}", path);
         let lib = match fs::read_to_string(path) {
@@ -122,7 +137,7 @@ impl Books {
             }
             Err(e) => {
                 println!("{e}");
-                Books::new()
+                Books { items: vec![] }
             }
         };
         // println!("Parsed lib.json: {:?}", lib);
@@ -246,6 +261,8 @@ struct Status {
     #[serde(rename = "combinedFlag")]
     combined_flag: ReadFlag,
     progresses: Vec<Progress>,
+    #[serde(rename = "lastRead")]
+    last_read: NaiveDate,
     star: u32,
 }
 
@@ -263,6 +280,7 @@ impl Status {
             read_status: activity.read_status,
             combined_flag: read_flag,
             progresses: progress,
+            last_read: activity.term[1],
             star: activity.star,
         }
     }
@@ -277,6 +295,7 @@ impl Status {
         };
         self.combined_flag.merge(new.combined_flag);
         self.progresses.extend(new.progresses);
+        self.last_read = new.last_read;
         self.star = new.star;
     }
 }

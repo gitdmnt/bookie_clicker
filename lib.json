@@ -1,106 +1,177 @@
 {
-    "items": [
-        {
-            "attr": {
-                "isbn": "a",
-                "title": "あらゆるもののすべて",
-                "subtitle": "4歳児編",
-                "authors": [
-                    "小野田マシンガン",
-                    "豚汁大手 大谷商社"
-                ],
-                "imageUrl": "https://github.com/gitdmnt/gitdmnt.github.io/blob/main/public/favicon.png",
-                "totalPageCount": 99
-            },
-            "status": {
-                "readStatus": "Read",
-                "combinedFlag": {
-                    "b64": "////////////////4A=="
-                },
-                "progresses": [
-                    {
-                        "termStart": "2024-01-14",
-                        "termEnd": "2024-01-14",
-                        "flag": {
-                            "b64": "////////////////4A=="
-                        },
-                        "memo": ""
-                    }
-                ]
-            }
+  "items": [
+    {
+      "attr": {
+        "isbn": "b",
+        "title": "あらゆるもののすべて",
+        "subtitle": "4歳児編",
+        "authors": [
+          "小野田マシンガン",
+          "豚汁大手 大谷商社"
+        ],
+        "imageUrl": "https://github.com/gitdmnt/gitdmnt.github.io/blob/main/public/favicon.png",
+        "totalPageCount": 99
+      },
+      "status": {
+        "readStatus": "Read",
+        "combinedFlag": {
+          "b64": "////////////////4A=="
         },
-        {
-            "attr": {
-                "isbn": "B",
-                "title": "あらゆるもののすべて",
-                "subtitle": "4歳児編",
-                "authors": [
-                    "小野田マシンガン",
-                    "豚汁大手 大谷商社"
-                ],
-                "imageUrl": "https://github.com/gitdmnt/gitdmnt.github.io/blob/main/public/favicon.png",
-                "totalPageCount": 99
+        "progresses": [
+          {
+            "termStart": "2024-01-31",
+            "termEnd": "2024-01-31",
+            "flag": {
+              "b64": "////////////////4A=="
             },
-            "status": {
-                "readStatus": "Reading",
-                "combinedFlag": {
-                    "b64": "///wAAAAAAAAAAAAAA=="
-                },
-                "progresses": [
-                    {
-                        "termStart": "2024-01-14",
-                        "termEnd": "2024-01-14",
-                        "flag": {
-                            "b64": "/8AAAAAAAAAAAAAAAA=="
-                        },
-                        "memo": ""
-                    },
-                    {
-                        "termStart": "2024-01-14",
-                        "termEnd": "2024-01-14",
-                        "flag": {
-                            "b64": "AAPwAAAAAAAAAAAAAA=="
-                        },
-                        "memo": ""
-                    },
-                    {
-                        "termStart": "2024-01-14",
-                        "termEnd": "2024-01-14",
-                        "flag": {
-                            "b64": "AH4AAAAAAAAAAAAAAA=="
-                        },
-                        "memo": ""
-                    }
-                ]
-            }
+            "memo": "",
+            "star": 3
+          }
+        ],
+        "star": 3
+      }
+    },
+    {
+      "attr": {
+        "isbn": "big unko",
+        "title": "あらゆるもののすべて",
+        "subtitle": "4歳児編",
+        "authors": [
+          "小野田マシンガン",
+          "豚汁大手 大谷商社"
+        ],
+        "imageUrl": "https://github.com/gitdmnt/gitdmnt.github.io/blob/main/public/favicon.png",
+        "totalPageCount": 99
+      },
+      "status": {
+        "readStatus": "Reading",
+        "combinedFlag": {
+          "b64": "/////4AAAAAAAAAAAA=="
         },
-        {
-            "attr": {
-                "isbn": "9784122044289",
-                "title": "スカイ・クロラ",
-                "subtitle": "",
-                "authors": [
-                    "森博嗣"
-                ],
-                "imageUrl": "http://books.google.com/books/content?id=Zr0gNwAACAAJ&printsec=frontcover&img=1&zoom=5&source=gbs_api",
-                "totalPageCount": 333
+        "progresses": [
+          {
+            "termStart": "2024-01-31",
+            "termEnd": "2024-01-31",
+            "flag": {
+              "b64": "/////4AAAAAAAAAAAA=="
             },
-            "status": {
-                "readStatus": "Read",
-                "combinedFlag": {
-                    "b64": "///////////////////////////////////////////////////////4"
-                },
-                "progresses": [
-                    {
-                        "termStart": "2024-01-14",
-                        "termEnd": "2024-01-14",
-                        "flag": {
-                            "b64": "///////////////////////////////////////////////////////4"
-                        },
-                        "memo": ""
-                    }
-                ]
-            }
-        }
-    ]
+            "memo": "",
+            "star": 3
+          }
+        ],
+        "star": 3
+      }
+    },
+    {
+      "attr": {
+        "isbn": "king",
+        "title": "あらゆるもののすべて",
+        "subtitle": "4歳児編",
+        "authors": [
+          "小野田マシンガン",
+          "豚汁大手 大谷商社"
+        ],
+        "imageUrl": "https://github.com/gitdmnt/gitdmnt.github.io/blob/main/public/favicon.png",
+        "totalPageCount": 99
+      },
+      "status": {
+        "readStatus": "Reading",
+        "combinedFlag": {
+          "b64": "/////4AAAAAAAAAAAA=="
+        },
+        "progresses": [
+          {
+            "termStart": "2024-01-31",
+            "termEnd": "2024-01-31",
+            "flag": {
+              "b64": "/8AAAAAAAAAAAAAAAA=="
+            },
+            "memo": "",
+            "star": 3
+          },
+          {
+            "termStart": "2024-01-31",
+            "termEnd": "2024-01-31",
+            "flag": {
+              "b64": "/////4AAAAAAAAAAAA=="
+            },
+            "memo": "",
+            "star": 3
+          }
+        ],
+        "star": 3
+      }
+    },
+    {
+      "attr": {
+        "isbn": "partial unko",
+        "title": "あらゆるもののすべて",
+        "subtitle": "4歳児編",
+        "authors": [
+          "小野田マシンガン",
+          "豚汁大手 大谷商社"
+        ],
+        "imageUrl": "https://github.com/gitdmnt/gitdmnt.github.io/blob/main/public/favicon.png",
+        "totalPageCount": 99
+      },
+      "status": {
+        "readStatus": "Reading",
+        "combinedFlag": {
+          "b64": "/////4AAAAAAAAAAAA=="
+        },
+        "progresses": [
+          {
+            "termStart": "2024-01-31",
+            "termEnd": "2024-01-31",
+            "flag": {
+              "b64": "/////4AAAAAAAAAAAA=="
+            },
+            "memo": "",
+            "star": 3
+          }
+        ],
+        "star": 3
+      }
+    },
+    {
+      "attr": {
+        "isbn": "unko",
+        "title": "あらゆるもののすべて",
+        "subtitle": "4歳児編",
+        "authors": [
+          "小野田マシンガン",
+          "豚汁大手 大谷商社"
+        ],
+        "imageUrl": "https://github.com/gitdmnt/gitdmnt.github.io/blob/main/public/favicon.png",
+        "totalPageCount": 99
+      },
+      "status": {
+        "readStatus": "Read",
+        "combinedFlag": {
+          "b64": "////////////////4A=="
+        },
+        "progresses": [
+          {
+            "termStart": "2024-01-31",
+            "termEnd": "2024-01-31",
+            "flag": {
+              "b64": "/8AAAAAAAAAAAAAAAA=="
+            },
+            "memo": "",
+            "star": 3
+          },
+          {
+            "termStart": "2024-01-31",
+            "termEnd": "2024-01-31",
+            "flag": {
+              "b64": "////////////////4A=="
+            },
+            "memo": "",
+            "star": 3
+          }
+        ],
+        "star": 3
+      }
+    }
+  ]
 }
