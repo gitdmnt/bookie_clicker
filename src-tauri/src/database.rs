@@ -1,19 +1,97 @@
-// use crate::cli::ReadFlag;
-use chrono::NaiveDate;
-use reqwest::get;
+use std::fs;
+use std::io::Write;
+use std::path::PathBuf;
+use std::sync::Mutex;
+
+use tauri::async_runtime::block_on;
+
+use surrealdb::engine::local::{Db, Mem};
+use surrealdb::Surreal;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+
+use base64ct::{Base64, Encoding};
+use chrono::NaiveDate;
+use reqwest::get;
+
+// jsonのデータをDBに入れて扱いやすくしている。
+// 将来的には普通にファイルとしてのDBで保存しておいて、たまにjsonに書き出せるようにすべきなのかも？
+pub struct Library {
+    db: Mutex<Surreal<Db>>,
+}
+
+impl Library {
+    // jsonを読み込んでstructに包んで返す
+    pub fn load(path: &PathBuf) -> Library {
+        let db = block_on(async { Surreal::new::<Mem>(()).await.unwrap() });
+        block_on(async {
+            db.use_ns("namespace").use_db("database").await.unwrap();
+            let books = Books::load(path);
+            for b in books {
+                let _: Option<Record> = db.create(("book", &b.attr.isbn)).content(b).await.unwrap();
+            }
+        });
+        Library { db: Mutex::new(db) }
+    }
+
+    // on-memのDBをjsonに保存する。
+    pub fn save(&self, path: &PathBuf) {
+        let db = self.db.lock().unwrap();
+        let books: Vec<Record> = block_on(async {
+            db.query("select * from book")
+                .await
+                .unwrap()
+                .take(0)
+                .unwrap()
+        });
+        let books = Books::from(books);
+        books.save(path);
+    }
+
+    // 新しいデータを追加する。
+    pub fn add(&self, new: Record) {
+        let db = self.db.lock().unwrap();
+        let select_task = async {
+            db.query("select * from book were attr.isbn = ?")
+                .bind(&new.attr.isbn)
+                .await
+                .unwrap()
+                .take(0)
+                .unwrap()
+        };
+        let mut rec: Vec<Record> = block_on(select_task);
+        rec[0].merge(new);
+        let update_task = async {
+            let _: Option<Record> = db
+                .update(("book", &rec[0].attr.isbn))
+                .content(&rec[0])
+                .await
+                .unwrap();
+        };
+        block_on(update_task);
+    }
+
+    fn search_from_term(&self) {
+        //未定
+        todo!()
+    }
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Books {
     items: Vec<Record>,
 }
 
+// 基本的にliburary.rsから呼び出されてるだけ。Recordの配列。jsonに記録するのはこれ
 impl Books {
-    pub fn new() -> Books {
+    fn new() -> Books {
         Books { items: Vec::new() }
     }
-    pub fn add(&mut self, new: Record) {
+    fn from(items: Vec<Record>) -> Books {
+        Books { items }
+    }
+    fn add(&mut self, new: Record) {
         for i in 0..self.items.len() {
             if self.items[i].attr.isbn == new.attr.isbn {
                 self.items[i].merge(new);
@@ -23,26 +101,73 @@ impl Books {
         }
         self.items.push(new);
     }
+    fn load(path: &PathBuf) -> Books {
+        println!("Loading lib.json path: {:?}", path);
+        let lib = match fs::read_to_string(path) {
+            Ok(str) => str,
+            Err(_) => {
+                fs::create_dir_all(path.parent().unwrap()).unwrap_or_else(|why| {
+                    println!("! {:?}", why.kind());
+                });
+                fs::File::create(path).unwrap();
+
+                String::new()
+            }
+        };
+        // println!("Parsing lib.json: {}", lib);
+        let lib: Books = match serde_json::from_str(&lib) {
+            Ok(lib) => {
+                println!("Load lib.json successfully");
+                lib
+            }
+            Err(e) => {
+                println!("{e}");
+                Books::new()
+            }
+        };
+        // println!("Parsed lib.json: {:?}", lib);
+        lib
+    }
+    fn save(&self, path: &PathBuf) {
+        println!("Saving on {:?}", path);
+        let lib: String = serde_json::to_string(self).unwrap();
+        let mut file = fs::File::create(path).unwrap();
+        file.write_all(lib.as_bytes()).unwrap();
+    }
 }
 
+// for book in booksがやりたいだけ
+impl IntoIterator for Books {
+    type Item = Record;
+    type IntoIter = <Vec<Record> as IntoIterator>::IntoIter;
+    fn into_iter(self) -> Self::IntoIter {
+        self.items.into_iter()
+    }
+}
+
+// 本の情報とそれに関する行動の履歴をまとめておくコンテナ
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Record {
-    attr: BookAttr,
+    pub attr: BookAttr,
     status: Status,
 }
+
 impl Record {
-    pub fn from(attr: BookAttr, activity: Activity) -> Record {
+    pub fn from(attr: BookAttr, mut activity: Activity) -> Record {
+        // ぐちゃぐちゃの入力データを直す会
+        activity.normalize(&attr);
         let status = Status::from(&attr, activity);
         Record { attr, status }
     }
-    fn merge(&mut self, new: Record) {
+    pub fn merge(&mut self, new: Record) {
         self.status.merge(new.status);
     }
 }
 
+// 本の情報
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BookAttr {
-    isbn: String,
+    pub isbn: String,
     title: String,
     subtitle: String,
     authors: Vec<String>,
@@ -53,17 +178,7 @@ pub struct BookAttr {
 }
 
 impl BookAttr {
-    fn new() -> BookAttr {
-        BookAttr {
-            isbn: String::new(),
-            title: String::new(),
-            subtitle: String::new(),
-            authors: vec![],
-            image_url: String::new(),
-            total_page_count: 0,
-        }
-    }
-    pub async fn from(isbn: &str) -> Result<BookAttr, String> {
+    pub async fn from_isbn(isbn: &str) -> Result<BookAttr, String> {
         // Google Books APIにリクエスト
         let url = format!(
             "https://www.googleapis.com/books/v1/volumes?q=isbn:{}",
@@ -123,6 +238,7 @@ impl BookAttr {
     }
 }
 
+// ある本に関するユーザーの行動内容
 #[derive(Debug, Deserialize, Serialize)]
 struct Status {
     #[serde(rename = "readStatus")]
@@ -130,6 +246,7 @@ struct Status {
     #[serde(rename = "combinedFlag")]
     combined_flag: ReadFlag,
     progresses: Vec<Progress>,
+    star: u32,
 }
 
 impl Status {
@@ -140,11 +257,13 @@ impl Status {
             &activity.page_range,
             activity.term,
             activity.memo,
+            activity.star,
         )];
         Status {
             read_status: activity.read_status,
             combined_flag: read_flag,
             progresses: progress,
+            star: activity.star,
         }
     }
     fn merge(&mut self, new: Status) {
@@ -158,9 +277,11 @@ impl Status {
         };
         self.combined_flag.merge(new.combined_flag);
         self.progresses.extend(new.progresses);
+        self.star = new.star;
     }
 }
 
+// 読書情報をフロントエンドから運んでくるためのコンテナ
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Activity {
     #[serde(rename = "readStatus")]
@@ -169,6 +290,34 @@ pub struct Activity {
     page_range: [u32; 2],
     term: [NaiveDate; 2],
     memo: String,
+    star: u32,
+}
+
+impl Activity {
+    // read_statusからpage_rangeを復元したり、その逆をやったりしているz
+    fn normalize(&mut self, attr: &BookAttr) {
+        let max = attr.total_page_count;
+        self.page_range[0] = match self.read_status {
+            ReadStatus::Read => match self.page_range[0] {
+                0 => 1,
+                _ => self.page_range[0],
+            },
+            ReadStatus::Reading => self.page_range[0],
+            ReadStatus::Unread => 0,
+        };
+        self.page_range[1] = match self.read_status {
+            ReadStatus::Read => {
+                if self.page_range[1] == 0 || self.page_range[1] == max {
+                    max
+                } else {
+                    self.read_status = ReadStatus::Reading;
+                    self.page_range[1]
+                }
+            }
+            ReadStatus::Reading => self.page_range[1],
+            ReadStatus::Unread => 0,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -178,6 +327,7 @@ enum ReadStatus {
     Unread,
 }
 
+// これ正直Activityと何が違うのかわからない　よりDBに記録しておきたい形なのかもね
 #[derive(Debug, Deserialize, Serialize)]
 struct Progress {
     #[serde(rename = "termStart")]
@@ -186,6 +336,7 @@ struct Progress {
     term_end: NaiveDate,
     flag: ReadFlag,
     memo: String,
+    star: u32,
 }
 
 impl Progress {
@@ -194,19 +345,22 @@ impl Progress {
         page_range: &[u32; 2],
         term: [NaiveDate; 2],
         memo: String,
+        star: u32,
     ) -> Progress {
         Progress {
             term_start: term[0],
             term_end: term[1],
             flag: ReadFlag::from(attr.total_page_count, page_range),
             memo: memo,
+            star,
         }
     }
 }
 
+// 読んだページのフラグ
 #[derive(Debug, Deserialize, Serialize)]
 struct ReadFlag {
-    hex: String,
+    b64: String,
 }
 
 impl ReadFlag {
@@ -222,8 +376,9 @@ impl ReadFlag {
         let flag_byte = ReadFlag::bools_to_bytes(flag_bool);
 
         // 記録のために文字列化
-        let flag_hex = ReadFlag::bytes_to_hex(flag_byte);
-        ReadFlag { hex: flag_hex }
+        let flag_b64 = Base64::encode_string(&flag_byte);
+
+        ReadFlag { b64: flag_b64 }
     }
     fn range_to_bools(len: usize, page_range: &[u32; 2]) -> Vec<bool> {
         let mut flag_bool = vec![false; len];
@@ -249,30 +404,14 @@ impl ReadFlag {
         }
         flag_byte
     }
-    fn bytes_to_hex(flag_byte: Vec<u8>) -> String {
-        let mut flag_hex = String::new();
-        for b in flag_byte {
-            flag_hex += &format!("{:02x}", b);
-        }
-        flag_hex
-    }
-    fn hex_to_bytes(flag_hex: &str) -> Vec<u8> {
-        let mut bytes = vec![];
-        for i in (0..flag_hex.len()).step_by(2) {
-            let c = &flag_hex[i..i + 2];
-            let n = u8::from_str_radix(c, 16).unwrap();
-            bytes.push(n);
-        }
-        bytes
-    }
     fn merge(&mut self, new: ReadFlag) {
-        let old = ReadFlag::hex_to_bytes(&self.hex);
-        let new = ReadFlag::hex_to_bytes(&new.hex);
+        let old = Base64::decode_vec(&self.b64).unwrap();
+        let new = Base64::decode_vec(&new.b64).unwrap();
         let mut newer = vec![];
         for i in 0..old.len() {
             newer.push(old[i] | new[i]);
         }
-        let hex = ReadFlag::bytes_to_hex(newer);
-        self.hex = hex;
+        let b64 = Base64::encode_string(&newer);
+        self.b64 = b64;
     }
 }

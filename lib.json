@@ -1,0 +1,106 @@
+{
+    "items": [
+        {
+            "attr": {
+                "isbn": "a",
+                "title": "あらゆるもののすべて",
+                "subtitle": "4歳児編",
+                "authors": [
+                    "小野田マシンガン",
+                    "豚汁大手 大谷商社"
+                ],
+                "imageUrl": "https://github.com/gitdmnt/gitdmnt.github.io/blob/main/public/favicon.png",
+                "totalPageCount": 99
+            },
+            "status": {
+                "readStatus": "Read",
+                "combinedFlag": {
+                    "b64": "////////////////4A=="
+                },
+                "progresses": [
+                    {
+                        "termStart": "2024-01-14",
+                        "termEnd": "2024-01-14",
+                        "flag": {
+                            "b64": "////////////////4A=="
+                        },
+                        "memo": ""
+                    }
+                ]
+            }
+        },
+        {
+            "attr": {
+                "isbn": "B",
+                "title": "あらゆるもののすべて",
+                "subtitle": "4歳児編",
+                "authors": [
+                    "小野田マシンガン",
+                    "豚汁大手 大谷商社"
+                ],
+                "imageUrl": "https://github.com/gitdmnt/gitdmnt.github.io/blob/main/public/favicon.png",
+                "totalPageCount": 99
+            },
+            "status": {
+                "readStatus": "Reading",
+                "combinedFlag": {
+                    "b64": "///wAAAAAAAAAAAAAA=="
+                },
+                "progresses": [
+                    {
+                        "termStart": "2024-01-14",
+                        "termEnd": "2024-01-14",
+                        "flag": {
+                            "b64": "/8AAAAAAAAAAAAAAAA=="
+                        },
+                        "memo": ""
+                    },
+                    {
+                        "termStart": "2024-01-14",
+                        "termEnd": "2024-01-14",
+                        "flag": {
+                            "b64": "AAPwAAAAAAAAAAAAAA=="
+                        },
+                        "memo": ""
+                    },
+                    {
+                        "termStart": "2024-01-14",
+                        "termEnd": "2024-01-14",
+                        "flag": {
+                            "b64": "AH4AAAAAAAAAAAAAAA=="
+                        },
+                        "memo": ""
+                    }
+                ]
+            }
+        },
+        {
+            "attr": {
+                "isbn": "9784122044289",
+                "title": "スカイ・クロラ",
+                "subtitle": "",
+                "authors": [
+                    "森博嗣"
+                ],
+                "imageUrl": "http://books.google.com/books/content?id=Zr0gNwAACAAJ&printsec=frontcover&img=1&zoom=5&source=gbs_api",
+                "totalPageCount": 333
+            },
+            "status": {
+                "readStatus": "Read",
+                "combinedFlag": {
+                    "b64": "///////////////////////////////////////////////////////4"
+                },
+                "progresses": [
+                    {
+                        "termStart": "2024-01-14",
+                        "termEnd": "2024-01-14",
+                        "flag": {
+                            "b64": "///////////////////////////////////////////////////////4"
+                        },
+                        "memo": ""
+                    }
+                ]
+            }
+        }
+    ]
+}

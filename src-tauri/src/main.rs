@@ -1,121 +1,98 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use bookie_clicker::gui::{Activity, BookAttr, Books, Record};
+use std::path::PathBuf;
+
+use bookie_clicker::config::{Config, ConfigManager};
+use bookie_clicker::database::{Activity, BookAttr, Books, Library, Record};
+
+use chrono::NaiveDate;
+use dirs;
 use serde::{Deserialize, Serialize};
-use std::{fs, io::Write};
-
-const CONFIG_PATH: &str = ".bookie_clicker/config.json";
-
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
+// 本の情報をAPIを叩いて検索して返す
 #[tauri::command]
-async fn set_book_attr(cfg: tauri::State<'_, Config>, isbn: String) -> Result<BookAttr, String> {
-    let debug = cfg.debug;
+async fn set_book_attr(
+    cfg: tauri::State<'_, ConfigManager>,
+    isbn: String,
+) -> Result<BookAttr, String> {
+    let debug = cfg.get().debug;
 
     println!("fetching isbn: {}", isbn);
     let attr = if debug {
         BookAttr::fake(&isbn)
     } else {
-        BookAttr::from(&isbn).await
+        BookAttr::from_isbn(&isbn).await
     };
-    // println!("{:?}", attr);
+    println!("{:?}", attr);
     attr
 }
 
+// 保存する
 #[tauri::command]
-fn set_record(cfg: tauri::State<'_, Config>, book_attr: BookAttr, activity: Activity) {
-    // println!("attr: {:?}\nactivity: {:?}\n", book_attr, activity);
-    let lib_path = format!("{}/{}", &cfg.dir_path, "lib.json");
-    let lib = match fs::read_to_string(&lib_path) {
-        Ok(str) => str,
-        Err(_) => {
-            fs::create_dir_all(&cfg.dir_path).unwrap_or_else(|why| {
-                println!("! {:?}", why.kind());
-            });
-            fs::File::create(&lib_path).unwrap();
-
-            String::new()
-        }
-    };
-    let mut lib: Books = match serde_json::from_str(&lib) {
-        Ok(lib) => lib,
-        Err(_) => Books::new(),
-    };
+fn set_record(cfg: tauri::State<'_, ConfigManager>, book_attr: BookAttr, activity: Activity) {
     let rec = Record::from(book_attr, activity);
-    // println!("rec: {:?}", rec);
+    let cfg = cfg.get();
+    let lib_path = if cfg.debug {
+        PathBuf::from("../lib.json")
+    } else {
+        cfg.dir_path.join("lib.json")
+    };
+    let lib = Library::load(&lib_path);
+    println!("{:?}", rec);
     lib.add(rec);
-    // println!("lib: {:?}", lib);
-    let lib: String = serde_json::to_string(&lib).unwrap();
-    println!("{}", lib_path);
-    let mut file = fs::File::create(&lib_path).unwrap();
-    file.write_all(lib.as_bytes()).unwrap();
-
-    // dbを読み出す
-    // 一致するattrを探す
-    // activityをstatusに合成
-    // dbに書き込み
+    lib.save(&lib_path)
 }
 
+// ゴミ　これいらなくね？
 #[tauri::command]
 fn debug_print(msg: &str) -> Result<(), String> {
     println!("{}", msg);
     Ok(())
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Config {
-    debug: bool,
-    dir_path: String,
+// configを読み込み
+#[tauri::command]
+fn fetch_config(cfg: tauri::State<'_, ConfigManager>) -> Config {
+    let mut config = cfg.fetch();
+    config.dir_path = config.dir_path.join("lib.json");
+    config
 }
 
-impl Config {
-    pub fn new() -> Config {
-        Config {
-            debug: false,
-            dir_path: ".bookie_clicker".to_owned(),
-        }
-    }
+// configに書き込み
+#[tauri::command]
+fn set_config(cfg: tauri::State<'_, ConfigManager>, mut config: Config) {
+    let dir_path: PathBuf = dirs::config_dir().unwrap().join(".bookie_clicker");
+    let config_path = dir_path.join("config.json");
+    config.dir_path = config.dir_path.parent().unwrap().to_path_buf();
+    println!("{:?}", config);
+    cfg.set(&config_path, config);
+}
+
+// DBからレコードを読みたい
+#[tauri::command]
+fn fetch_record(cfg: tauri::State<'_, ConfigManager>, term: [NaiveDate; 2]) -> Books {
+    todo!()
 }
 
 fn main() {
-    let dir = "..";
-    let path = format!("{}/{}", dir, CONFIG_PATH);
-    let state = match fs::read_to_string(&path) {
-        Ok(str) => {
-            let config: Config = match serde_json::from_str(&str) {
-                Ok(config) => config,
-                Err(_) => {
-                    let mut file = fs::File::create(&path).unwrap();
-                    let default_config = Config::new();
-                    let json: String = serde_json::to_string(&default_config).unwrap();
-                    file.write_all(json.as_bytes()).unwrap();
-                    default_config
-                }
-            };
-            config
-        }
-        Err(_) => {
-            // dirを作る
-            let dir_path = format!("{}/{}", dir, ".bookie_clicker");
-            fs::create_dir_all(&dir_path).unwrap_or_else(|why| {
-                println!("! {:?}", why.kind());
-            });
-            // configファイルを作ってデフォルトをセットする
-            let mut file = fs::File::create(&path).unwrap();
-            let default_config = Config::new();
-            let json: String = serde_json::to_string(&default_config).unwrap();
-            file.write_all(json.as_bytes()).unwrap();
-            default_config
-        }
-    };
+    let dir_path: PathBuf = dirs::config_dir().unwrap().join(".bookie_clicker");
+    let config_path = dir_path.join("config.json");
+    let cfg = ConfigManager::load(&config_path);
+
+    let lib_path = &cfg.get().dir_path.join("lib.json");
+    let lib = Library::load(lib_path);
 
     tauri::Builder::default()
-        .manage(state)
+        .manage(cfg)
+        .manage(lib)
         .invoke_handler(tauri::generate_handler![
             set_book_attr,
             set_record,
-            debug_print
+            debug_print,
+            set_config,
+            fetch_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -26,6 +26,7 @@ dist-ssr
 
 #
 target
+src-tauri/target
 
 # 
 .bookie_clicker/

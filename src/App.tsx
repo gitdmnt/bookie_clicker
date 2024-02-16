@@ -1,6 +1,7 @@
 import Register from './components/Register';
 import Booklist from './components/Booklist';
 import Analytics from './components/Analytics';
+import { Config } from './components/Config';
 
 export default function App() {
   return (
@@ -10,10 +11,10 @@ export default function App() {
           Bookie Clicker
         </p>
       </header>
+      <Config />
       <Register />
       <Booklist />
       <Analytics />
-
       <div className='debug'>
         <p>9784000078702</p>
         <p>9784588010590</p>
