@@ -308,7 +308,11 @@ impl Status {
         };
         self.combined_flag.merge(new.combined_flag);
         self.progresses.extend(new.progresses);
-        self.last_read = new.last_read;
+        self.last_read = if self.last_read < new.last_read {
+            new.last_read
+        } else {
+            self.last_read
+        };
         self.star = new.star;
     }
 }
