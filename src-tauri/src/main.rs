@@ -37,14 +37,9 @@ fn set_record(
 ) {
     let rec = Record::from(book_attr, activity);
     let cfg = cfg.get();
-    let lib_path = if cfg.debug {
-        PathBuf::from("../lib.json")
-    } else {
-        cfg.dir_path.join("lib.json")
-    };
     println!("{:?}", rec);
     lib.add(rec);
-    lib.save(&lib_path)
+    lib.save()
 }
 
 // configを読み込み

@@ -52,5 +52,6 @@ export const color = {
   // progress bar
   progressbar_bg: base.white,
   progressbar_bar: primary.normal,
+  progressbar_bar_secondary: base.normal,
 };
 

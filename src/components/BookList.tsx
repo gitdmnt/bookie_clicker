@@ -1,43 +1,15 @@
-import BookCard from "./BookCard";
 import { invoke } from "@tauri-apps/api";
 import { useState, useEffect } from "react";
-import { Temporal } from "temporal-polyfill";
 import { css } from "@emotion/react";
 import { color } from "./Color";
+import { BookStatus } from "./BookStatus";
 
-type Book = {
-  attr: {
-    isbn: string;
-    title: string;
-    subtitle: string;
-    authors: string[];
-    imageUrl: string;
-    totalPageCount: number;
-  };
-  status: {
-    readStatus: string;
-    combinedFlag: {
-      b64: string;
-    };
-    progresses: {
-      termStart: string;
-      termEnd: string;
-      flag: {
-        b64: string;
-      };
-      memo: string;
-      star: number;
-    }[];
-    lastRead: string;
-    star: number;
-  };
-};
+// displayStatusをいじって、本のタイトルをクリックするとその本に関する情報が右側にばっと出てくるようにする
 
-type Books = {
-  items: Book[];
-};
-
-const progress = (book: Book) => {
+const progress = (book: Book | null) => {
+  if (!book) {
+    return 0;
+  }
   if (book.status.readStatus === "Read") {
     return 100;
   } else if (book.status.readStatus === "Reading") {
@@ -61,47 +33,52 @@ const progress = (book: Book) => {
 
 function Booklist() {
   //const term = { start: Temporal.PlainDate.from("2024-01-01"), end: Temporal.PlainDate.from("2024-01-31") };
-  const defaultBookList: [string, number][] = [];
+  const defaultBookList: Book[] = [];
   const [bookList, setBookList] = useState(defaultBookList);
-  const defaultBookCardList: JSX.Element[] = [];
-  const [bookCardList, setBookCardList] = useState(defaultBookCardList);
-
+  const [bookStatus, setBookStatus] = useState<Book | null>(null);
+  const refreshList = async () => {
+    const tempList: Book[] = [];
+    const books: Books = await invoke("fetch_new");
+    books.items.sort(
+      (a, b) => Date.parse(b.status.lastRead) - Date.parse(a.status.lastRead)
+    );
+    for (let i = 0; i < books.items.length; i++) {
+      const book = books.items[i];
+      tempList.push(book);
+    }
+    setBookList(tempList);
+    setBookStatus(tempList[0]);
+  };
+  const displayStatus = (i: number) => {
+    // タイトルをクリックしたらその作品のカードが開くようにしたいなあと思う
+    // もしかしたらbookcard使わないかも
+    setBookStatus(bookList[i]);
+  };
   useEffect(() => {
-    const fn = async () => {
-      const tempList: [string, number][] = [];
-      const tempCardList: JSX.Element[] = [];
-      const books: Books = await invoke("fetch_new");
-      books.items.sort(
-        (a, b) => Date.parse(b.status.lastRead) - Date.parse(a.status.lastRead)
-      );
-      for (let i = 0; i < books.items.length; i++) {
-        const book = books.items[i];
-        tempList.push([book.attr.title, progress(book)]);
-        tempCardList.push(<BookCard book={book} />);
-      }
-      setBookList(tempList);
-      setBookCardList(tempCardList);
-    };
-    fn();
+    refreshList();
   }, []);
 
   return (
     <div css={style.BookList}>
-      <h2>最近読んだ本の一覧</h2>
-      <ul>
-        {bookList.map((e) => (
-          <li>
-            {e[0]}
-            <div className="progressbar_container">
-              <div
-                className="progressbar"
-                style={{ width: e[1].toString() + "%" }}
-              ></div>
-            </div>
-          </li>
-        ))}
-      </ul>
-      <ul>{bookCardList}</ul>
+      <div className="title_list">
+        <div className="container search_container">
+          <div className="search">検索</div>
+        </div>
+        <ul>
+          {bookList.map((e, i) => (
+            <li className="container" onClick={() => displayStatus(i)}>
+              <div className="title">{e.attr.title}</div>
+              <div className="progressbar_container">
+                <div
+                  className="progressbar"
+                  style={{ width: progress(e).toString() + "%" }}
+                ></div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <BookStatus bookStatus={bookStatus} />
     </div>
   );
 }
@@ -110,14 +87,45 @@ export default Booklist;
 
 const style = {
   BookList: css`
-    .progressbar_container {
-      margin: 0;
+    height: 100dvh;
+    display: flex;
+    place-items: start start;
+    .title_list {
+      height: 100dvh;
       width: 100%;
-      height: 0.2rem;
-      background-color: ${color.progressbar_bg};
-      .progressbar {
-        height: 100%;
-        background-color: ${color.progressbar_bar};
+      background-color: ${color.bg_secondary};
+      overflow: scroll;
+      resize: horizontal;
+      .container {
+        margin: 0.4rem auto;
+        border-radius: 0.4rem;
+        height: auto;
+        width: 90%;
+        white-space: nowrap;
+        overflow: scroll;
+        &:hover {
+          background-color: ${color.bg_component_active};
+        }
+        .search {
+          margin: 0.4rem auto;
+          width: 90%;
+        }
+        .title {
+          margin: 0.2rem 0.4rem;
+        }
+        .progressbar_container {
+          margin: 0;
+          height: 0.2rem;
+          width: 100%;
+          background-color: ${color.progressbar_bg};
+          .progressbar {
+            height: 100%;
+            background-color: ${color.progressbar_bar_secondary};
+          }
+        }
+      }
+      .search_container {
+        background-color: ${color.bg_component};
       }
     }
   `,

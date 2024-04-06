@@ -15,30 +15,69 @@ use base64ct::{Base64, Encoding};
 use chrono::NaiveDate;
 use reqwest::get;
 
+const CURRENT_DB_VERSION: u32 = 1;
+
 // jsonのデータをDBに入れて扱いやすくしている。
 // 将来的には普通にファイルとしてのDBで保存しておいて、たまにjsonに書き出せるようにすべきなのかも？
+
 pub struct Library {
+    path: PathBuf,
     db: Mutex<Surreal<Db>>,
 }
 
 impl Library {
     // on-memのDBをMutexに包んで返す
-    fn new() -> Library {
+    fn new(path: &PathBuf) -> Library {
         let create_new_db = async {
             let db = Surreal::new::<Mem>(()).await.unwrap();
             db.use_ns("namespace").use_db("database").await.unwrap();
             db
         };
         let db = block_on(create_new_db);
-        Library { db: Mutex::new(db) }
+        Library {
+            path: path.to_path_buf(),
+            db: Mutex::new(db),
+        }
     }
 
     // on-memのDBにjsonを移して返す
     pub fn load(path: &PathBuf) -> Library {
-        let lib = Library::new();
+        let lib = Library::new(path);
         let copy_json_to_db = async {
             let db = lib.db.lock().unwrap();
-            let books = Books::load(path);
+
+            // ここから
+            println!("Loading lib.json from {:?}", path);
+
+            // ファイルから文字列を読み込む
+            let books = match fs::read_to_string(path) {
+                Ok(str) => str,
+                Err(_) => {
+                    // 読み込めない場合は新しいファイルを作って空文字列を返す
+                    fs::create_dir_all(path.parent().unwrap()).unwrap_or_else(|why| {
+                        println!("! {:?}", why.kind());
+                    });
+                    fs::File::create(path).unwrap();
+                    String::new()
+                }
+            };
+
+            // パースするだけ
+            let books: Books = match serde_json::from_str(&books) {
+                Ok(json) => {
+                    println!("Load lib.json successfully");
+                    json
+                }
+                Err(e) => {
+                    println!("{e}");
+                    Books {
+                        version: CURRENT_DB_VERSION,
+                        items: vec![],
+                    }
+                }
+            };
+            //ここまで
+
             for b in books {
                 let _: Option<Record> = db.create(("book", &b.attr.isbn)).content(b).await.unwrap();
             }
@@ -48,7 +87,7 @@ impl Library {
     }
 
     // on-memのDBをjsonに保存する。
-    pub fn save(&self, path: &PathBuf) {
+    pub fn save(&self) {
         let db = self.db.lock().unwrap();
         let books: Vec<Record> = block_on(async {
             db.query("select * from book")
@@ -57,8 +96,14 @@ impl Library {
                 .take(0)
                 .unwrap()
         });
-        let books = Books { items: books };
-        books.save(path);
+        let books = Books {
+            version: CURRENT_DB_VERSION,
+            items: books,
+        };
+        println!("Saving on {:?}", self.path);
+        let books: String = serde_json::to_string(&books).unwrap();
+        let mut file = fs::File::create(&self.path).unwrap();
+        file.write_all(books.as_bytes()).unwrap();
     }
 
     // 新しいデータを追加する。
@@ -103,6 +148,7 @@ impl Library {
                 .unwrap()
         };
         let rec = Books {
+            version: CURRENT_DB_VERSION,
             items: block_on(select_task),
         };
         rec
@@ -112,43 +158,8 @@ impl Library {
 // 基本的にliburary.rsから呼び出されてるだけ。Recordの配列。jsonに記録するのはこれ
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Books {
+    version: u32,
     items: Vec<Record>,
-}
-
-impl Books {
-    fn load(path: &PathBuf) -> Books {
-        println!("Loading lib.json path: {:?}", path);
-        let lib = match fs::read_to_string(path) {
-            Ok(str) => str,
-            Err(_) => {
-                fs::create_dir_all(path.parent().unwrap()).unwrap_or_else(|why| {
-                    println!("! {:?}", why.kind());
-                });
-                fs::File::create(path).unwrap();
-
-                String::new()
-            }
-        };
-        // println!("Parsing lib.json: {}", lib);
-        let lib: Books = match serde_json::from_str(&lib) {
-            Ok(lib) => {
-                println!("Load lib.json successfully");
-                lib
-            }
-            Err(e) => {
-                println!("{e}");
-                Books { items: vec![] }
-            }
-        };
-        // println!("Parsed lib.json: {:?}", lib);
-        lib
-    }
-    fn save(&self, path: &PathBuf) {
-        println!("Saving on {:?}", path);
-        let lib: String = serde_json::to_string(self).unwrap();
-        let mut file = fs::File::create(path).unwrap();
-        file.write_all(lib.as_bytes()).unwrap();
-    }
 }
 
 // for book in booksがやりたいだけ

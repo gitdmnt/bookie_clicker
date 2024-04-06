@@ -89,6 +89,7 @@ const sidebarStyle = {
 
     height: calc(100dvh - 1rem);
 
+    border-inline-end: 2px dashed ${color.border_secondary};
     background-color: ${color.bg_secondary};
   `,
   selector: css`
@@ -227,6 +228,8 @@ const global = {
 
     ul {
       list-style: none;
+      margin: 0;
+      padding: 0;
     }
 
     .button {
