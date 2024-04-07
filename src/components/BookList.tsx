@@ -39,9 +39,6 @@ function Booklist() {
   const refreshList = async () => {
     const tempList: Book[] = [];
     const books: Books = await invoke("fetch_new");
-    books.items.sort(
-      (a, b) => Date.parse(b.status.lastRead) - Date.parse(a.status.lastRead)
-    );
     for (let i = 0; i < books.items.length; i++) {
       const book = books.items[i];
       tempList.push(book);

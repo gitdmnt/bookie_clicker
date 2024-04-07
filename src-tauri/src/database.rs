@@ -136,20 +136,19 @@ impl Library {
         block_on(update_task);
     }
 
-    // 最新のデータをn件取得する。
-    pub fn fetch_new(&self, n: u32) -> Books {
+    // 全データを取得する。
+    pub fn fetch_all(&self) -> Books {
         let db = self.db.lock().unwrap();
-        let select_task = async {
-            db.query("SELECT * FROM book ORDER BY status.last_read DESC LIMIT $limit")
-                .bind(("limit", n))
-                .await
-                .unwrap()
-                .take::<Vec<Record>>(0)
-                .unwrap()
-        };
+        let select_task = async { db.select("book").await.unwrap() };
+        let mut books = block_on(select_task);
+        books.sort_by_key(|k: &Record| k.status.last_read);
+        books.reverse();
+        for b in &books {
+            println!("{:?}", b);
+        }
         let rec = Books {
             version: CURRENT_DB_VERSION,
-            items: block_on(select_task),
+            items: books,
         };
         rec
     }

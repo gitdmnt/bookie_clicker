@@ -29,14 +29,8 @@ async fn set_book_attr(
 
 // 保存する
 #[tauri::command]
-fn set_record(
-    cfg: tauri::State<'_, ConfigManager>,
-    lib: tauri::State<'_, Library>,
-    book_attr: BookAttr,
-    activity: Activity,
-) {
+fn set_record(lib: tauri::State<'_, Library>, book_attr: BookAttr, activity: Activity) {
     let rec = Record::from(book_attr, activity);
-    let cfg = cfg.get();
     println!("{:?}", rec);
     lib.add(rec);
     lib.save()
@@ -64,7 +58,7 @@ fn set_config(cfg: tauri::State<'_, ConfigManager>, mut config: Config) {
 #[tauri::command]
 fn fetch_new(lib: tauri::State<'_, Library>) -> Books {
     // 今は返す型を適当にしてるけど、いずれもっと最適化した型で返したい
-    let rec = lib.fetch_new(10);
+    let rec = lib.fetch_all();
     rec
 }
 
