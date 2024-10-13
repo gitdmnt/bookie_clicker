@@ -1,11 +1,7 @@
-# bookie_clicker
+# Tauri + React + Typescript
 
-読書メーターの代替にしていきたい　ゆくゆくは……
+This template should help get you started developing with Tauri, React and Typescript in Vite.
 
-## 命名について
+## Recommended IDE Setup
 
-bookieってそんなによくなくない？
-案: 逆に何らかの賭け事要素を導入する
-↑ そんなわけなさすぎる
-bookとcookie clickerを掛けた絶妙な命名だと思ったんだけどな
-↑ 安直ではあるよね
+- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
