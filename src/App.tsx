@@ -1,53 +1,80 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
+import { SearchWindow } from "./components/SearchWindow/main";
+import { Bookshelf } from "./components/Bookshelf/main";
+import { Analytics } from "./components/Analytics/main";
+import { Settings } from "./components/Settings/main";
 import "./App.css";
 
+import { useState } from "react";
+
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [page, setPage]: ["search" | "shelf" | "analytics" | "settings", any] =
+    useState("search");
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name }));
-  }
-
+  const handleTab = (tab: "search" | "shelf" | "analytics" | "settings") => {
+    setPage(tab);
+  };
+  const handleTabStyle = (
+    tab: "search" | "shelf" | "analytics" | "settings"
+  ) => {
+    if (page === tab) {
+      return "bg-white";
+    } else {
+      return "bg-gray-200";
+    }
+  };
+  const handlePageStyle = (
+    tab: "search" | "shelf" | "analytics" | "settings"
+  ) => {
+    const defaultStyle = "grid bg-white";
+    if (page === tab) {
+      return defaultStyle + " block";
+    } else {
+      return defaultStyle + " hidden";
+    }
+  };
   return (
-    <div className="container">
-      <h1>Welcome to Tauri!</h1>
-
-      <div className="row">
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="w-screen font-sans bg-gray-200">
+      <header className="grid grid-cols-4 mx-20 bg-white *:px-6 *:py-2 *:max-w-xs">
+        <div
+          className={handleTabStyle("search")}
+          onClick={() => handleTab("search")}
+        >
+          さがす
+        </div>
+        <div
+          className={handleTabStyle("shelf")}
+          onClick={() => handleTab("shelf")}
+        >
+          本棚
+        </div>
+        <div
+          className={handleTabStyle("analytics")}
+          onClick={() => handleTab("analytics")}
+        >
+          統計
+        </div>
+        <div
+          className={handleTabStyle("settings")}
+          onClick={() => handleTab("settings")}
+        >
+          設定
+        </div>
+      </header>
+      <div className={handlePageStyle("search")}>
+        <SearchWindow />
       </div>
-
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-
-      <p>{greetMsg}</p>
+      <div className={handlePageStyle("shelf")}>
+        <Bookshelf />
+      </div>
+      <div className={handlePageStyle("analytics")}>
+        <Analytics />
+      </div>
+      <div className={handlePageStyle("settings")}>
+        <Settings />
+      </div>
     </div>
   );
 }
 
 export default App;
+
