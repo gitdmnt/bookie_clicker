@@ -2,13 +2,13 @@
 mod bookshelf;
 mod config;
 
-use bookshelf::{BookInfo, BookShelf, ReadState};
+use bookshelf::{Activity, BookInfo, Bookshelf, Query};
 use config::Config;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let config = Config::load();
-    let bookshelf = BookShelf::load(&config.bookshelf_path.lock().unwrap());
+    let bookshelf = Bookshelf::load(&config.bookshelf_path.lock().unwrap());
 
     tauri::Builder::default()
         .manage(bookshelf)
@@ -22,14 +22,21 @@ pub fn run() {
 // レコードを追加する
 #[tauri::command]
 fn add_record(
-    bookshelf: tauri::State<BookShelf>,
+    bookshelf: tauri::State<Bookshelf>,
     book_info: BookInfo,
-    read_state: ReadState,
+    activity: Activity,
 ) -> String {
     let message = format!("Added: {}", book_info);
-    bookshelf.add(book_info, read_state);
+    bookshelf.add(book_info, activity);
     bookshelf.save();
     message
+}
+
+#[tauri::command]
+fn show_record(bookshelf: tauri::State<Bookshelf>, query: Query) -> String {
+    // 指定するもの: 読んだ期間、評価
+
+    todo!()
 }
 
 // 設定を返す
@@ -42,7 +49,7 @@ fn get_config() -> Config {
 #[tauri::command]
 fn set_config(
     c: tauri::State<Config>,
-    bookshelf: tauri::State<BookShelf>,
+    bookshelf: tauri::State<Bookshelf>,
     config: Config,
 ) -> String {
     let result = c.set(&config);

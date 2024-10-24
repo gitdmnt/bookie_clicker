@@ -1,9 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::{collections::HashMap, path::PathBuf, sync::Mutex};
+
 //
-// フロントエンドから受け取る情報
+// DBに保存する情報 -> (Vec<BookInfo>, Vec<Activity>)
 //
+
 #[derive(Serialize, Deserialize)]
 pub struct BookInfo {
     isbn: u64,
@@ -20,29 +22,26 @@ impl std::fmt::Display for BookInfo {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct ReadState {
+pub struct Activity {
+    isbn: u64,
     range: [u32; 2],
     date: String,
     memo: String,
     star: u8,
 }
 
-//
-// バックエンドの情報
-//
-
 // 各本に紐づけられた情報を束ねる
-pub struct BookShelf {
-    records: Mutex<HashMap<u64, Record>>,
+pub struct Bookshelf {
+    books: Mutex<HashMap<u64, BookInfo>>,
+    diaries: Mutex<Vec<Activity>>,
     path: Mutex<PathBuf>,
 }
-impl BookShelf {
-    pub fn add(&self, book_info: BookInfo, read_state: ReadState) {
-        let mut records = self.records.lock().unwrap();
-        let record = records
-            .entry(book_info.isbn)
-            .or_insert(Record::from(book_info));
-        record.merge(read_state);
+impl Bookshelf {
+    pub fn add(&self, book_info: BookInfo, activity: Activity) {
+        let mut books = self.books.lock().unwrap();
+        books.insert(book_info.isbn, book_info);
+        let mut diaries = self.diaries.lock().unwrap();
+        diaries.push(activity);
     }
 
     pub fn load(path: &PathBuf) -> Self {
@@ -52,25 +51,31 @@ impl BookShelf {
             Err(_) => "".to_string(),
         };
         // パースする
-        let records_vec: Vec<Record> = match serde_json::from_str(&json) {
+        let bookshelf_json: (Vec<BookInfo>, Vec<Activity>) = match serde_json::from_str(&json) {
             Ok(bookshelf) => bookshelf,
-            Err(_) => vec![],
+            Err(_) => (vec![], vec![]),
         };
         // データをハッシュマップにして構造体に格納する
-        let mut records = HashMap::new();
-        for record in records_vec {
-            records.insert(record.isbn, record);
+        let mut books = HashMap::new();
+        for book in bookshelf_json.0 {
+            books.insert(book.isbn, book);
         }
+        let diaries = bookshelf_json.1;
+
         Self {
-            records: Mutex::new(records),
+            books: Mutex::new(books),
+            diaries: Mutex::new(diaries),
             path: Mutex::new(path.clone()),
         }
     }
 
     pub fn save(&self) {
-        let records = self.records.lock().unwrap();
-        let records_vec: Vec<&Record> = records.values().collect();
-        let json = serde_json::to_string(&records_vec).unwrap();
+        let books = self.books.lock().unwrap();
+        let books: Vec<&BookInfo> = books.values().collect();
+        let diaries = self.diaries.lock().unwrap();
+        let diaries: Vec<&Activity> = diaries.iter().collect();
+
+        let json = serde_json::to_string(&(&books, &diaries)).unwrap();
         let path = self.path.lock().unwrap();
         fs::create_dir_all(&path.parent().unwrap()).unwrap();
         fs::File::create(&*path).unwrap();
@@ -83,46 +88,28 @@ impl BookShelf {
     }
 }
 
-// 本についての総合的な情報を保持する
+//
+// 検索クエリ
+//
+
 #[derive(Serialize, Deserialize)]
-struct Record {
-    isbn: u64,
-    title: String,
-    subtitle: String,
-    authors: Vec<String>,
-    image_url: String,
-    total_page_count: u32,
-    star: u8,
-    memo: String,
-    activity: Vec<Activity>,
-}
-impl Record {
-    fn from(book_info: BookInfo) -> Self {
-        Self {
-            isbn: book_info.isbn,
-            title: book_info.title,
-            subtitle: book_info.subtitle,
-            authors: book_info.authors,
-            image_url: book_info.image_url,
-            total_page_count: book_info.total_page_count,
-            star: 0,
-            memo: "".to_string(),
-            activity: vec![],
-        }
-    }
-    fn merge(&mut self, read_state: ReadState) {
-        self.star = read_state.star;
-        self.memo = read_state.memo;
-        self.activity.push(Activity {
-            date: read_state.date,
-            range: read_state.range,
-        });
-    }
+pub struct Query {
+    date_range: [String; 2],
+    star_range: [u8; 2],
+    order: Order,
+    key: Key,
 }
 
-// 一回の読書情報を保持する
 #[derive(Serialize, Deserialize)]
-struct Activity {
-    date: String,
-    range: [u32; 2],
+enum Order {
+    Desc,
+    Asc,
+}
+
+#[derive(Serialize, Deserialize)]
+enum Key {
+    Date,
+    Star,
+    Title,
+    Page,
 }

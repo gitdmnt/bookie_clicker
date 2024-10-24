@@ -44,7 +44,8 @@ export const SearchWindow = () => {
     total_page_count: 1,
   });
   // 読書状態
-  const [readState, setReadState]: [ReadState, any] = useState({
+  const [activity, setActivity]: [Activity, any] = useState({
+    isbn: 0,
     range: [0, 0],
     date: "2021-01-01",
     memo: "",
@@ -53,7 +54,7 @@ export const SearchWindow = () => {
 
   // データを送信する関数
   const sendData = () => {
-    invoke("add_record", { bookInfo, readState }).then((s) => console.log(s));
+    invoke("add_record", { bookInfo, activity }).then((s) => console.log(s));
     setBookInfo({
       isbn: 0,
       title: "",
@@ -62,7 +63,7 @@ export const SearchWindow = () => {
       image_url: "",
       total_page_count: 1,
     });
-    setReadState({ range: [0, 0], date: "2021-01-01", memo: "", star: 0 });
+    setActivity({ range: [0, 0], date: "2021-01-01", memo: "", star: 0 });
   };
 
   return (
@@ -74,8 +75,8 @@ export const SearchWindow = () => {
         <div className="bookInfo h-50 bg-gray-50">
           <BookInfo bookInfo={bookInfo} />
         </div>
-        <div className="readState h-50 bg-gray-50">
-          <ReadState bookInfo={bookInfo} setReadState={setReadState} />
+        <div className="activity h-50 bg-gray-50">
+          <Activity bookInfo={bookInfo} setActivity={setActivity} />
         </div>
         <div className="sendData grid place-items-center">
           <button onClick={sendData}>データを送信</button>
@@ -197,7 +198,7 @@ const BookInfo = (props: { bookInfo: BookInfo }) => {
   );
 };
 
-const ReadState = (props: { bookInfo: BookInfo; setReadState: any }) => {
+const Activity = (props: { bookInfo: BookInfo; setActivity: any }) => {
   /*
     1. 読書状態を入力する。
     2. 読書状態を構造体に詰めて親に渡す。
@@ -210,7 +211,8 @@ const ReadState = (props: { bookInfo: BookInfo; setReadState: any }) => {
 
   // 変更があったら親に渡す
   useEffect(() => {
-    props.setReadState({
+    props.setActivity({
+      isbn: props.bookInfo.isbn,
       range,
       date,
       memo,
@@ -234,7 +236,7 @@ const ReadState = (props: { bookInfo: BookInfo; setReadState: any }) => {
   }, [props.bookInfo.total_page_count]);
 
   return (
-    <div className="ReadState">
+    <div className="activity">
       <ToggleButton
         value="Read"
         selected={

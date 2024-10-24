@@ -7,7 +7,8 @@ interface BookInfo {
   total_page_count: number;
 }
 
-interface ReadState {
+interface Activity {
+  isbn: number;
   range: number[];
   date: string;
   memo: string;
