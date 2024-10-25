@@ -395,5 +395,7 @@ mod bookshelf_search {
 
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].isbn(), 0);
+
+        println!("{:?}", result);
     }
 }

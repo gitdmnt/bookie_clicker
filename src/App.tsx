@@ -4,7 +4,7 @@ import { Analytics } from "./components/Analytics/main";
 import { Settings } from "./components/Settings/main";
 import "./App.css";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function App() {
   const [page, setPage]: ["search" | "shelf" | "analytics" | "settings", any] =
@@ -32,6 +32,10 @@ function App() {
       return defaultStyle + " hidden";
     }
   };
+
+  useEffect(() => {
+    console.log(page);
+  }, [page]);
   return (
     <div className="w-screen font-sans bg-gray-200">
       <header className="grid grid-cols-4 mx-20 bg-white *:px-6 *:py-2 *:max-w-xs">
@@ -67,7 +71,7 @@ function App() {
         <Bookshelf />
       </div>
       <div className={handlePageStyle("analytics")}>
-        <Analytics />
+        <Analytics isVisible={page === "analytics"} />
       </div>
       <div className={handlePageStyle("settings")}>
         <Settings />

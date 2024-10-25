@@ -40,7 +40,6 @@ fn add_record(
 
 #[tauri::command]
 fn get_records(bookshelf: tauri::State<Bookshelf>, query: Query) -> Vec<Container> {
-    // 指定するもの: 読んだ期間、評価
     let result = bookshelf.search(query);
     result
 }
