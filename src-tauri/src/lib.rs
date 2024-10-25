@@ -1,8 +1,9 @@
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 mod bookshelf;
 mod config;
+mod test;
 
-use bookshelf::{Activity, BookInfo, Bookshelf, Query};
+use bookshelf::{Activity, BookInfo, Bookshelf, Container, Query};
 use config::Config;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -14,7 +15,12 @@ pub fn run() {
         .manage(bookshelf)
         .manage(config)
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![add_record, get_config, set_config])
+        .invoke_handler(tauri::generate_handler![
+            add_record,
+            get_config,
+            set_config,
+            get_records,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -33,10 +39,10 @@ fn add_record(
 }
 
 #[tauri::command]
-fn show_record(bookshelf: tauri::State<Bookshelf>, query: Query) -> String {
+fn get_records(bookshelf: tauri::State<Bookshelf>, query: Query) -> Vec<Container> {
     // 指定するもの: 読んだ期間、評価
-
-    todo!()
+    let result = bookshelf.search(query);
+    result
 }
 
 // 設定を返す

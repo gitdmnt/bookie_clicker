@@ -6,7 +6,7 @@ use std::{collections::HashMap, path::PathBuf, sync::Mutex};
 // DBに保存する情報 -> (Vec<BookInfo>, Vec<Activity>)
 //
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct BookInfo {
     isbn: u64,
     title: String,
@@ -20,14 +20,58 @@ impl std::fmt::Display for BookInfo {
         write!(f, "{} {}", self.title, self.subtitle)
     }
 }
+impl BookInfo {
+    pub fn new(
+        isbn: u64,
+        title: String,
+        subtitle: String,
+        authors: Vec<String>,
+        image_url: String,
+        total_page_count: u32,
+    ) -> Self {
+        Self {
+            isbn,
+            title,
+            subtitle,
+            authors,
+            image_url,
+            total_page_count,
+        }
+    }
+}
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct Activity {
     isbn: u64,
     range: [u32; 2],
     date: String,
     memo: String,
-    star: u8,
+    rating: u8,
+}
+impl Activity {
+    pub fn new(isbn: u64, range: [u32; 2], date: String, memo: String, rating: u8) -> Self {
+        Self {
+            isbn,
+            range,
+            date,
+            memo,
+            rating,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct Container {
+    book: BookInfo,
+    diaries: Vec<Activity>,
+}
+impl Container {
+    pub fn new(book: BookInfo, diaries: Vec<Activity>) -> Self {
+        Self { book, diaries }
+    }
+    pub fn isbn(&self) -> u64 {
+        self.book.isbn
+    }
 }
 
 // 各本に紐づけられた情報を束ねる
@@ -37,6 +81,14 @@ pub struct Bookshelf {
     path: Mutex<PathBuf>,
 }
 impl Bookshelf {
+    pub fn new() -> Self {
+        Self {
+            books: Mutex::new(HashMap::new()),
+            diaries: Mutex::new(Vec::new()),
+            path: Mutex::new(PathBuf::new()),
+        }
+    }
+
     pub fn add(&self, book_info: BookInfo, activity: Activity) {
         let mut books = self.books.lock().unwrap();
         books.insert(book_info.isbn, book_info);
@@ -86,6 +138,74 @@ impl Bookshelf {
         *self.path.lock().unwrap() = path;
         self.save();
     }
+
+    pub fn search(&self, query: Query) -> Vec<Container> {
+        let books = self.books.lock().unwrap();
+        let diaries = self.diaries.lock().unwrap();
+        let books = books.values().collect::<Vec<&BookInfo>>();
+
+        // 絞り込み
+        let term = query.term;
+        let rating = query.rating;
+        let diaries = diaries
+            .iter()
+            .filter(|d| *d.date >= *term[0] && *d.date <= *term[1])
+            .filter(|d| d.rating >= rating[0] && d.rating <= rating[1])
+            .collect::<Vec<&Activity>>();
+
+        let containers: Vec<Container> = books
+            .into_iter()
+            .map(|b| Container {
+                book: b.clone(),
+                diaries: diaries
+                    .iter()
+                    .filter(|d| d.isbn == b.isbn)
+                    .map(|d| (*d).clone())
+                    .collect::<Vec<Activity>>(),
+            })
+            .filter(|r| !r.diaries.is_empty())
+            .collect();
+
+        let mut containers = containers
+            .into_iter()
+            .map(|mut r| match query.order {
+                Order::Desc => {
+                    r.diaries.sort_by(|a, b| a.date.cmp(&b.date));
+                    r
+                }
+                Order::Asc => {
+                    r.diaries.sort_by(|a, b| b.date.cmp(&a.date));
+                    r
+                }
+            })
+            .collect::<Vec<Container>>();
+
+        // ソート
+        let containers = match query.key {
+            Key::Date => {
+                containers.sort_by(|a, b| a.diaries[0].date.cmp(&b.diaries[0].date));
+                containers
+            }
+            Key::Rating => {
+                containers.sort_by(|a, b| a.diaries[0].rating.cmp(&b.diaries[0].rating));
+                containers
+            }
+            Key::Title => {
+                containers.sort_by(|a, b| a.book.title.cmp(&b.book.title));
+                containers
+            }
+            Key::Page => {
+                containers.sort_by(|a, b| a.book.total_page_count.cmp(&b.book.total_page_count));
+                containers
+            }
+        };
+        let containers = match query.order {
+            Order::Desc => containers,
+            Order::Asc => containers.into_iter().rev().collect(),
+        };
+
+        containers
+    }
 }
 
 //
@@ -94,22 +214,33 @@ impl Bookshelf {
 
 #[derive(Serialize, Deserialize)]
 pub struct Query {
-    date_range: [String; 2],
-    star_range: [u8; 2],
+    term: [String; 2],
+    rating: [u8; 2],
     order: Order,
     key: Key,
 }
 
 #[derive(Serialize, Deserialize)]
-enum Order {
+pub enum Order {
     Desc,
     Asc,
 }
 
 #[derive(Serialize, Deserialize)]
-enum Key {
+pub enum Key {
     Date,
-    Star,
+    Rating,
     Title,
     Page,
+}
+
+impl Query {
+    pub fn new(term: [String; 2], rating: [u8; 2], order: Order, key: Key) -> Self {
+        Self {
+            term,
+            rating,
+            order,
+            key,
+        }
+    }
 }

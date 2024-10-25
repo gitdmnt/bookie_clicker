@@ -31,7 +31,7 @@ export const RangeSlider = (props: any) => {
   );
 };
 
-export const StarSlider = (props: any) => {
+export const RatingSlider = (props: any) => {
   const { max, min, value, onChange } = props;
   return (
     <div className="Slider">
@@ -40,7 +40,7 @@ export const StarSlider = (props: any) => {
         value={value}
         onChange={(_, v) => onChange(v as number)}
         valueLabelDisplay="auto"
-        step={0.1}
+        step={1}
         max={max}
         min={min}
       />
