@@ -1,3 +1,15 @@
+interface Query {
+  term: [string, string];
+  rating: [number, number];
+  order: "Asc" | "Desc";
+  key: "Title" | "Rating" | "Date" | "Page";
+}
+
+interface Container {
+  book: BookInfo;
+  diaries: Activity[];
+}
+
 interface BookInfo {
   isbn: number;
   title: string;

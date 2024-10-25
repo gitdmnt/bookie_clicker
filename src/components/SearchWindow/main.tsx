@@ -3,8 +3,9 @@ import { Temporal } from "proposal-temporal";
 import "./type.d.ts";
 import { dummy } from "./dummydata.ts";
 import { ToggleButton } from "@mui/material";
-import { RangeSlider, StarSlider } from "./slider.tsx";
+import { RangeSlider, RatingSlider } from "./slider.tsx";
 import { invoke } from "@tauri-apps/api/core";
+import { XMLParser } from "fast-xml-parser";
 
 /*
   isbnを入力すると、Google Books APIを使って書籍情報を取得し、表示するコンポーネント。
@@ -23,6 +24,8 @@ import { invoke } from "@tauri-apps/api/core";
   7. 読み進めたページ数などを入力する。
   8. その情報をバックエンドに送信する。
 */
+
+const today = new Date().toISOString().slice(0, 10);
 
 export const SearchWindow = () => {
   /*
@@ -44,16 +47,17 @@ export const SearchWindow = () => {
     total_page_count: 1,
   });
   // 読書状態
-  const [readState, setReadState]: [ReadState, any] = useState({
+  const [activity, setActivity]: [Activity, any] = useState({
+    isbn: 0,
     range: [0, 0],
-    date: "2021-01-01",
+    date: today,
     memo: "",
-    star: 0,
+    rating: 0,
   });
 
   // データを送信する関数
   const sendData = () => {
-    invoke("add_record", { bookInfo, readState }).then((s) => console.log(s));
+    invoke("add_record", { bookInfo, activity }).then((s) => console.log(s));
     setBookInfo({
       isbn: 0,
       title: "",
@@ -62,7 +66,7 @@ export const SearchWindow = () => {
       image_url: "",
       total_page_count: 1,
     });
-    setReadState({ range: [0, 0], date: "2021-01-01", memo: "", star: 0 });
+    setActivity({ range: [0, 0], date: today, memo: "", rating: 0 });
   };
 
   return (
@@ -74,8 +78,8 @@ export const SearchWindow = () => {
         <div className="bookInfo h-50 bg-gray-50">
           <BookInfo bookInfo={bookInfo} />
         </div>
-        <div className="readState h-50 bg-gray-50">
-          <ReadState bookInfo={bookInfo} setReadState={setReadState} />
+        <div className="activity h-50 bg-gray-50">
+          <Activity bookInfo={bookInfo} setActivity={setActivity} />
         </div>
         <div className="sendData grid place-items-center">
           <button onClick={sendData}>データを送信</button>
@@ -103,63 +107,108 @@ const Search = (props: { setBookInfo: any }) => {
   });
 
   // 関数定義
-  // isbnが正しいかどうかを判定する関数
-  const validateIsbn = (isbn: string): boolean => {
-    const validatedIsbn = isbn
+  //
+  const handleIsbnChange = (e: any) => {
+    let i = e.target.value
       .replace(/\D/g, "")
       .match(/^((97)(8|9))?(\d{10})$/)?.[0];
-    if (!validatedIsbn) {
-      return false;
-    } else {
-      return true;
+    if (!i) {
+      setSearchWindowStyle({ backgroundColor: "red" });
+      return;
     }
+    i = i.length === 13 ? i : `978${i}`;
+    setIsbn(i);
+    setSearchWindowStyle({ backgroundColor: "white" });
   };
 
-  // Google Books APIを使って書籍情報を取得する関数
+  // NDL SRU APIを使って書籍情報を取得する関数
   const search = async (): Promise<any> => {
-    const validatedIsbn = isbn
-      .replace(/\D/g, "")
-      .match(/^((97)(8|9))?(\d{10})$/)?.[0];
-    console.log(
-      `hitting google books apis: https://www.googleapis.com/books/v1/volumes?q=isbn:${validatedIsbn}`
-    );
-    const data = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=isbn:${validatedIsbn}`
-    );
-    const json: any = await data.json();
-    console.log(`data fetched! total items: ${json.totalItems}`);
-    return json;
+    const isbn_13 = isbn.length === 13 ? isbn : `978${isbn}`;
+    const url_13 = `https://ndlsearch.ndl.go.jp/api/sru?operation=searchRetrieve&recordSchema=dcndl&recordPacking=xml&query=isbn%3d${isbn_13}`;
+
+    const parser = new XMLParser();
+
+    console.log(`hitting NDL Search API: ${url_13}`);
+    let data = await fetch(url_13);
+    let json: any = parser.parse(await data.text());
+    if (json.searchRetrieveResponse.records) {
+      const records = json.searchRetrieveResponse.records;
+      console.log(`data fetched!`);
+      console.log(records);
+      return records;
+    }
+    console.log(`data not found for ${isbn_13}, trying isbn-10`);
+
+    const isbn_10 = isbn.length === 13 ? isbn.slice(3, -1) : isbn;
+    const url_10 = `https://ndlsearch.ndl.go.jp/api/sru?operation=searchRetrieve&recordSchema=dcndl&recordPacking=xml&query=isbn%3d${isbn_10}`;
+
+    console.log(`hitting NDL Search API: ${url_10}`);
+    data = await fetch(url_10);
+    json = parser.parse(await data.text());
+    if (json.searchRetrieveResponse.records) {
+      const records = json.searchRetrieveResponse.records;
+      console.log(`data fetched!`);
+      console.log(records);
+      return records;
+    }
+    console.log("data not found.");
+    return {};
   };
 
-  // Google Books APIから取得したデータを整形する関数
-  const formatBookInfo = (data: any): BookInfo => {
-    const volumeInfo = data.items[0].volumeInfo;
-    const bookInfo: BookInfo = {
-      isbn: Number(
-        isbn.replace(/\D/g, "").match(/^((97)(8|9))?(\d{10})$/)?.[0]
-      ),
-      title: volumeInfo.title,
-      subtitle: volumeInfo.subtitle,
-      authors: volumeInfo.authors,
-      image_url: volumeInfo.imageLinks ?? "",
-      total_page_count: volumeInfo.pageCount,
-    };
-    return bookInfo;
+  // APIから取得したデータを整形する関数
+  const formatBookInfo = (data: any): BookInfo[] => {
+    console.log(data);
+    const records = Array.isArray(data.record) ? data.record : [data.record];
+
+    const books = records.map((record: any) => {
+      const resource = record.recordData["rdf:RDF"]["dcndl:BibResource"][0];
+      console.log(resource);
+
+      const isbn_13 = isbn.length === 13 ? isbn : `978${isbn}`;
+      const title = resource["dc:title"]["rdf:Description"]["rdf:value"];
+      const seriesTitle = resource["dcndl:seriesTitle"]
+        ? resource["dcndl:seriesTitle"]["rdf:Description"]["rdf:value"]
+        : "";
+      const authors = Array.isArray(resource["dcterms:creator"])
+        ? resource["dcterms:creator"].map((a: any) =>
+            a["foaf:Agent"]["foaf:name"].split(",").slice(0, -1).join("")
+          )
+        : [
+            resource["dcterms:creator"]["foaf:Agent"]["foaf:name"]
+              .split(",")
+              .slice(0, -1)
+              .join(""),
+          ];
+
+      const book: BookInfo = {
+        isbn: Number(isbn_13),
+        title: title,
+        subtitle: seriesTitle,
+        authors: authors,
+        image_url: `https://ndlsearch.ndl.go.jp/thumbnail/${isbn_13}.jpg`,
+        total_page_count: Number(resource["dcterms:extent"].match(/^\d+/)[0]),
+      };
+      return book;
+    });
+    return books;
   };
 
   const loadBookInfo = async () => {
-    if (validateIsbn(isbn)) {
-      setSearchWindowStyle({ backgroundColor: "white" });
-      // const data = await search();
-      const data = dummy;
-      const formattedData = formatBookInfo(data);
-      props.setBookInfo(formattedData);
-      console.log(`book info: ${formattedData.image_url}`);
-    } else if (isbn !== "") {
-      setSearchWindowStyle({ backgroundColor: "red" });
-    } else {
-      setSearchWindowStyle({ backgroundColor: "white" });
+    const data = await search();
+    if (!data) {
+      props.setBookInfo({
+        isbn: 0,
+        title: "データが見つかりませんでした。",
+        subtitle: "",
+        authors: [],
+        image_url: "",
+        total_page_count: 1,
+      });
+      return;
     }
+    const formattedData = formatBookInfo(data)[0];
+    props.setBookInfo(formattedData);
+    console.log("book info:", formattedData);
   };
 
   useEffect(() => {
@@ -172,7 +221,7 @@ const Search = (props: { setBookInfo: any }) => {
         type="text"
         placeholder="ISBNを入力"
         style={searchWindowStyle}
-        onChange={(e) => setIsbn(e.target.value)}
+        onChange={(e) => handleIsbnChange(e)}
       />
       <button onClick={loadBookInfo}>検索</button>
     </div>
@@ -197,34 +246,35 @@ const BookInfo = (props: { bookInfo: BookInfo }) => {
   );
 };
 
-const ReadState = (props: { bookInfo: BookInfo; setReadState: any }) => {
+const Activity = (props: { bookInfo: BookInfo; setActivity: any }) => {
   /*
     1. 読書状態を入力する。
     2. 読書状態を構造体に詰めて親に渡す。
    */
 
   const [range, setRange]: [number[], any] = useState([1, 1]);
-  const [date, setDate]: [string, any] = useState("2021-01-01");
+  const [date, setDate]: [string, any] = useState(today);
   const [memo, setMemo]: [string, any] = useState("");
-  const [star, setStar]: [number, any] = useState(0);
+  const [rating, setrating]: [number, any] = useState(5);
 
   // 変更があったら親に渡す
   useEffect(() => {
-    props.setReadState({
+    props.setActivity({
+      isbn: props.bookInfo.isbn,
       range,
       date,
       memo,
-      star,
+      rating,
     });
-  }, [range, date, memo, star]);
+  }, [range, date, memo, rating]);
 
   // 送信されたら初期化
   useEffect(() => {
     if (props.bookInfo.title === "") {
       setRange([1, 1]);
-      setDate("2021-01-01");
+      setDate(today);
       setMemo("");
-      setStar(0);
+      setrating(5);
     }
   }, [props.bookInfo]);
 
@@ -234,7 +284,7 @@ const ReadState = (props: { bookInfo: BookInfo; setReadState: any }) => {
   }, [props.bookInfo.total_page_count]);
 
   return (
-    <div className="ReadState">
+    <div className="activity">
       <ToggleButton
         value="Read"
         selected={
@@ -277,9 +327,9 @@ const ReadState = (props: { bookInfo: BookInfo; setReadState: any }) => {
           onChange={(e) => setMemo(e.target.value)}
         />
       </div>
-      <StarSlider min={1} max={5} value={star} onChange={setStar} />
+      <RatingSlider min={1} max={5} value={rating} onChange={setrating} />
       <p>
-        {range.join(",")}/{date.toString()}/{memo}/{star}
+        {range.join(",")}/{date.toString()}/{memo}/{rating}
       </p>
     </div>
   );
