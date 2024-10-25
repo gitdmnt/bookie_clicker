@@ -26,6 +26,22 @@ import { XMLParser } from "fast-xml-parser";
 */
 
 const today = new Date().toISOString().slice(0, 10);
+const defaultBookInfo: BookInfo = {
+  isbn: 0,
+  title: "",
+  subtitle: "",
+  authors: [],
+  image_url: "",
+  total_page_count: 0,
+};
+const errorBookInfo: BookInfo = {
+  isbn: 0,
+  title: "データが見つかりませんでした。",
+  subtitle: "",
+  authors: [],
+  image_url: "",
+  total_page_count: 0,
+};
 
 export const SearchWindow = () => {
   /*
@@ -38,14 +54,7 @@ export const SearchWindow = () => {
 
   // 初期化
   // 書籍情報
-  const [bookInfo, setBookInfo]: [BookInfo, any] = useState({
-    isbn: 0,
-    title: "",
-    subtitle: "",
-    authors: [],
-    image_url: "",
-    total_page_count: 1,
-  });
+  const [bookInfo, setBookInfo]: [BookInfo, any] = useState(defaultBookInfo);
   // 読書状態
   const [activity, setActivity]: [Activity, any] = useState({
     isbn: 0,
@@ -55,17 +64,14 @@ export const SearchWindow = () => {
     rating: 0,
   });
 
+  useEffect(() => {
+    setBookInfo(defaultBookInfo);
+  }, []);
+
   // データを送信する関数
   const sendData = () => {
     invoke("add_record", { bookInfo, activity }).then((s) => console.log(s));
-    setBookInfo({
-      isbn: 0,
-      title: "",
-      subtitle: "",
-      authors: [],
-      image_url: "",
-      total_page_count: 1,
-    });
+    setBookInfo(defaultBookInfo);
     setActivity({ range: [0, 0], date: today, memo: "", rating: 0 });
   };
 
@@ -159,7 +165,6 @@ const Search = (props: { setBookInfo: any }) => {
   const formatBookInfo = (data: any): BookInfo[] => {
     console.log(data);
     const records = Array.isArray(data.record) ? data.record : [data.record];
-
     const books = records.map((record: any) => {
       const resource = record.recordData["rdf:RDF"]["dcndl:BibResource"][0];
       console.log(resource);
@@ -171,13 +176,16 @@ const Search = (props: { setBookInfo: any }) => {
         : "";
       const authors = Array.isArray(resource["dcterms:creator"])
         ? resource["dcterms:creator"].map((a: any) =>
-            a["foaf:Agent"]["foaf:name"].split(",").slice(0, -1).join("")
+            a["foaf:Agent"]["foaf:name"]
+              .split(/,\s?/)
+              .filter((n: string) => !/^\d{4}/.test(n))
+              .join(" ")
           )
         : [
             resource["dcterms:creator"]["foaf:Agent"]["foaf:name"]
-              .split(",")
-              .slice(0, -1)
-              .join(""),
+              .split(/,\s?/)
+              .filter((n: string) => !/^\d{4}/.test(n))
+              .join(" "),
           ];
 
       const book: BookInfo = {
@@ -194,16 +202,13 @@ const Search = (props: { setBookInfo: any }) => {
   };
 
   const loadBookInfo = async () => {
+    if (isbn === "") {
+      props.setBookInfo({ defaultBookInfo });
+      return;
+    }
     const data = await search();
-    if (!data) {
-      props.setBookInfo({
-        isbn: 0,
-        title: "データが見つかりませんでした。",
-        subtitle: "",
-        authors: [],
-        image_url: "",
-        total_page_count: 1,
-      });
+    if (!data.record) {
+      props.setBookInfo({ errorBookInfo });
       return;
     }
     const formattedData = formatBookInfo(data)[0];
@@ -237,7 +242,7 @@ const BookInfo = (props: { bookInfo: BookInfo }) => {
     <div className="BookInfo">
       <div className="title">{props.bookInfo.title}</div>
       <div className="subtitle">{props.bookInfo.subtitle}</div>
-      <div className="authors">{props.bookInfo.authors.join(", ")}</div>
+      <div className="authors">{(props.bookInfo.authors ?? []).join(", ")}</div>
       <div className="image_url">
         <img src={props.bookInfo.image_url ?? ""} alt="book cover" />
       </div>
@@ -309,7 +314,7 @@ const Activity = (props: { bookInfo: BookInfo; setActivity: any }) => {
         />
       </div>
       <div className="date">
-        <span>読書期間</span>
+        <span>読んだ日</span>
         <input
           type="date"
           value={date.toString()}
@@ -328,9 +333,6 @@ const Activity = (props: { bookInfo: BookInfo; setActivity: any }) => {
         />
       </div>
       <RatingSlider min={1} max={5} value={rating} onChange={setrating} />
-      <p>
-        {range.join(",")}/{date.toString()}/{memo}/{rating}
-      </p>
     </div>
   );
 };

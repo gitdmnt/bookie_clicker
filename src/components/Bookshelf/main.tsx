@@ -5,7 +5,10 @@ import "./type.d.ts";
 
 export const Bookshelf = () => {
   const today = new Date().toISOString().slice(0, 10);
-  const [term, setTerm]: [[string, string], any] = useState([today, today]);
+  const [term, setTerm]: [[string, string], any] = useState([
+    "2021-01-01",
+    today,
+  ]);
   const [rating, setRating]: [[number, number], any] = useState([1, 5]);
   const [order, setOrder]: ["Asc" | "Desc", any] = useState("Asc");
   const [key, setKey]: ["Title" | "Rating" | "Date" | "Page", any] =
@@ -14,12 +17,11 @@ export const Bookshelf = () => {
   const [books, setBooks]: [Container[], any] = useState([]);
 
   useEffect(() => {
-    console.log(term);
-    console.log(rating);
     const query: Query = { term, rating, order, key };
-    invoke("get_records", { query }).then((books) => {
-      console.log("books", books);
-      setBooks(books);
+    console.log("query", query);
+    invoke("get_records", { query }).then((b) => {
+      console.log("books", b);
+      setBooks(b);
     });
   }, [term, rating, order, key]);
 
@@ -36,11 +38,19 @@ export const Bookshelf = () => {
         onChange={(e) => setTerm([term[0], e.target.value])}
       />
       <StarRangeSlider value={rating} onChange={setRating} />
-      <select className="Order" onChange={setOrder}>
+      <select
+        className="Order"
+        onChange={(e) => setOrder(e.target.value)}
+        value={order}
+      >
         <option value="Desc">Desc</option>
         <option value="Asc">Asc</option>
       </select>
-      <select className="Key" onChange={setKey}>
+      <select
+        className="Key"
+        onChange={(e) => setKey(e.target.value)}
+        value={key}
+      >
         <option value="Title">Title</option>
         <option value="Rating">Rating</option>
         <option value="Date">Date</option>
