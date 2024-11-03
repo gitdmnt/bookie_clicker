@@ -54,7 +54,8 @@ export const SearchWindow = () => {
 
   // 初期化
   // 書籍情報
-  const [bookInfo, setBookInfo]: [BookInfo, any] = useState(defaultBookInfo);
+  const [bookInfo, setBookInfo]: [BookInfo[], any] = useState([]);
+  const [bookInfoIndex, setBookInfoIndex] = useState(0);
   // 読書状態
   const [activity, setActivity]: [Activity, any] = useState({
     isbn: 0,
@@ -64,28 +65,27 @@ export const SearchWindow = () => {
     rating: 0,
   });
 
-  useEffect(() => {
-    setBookInfo(defaultBookInfo);
-  }, []);
-
   // データを送信する関数
   const sendData = () => {
     invoke("add_record", { bookInfo, activity }).then((s) => console.log(s));
-    setBookInfo(defaultBookInfo);
+    setBookInfo([]);
     setActivity({ range: [0, 0], date: today, memo: "", rating: 0 });
   };
 
   return (
     <div className="SearchWindow">
-      <div className="search h-screen bg-gray-50 grid place-items-center">
-        <Search setBookInfo={(v: BookInfo) => setBookInfo(v)} />
+      <div className="search bg-gray-50 grid place-items-center">
+        <Search setBookInfo={(v: BookInfo[]) => setBookInfo(v)} />
       </div>
-      <div className="sendData grid place-items-center">
+      <div className="sendData place-items-center hidden">
         <div className="bookInfo h-50 bg-gray-50">
-          <BookInfo bookInfo={bookInfo} />
+          <BookInfo bookInfoContainer={bookInfo} setIndex={setBookInfoIndex} />
         </div>
         <div className="activity h-50 bg-gray-50">
-          <Activity bookInfo={bookInfo} setActivity={setActivity} />
+          <Activity
+            bookInfo={bookInfo[bookInfoIndex] ?? defaultBookInfo}
+            setActivity={setActivity}
+          />
         </div>
         <div className="sendData grid place-items-center">
           <button onClick={sendData}>データを送信</button>
@@ -211,7 +211,7 @@ const Search = (props: { setBookInfo: any }) => {
       props.setBookInfo({ errorBookInfo });
       return;
     }
-    const formattedData = formatBookInfo(data)[0];
+    const formattedData = formatBookInfo(data);
     props.setBookInfo(formattedData);
     console.log("book info:", formattedData);
   };
@@ -233,22 +233,26 @@ const Search = (props: { setBookInfo: any }) => {
   );
 };
 
-const BookInfo = (props: { bookInfo: BookInfo }) => {
+const BookInfo = (props: { bookInfoContainer: BookInfo[]; setIndex: any }) => {
   /*
     1. 書籍情報を表示する。
    */
 
-  return (
-    <div className="BookInfo">
-      <div className="title">{props.bookInfo.title}</div>
-      <div className="subtitle">{props.bookInfo.subtitle}</div>
-      <div className="authors">{(props.bookInfo.authors ?? []).join(", ")}</div>
-      <div className="image_url">
-        <img src={props.bookInfo.image_url ?? ""} alt="book cover" />
+  const bookInfoItems = props.bookInfoContainer.map(
+    (bookInfo: BookInfo, index: number) => (
+      <div className="BookInfo" onClick={() => props.setIndex(index)}>
+        <div className="title">{bookInfo.title}</div>
+        <div className="subtitle">{bookInfo.subtitle}</div>
+        <div className="authors">{(bookInfo.authors ?? []).join(", ")}</div>
+        <div className="image_url">
+          <img src={bookInfo.image_url ?? ""} alt="book cover" />
+        </div>
+        <div className="total_page_count">{bookInfo.total_page_count}</div>
       </div>
-      <div className="total_page_count">{props.bookInfo.total_page_count}</div>
-    </div>
+    )
   );
+
+  return <div className="BookInfoContainer">{bookInfoItems}</div>;
 };
 
 const Activity = (props: { bookInfo: BookInfo; setActivity: any }) => {
