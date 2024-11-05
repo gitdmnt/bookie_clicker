@@ -5,24 +5,9 @@ import { ToggleButton } from "@mui/material";
 import { RangeSlider, RatingSlider } from "./slider.tsx";
 import { invoke } from "@tauri-apps/api/core";
 
-/*
-  isbnを入力すると、Google Books APIを使って書籍情報を取得し、表示するコンポーネント。
-  ただし、isbnの入力が正しくない場合は、赤く表示する。
-  また、isbnの入力が正しくない場合は、検索ボタンを押しても検索しない。
-  isbnの入力が正しい場合は、検索ボタンを押すと、Google Books APIを使って書籍情報を取得する。
+// バックエンドに書き込むコンポーネント
 
-  1. stateとしてisbnを受け取る。
-  2. isbnが変わったとき、useEffectでisbnが正しいかどうかを判定する。
-  3. isbnが正しい場合は、Google Books APIを使って書籍情報を取得する。
-  4. isbnが正しくない場合は、赤く表示する。
-
-  次はここから
-  5. 取得した書籍情報をbookInfoとしてstateに保存する。
-  6. bookInfoを表示する。
-  7. 読み進めたページ数などを入力する。
-  8. その情報をバックエンドに送信する。
-*/
-
+// 定数
 const today = new Date().toISOString().slice(0, 10);
 const defaultBookInfo: BookInfo = {
   isbn: 0,
@@ -43,7 +28,7 @@ const defaultActivity: Activity = {
 export const SearchWindow = () => {
   /*
     1. isbnを入力するための検索窓を表示する。
-    2. isbnを入力すると、NDL Search APIを使って書籍情報を取得する。
+    2. isbnを入力すると、バックグラウンドAPIを叩いて書籍情報を取得する。
     3. 取得した書籍情報を表示する。
     4. 読書状態を入力する。
     5. その情報をバックエンドに送信する。
@@ -110,7 +95,7 @@ export const SearchWindow = () => {
 const Search = (props: { setBookInfoContainer: any }) => {
   /*
   1. isbnを入力するための検索窓を表示する。
-  2. isbnを入力すると、NDL Search APIを使って書籍情報を取得する。
+  2. isbnを入力すると書籍情報を取得する。
   3. isbnが正しくない場合は、検索窓を赤く表示する。
   4. isbnが正しい場合は、検索窓を白く表示する。
   5. 取得した書籍情報を親に渡す。
@@ -125,7 +110,7 @@ const Search = (props: { setBookInfoContainer: any }) => {
   });
 
   // 関数定義
-  //
+  // ISBN入力窓を制御する
   const handleIsbnChange = (e: any) => {
     let i = e.target.value
       .replace(/\D/g, "")
@@ -139,6 +124,7 @@ const Search = (props: { setBookInfoContainer: any }) => {
     setSearchWindowStyle({ backgroundColor: "white" });
   };
 
+  // バックエンドを叩く
   const loadBookInfo = async () => {
     if (isbn === "") {
       props.setBookInfoContainer([defaultBookInfo]);
@@ -176,10 +162,25 @@ const BookInfo = (props: { bookInfoContainer: BookInfo[]; setIndex: any }) => {
   /*
     1. 書籍情報を表示する。
    */
+  const [activeItemIndex, setActiveItemIndex] = useState(-1);
+  const activeItemStyle = (index: number) => {
+    if (index === activeItemIndex) {
+      return { backgroundColor: "skyblue" };
+    }
+  };
+
+  const handleBookSelection = (index: number) => {
+    setActiveItemIndex(index);
+    props.setIndex(index);
+  };
 
   const bookInfoItems = props.bookInfoContainer.map(
     (bookInfo: BookInfo, index: number) => (
-      <div className="BookInfo" onClick={() => props.setIndex(index)}>
+      <div
+        className="BookInfo"
+        onClick={() => handleBookSelection(index)}
+        style={activeItemStyle(index)}
+      >
         <div className="title">{bookInfo.title}</div>
         <div className="subtitle">{bookInfo.subtitle}</div>
         <div className="authors">{(bookInfo.authors ?? []).join(", ")}</div>
