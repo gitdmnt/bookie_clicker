@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { Temporal } from "proposal-temporal";
 import "./type.d.ts";
-import { dummy } from "./dummydata.ts";
 import { ToggleButton } from "@mui/material";
 import { RangeSlider, RatingSlider } from "./slider.tsx";
 import { invoke } from "@tauri-apps/api/core";
-import { XMLParser } from "fast-xml-parser";
 
 /*
   isbnを入力すると、Google Books APIを使って書籍情報を取得し、表示するコンポーネント。
@@ -34,19 +32,18 @@ const defaultBookInfo: BookInfo = {
   image_url: "",
   total_page_count: 0,
 };
-const errorBookInfo: BookInfo = {
+const defaultActivity: Activity = {
   isbn: 0,
-  title: "データが見つかりませんでした。",
-  subtitle: "",
-  authors: [],
-  image_url: "",
-  total_page_count: 0,
+  range: [0, 0],
+  date: today,
+  memo: "",
+  rating: 0,
 };
 
 export const SearchWindow = () => {
   /*
     1. isbnを入力するための検索窓を表示する。
-    2. isbnを入力すると、Google Books APIを使って書籍情報を取得する。
+    2. isbnを入力すると、NDL Search APIを使って書籍情報を取得する。
     3. 取得した書籍情報を表示する。
     4. 読書状態を入力する。
     5. その情報をバックエンドに送信する。
@@ -54,36 +51,51 @@ export const SearchWindow = () => {
 
   // 初期化
   // 書籍情報
-  const [bookInfo, setBookInfo]: [BookInfo[], any] = useState([]);
+  const [bookInfoContainer, setBookInfoContainer]: [BookInfo[], any] = useState(
+    []
+  );
   const [bookInfoIndex, setBookInfoIndex] = useState(0);
   // 読書状態
-  const [activity, setActivity]: [Activity, any] = useState({
-    isbn: 0,
-    range: [0, 0],
-    date: today,
-    memo: "",
-    rating: 0,
-  });
+  const [activity, setActivity]: [Activity, any] = useState(defaultActivity);
+
+  // ページのスタイル
+  const [afterSearchStyleIndex, setAfterSearchStyleIndex] = useState(1);
+  const afterSearchStyle = [{ display: "none" }, { display: "block" }][
+    afterSearchStyleIndex
+  ];
 
   // データを送信する関数
-  const sendData = () => {
-    invoke("add_record", { bookInfo, activity }).then((s) => console.log(s));
-    setBookInfo([]);
+  const sendData = async () => {
+    invoke("add_record", { bookInfoContainer, activity }).then((s) =>
+      console.log(s)
+    );
+    setBookInfoContainer([]);
     setActivity({ range: [0, 0], date: today, memo: "", rating: 0 });
   };
+
+  useEffect(() => {
+    if (bookInfoContainer.length > 0) {
+      setAfterSearchStyleIndex(1);
+    } else {
+      setAfterSearchStyleIndex(0);
+    }
+  }, [bookInfoContainer]);
 
   return (
     <div className="SearchWindow">
       <div className="search bg-gray-50 grid place-items-center">
-        <Search setBookInfo={(v: BookInfo[]) => setBookInfo(v)} />
+        <Search setBookInfoContainer={setBookInfoContainer} />
       </div>
-      <div className="sendData place-items-center hidden">
+      <div className="afterSearch place-items-center" style={afterSearchStyle}>
         <div className="bookInfo h-50 bg-gray-50">
-          <BookInfo bookInfoContainer={bookInfo} setIndex={setBookInfoIndex} />
+          <BookInfo
+            bookInfoContainer={bookInfoContainer}
+            setIndex={setBookInfoIndex}
+          />
         </div>
         <div className="activity h-50 bg-gray-50">
           <Activity
-            bookInfo={bookInfo[bookInfoIndex] ?? defaultBookInfo}
+            bookInfo={bookInfoContainer[bookInfoIndex] ?? defaultBookInfo}
             setActivity={setActivity}
           />
         </div>
@@ -95,10 +107,10 @@ export const SearchWindow = () => {
   );
 };
 
-const Search = (props: { setBookInfo: any }) => {
+const Search = (props: { setBookInfoContainer: any }) => {
   /*
   1. isbnを入力するための検索窓を表示する。
-  2. isbnを入力すると、Google Books APIを使って書籍情報を取得する。
+  2. isbnを入力すると、NDL Search APIを使って書籍情報を取得する。
   3. isbnが正しくない場合は、検索窓を赤く表示する。
   4. isbnが正しい場合は、検索窓を白く表示する。
   5. 取得した書籍情報を親に渡す。
@@ -127,93 +139,20 @@ const Search = (props: { setBookInfo: any }) => {
     setSearchWindowStyle({ backgroundColor: "white" });
   };
 
-  // NDL SRU APIを使って書籍情報を取得する関数
-  const search = async (): Promise<any> => {
-    const isbn_13 = isbn.length === 13 ? isbn : `978${isbn}`;
-    const url_13 = `https://ndlsearch.ndl.go.jp/api/sru?operation=searchRetrieve&recordSchema=dcndl&recordPacking=xml&query=isbn%3d${isbn_13}`;
-
-    const parser = new XMLParser();
-
-    console.log(`hitting NDL Search API: ${url_13}`);
-    let data = await fetch(url_13);
-    let json: any = parser.parse(await data.text());
-    if (json.searchRetrieveResponse.records) {
-      const records = json.searchRetrieveResponse.records;
-      console.log(`data fetched!`);
-      console.log(records);
-      return records;
-    }
-    console.log(`data not found for ${isbn_13}, trying isbn-10`);
-
-    const isbn_10 = isbn.length === 13 ? isbn.slice(3, -1) : isbn;
-    const url_10 = `https://ndlsearch.ndl.go.jp/api/sru?operation=searchRetrieve&recordSchema=dcndl&recordPacking=xml&query=isbn%3d${isbn_10}`;
-
-    console.log(`hitting NDL Search API: ${url_10}`);
-    data = await fetch(url_10);
-    json = parser.parse(await data.text());
-    if (json.searchRetrieveResponse.records) {
-      const records = json.searchRetrieveResponse.records;
-      console.log(`data fetched!`);
-      console.log(records);
-      return records;
-    }
-    console.log("data not found.");
-    return {};
-  };
-
-  // APIから取得したデータを整形する関数
-  const formatBookInfo = (data: any): BookInfo[] => {
-    console.log(data);
-    const records = Array.isArray(data.record) ? data.record : [data.record];
-    const books = records.map((record: any) => {
-      const resource = record.recordData["rdf:RDF"]["dcndl:BibResource"][0];
-      console.log(resource);
-
-      const isbn_13 = isbn.length === 13 ? isbn : `978${isbn}`;
-      const title = resource["dc:title"]["rdf:Description"]["rdf:value"];
-      const seriesTitle = resource["dcndl:seriesTitle"]
-        ? resource["dcndl:seriesTitle"]["rdf:Description"]["rdf:value"]
-        : "";
-      const authors = Array.isArray(resource["dcterms:creator"])
-        ? resource["dcterms:creator"].map((a: any) =>
-            a["foaf:Agent"]["foaf:name"]
-              .split(/,\s?/)
-              .filter((n: string) => !/^\d{4}/.test(n))
-              .join(" ")
-          )
-        : [
-            resource["dcterms:creator"]["foaf:Agent"]["foaf:name"]
-              .split(/,\s?/)
-              .filter((n: string) => !/^\d{4}/.test(n))
-              .join(" "),
-          ];
-
-      const book: BookInfo = {
-        isbn: Number(isbn_13),
-        title: title,
-        subtitle: seriesTitle,
-        authors: authors,
-        image_url: `https://ndlsearch.ndl.go.jp/thumbnail/${isbn_13}.jpg`,
-        total_page_count: Number(resource["dcterms:extent"].match(/^\d+/)[0]),
-      };
-      return book;
-    });
-    return books;
-  };
-
   const loadBookInfo = async () => {
     if (isbn === "") {
-      props.setBookInfo({ defaultBookInfo });
+      props.setBookInfoContainer([defaultBookInfo]);
       return;
     }
-    const data = await search();
-    if (!data.record) {
-      props.setBookInfo({ errorBookInfo });
-      return;
-    }
-    const formattedData = formatBookInfo(data);
-    props.setBookInfo(formattedData);
-    console.log("book info:", formattedData);
+
+    invoke("get_book_info", { isbn }).then((b: any) => {
+      const books: BookInfo[] = b;
+      console.log(
+        "book info:",
+        books.map((book: BookInfo) => book.title)
+      );
+      props.setBookInfoContainer(b);
+    });
   };
 
   useEffect(() => {

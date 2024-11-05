@@ -1,10 +1,13 @@
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 mod bookshelf;
 mod config;
+mod ndlsearch;
 mod test;
 
 use bookshelf::{Activity, BookInfo, Bookshelf, Container, Query};
 use config::Config;
+
+use anyhow::Result;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -20,11 +23,21 @@ pub fn run() {
             get_config,
             set_config,
             get_records,
+            get_book_info,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
+#[tauri::command]
+fn get_book_info(isbn: String) -> Result<Vec<BookInfo>, String> {
+    let result = ndlsearch::fetch(isbn);
+
+    match result {
+        Ok(book_info_container) => Ok(book_info_container),
+        Err(e) => Err(e.to_string()),
+    }
+}
 // レコードを追加する
 #[tauri::command]
 fn add_record(

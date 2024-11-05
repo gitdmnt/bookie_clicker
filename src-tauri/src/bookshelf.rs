@@ -8,12 +8,12 @@ use std::{collections::HashMap, path::PathBuf, sync::Mutex};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct BookInfo {
-    isbn: u64,
-    title: String,
-    subtitle: String,
-    authors: Vec<String>,
-    image_url: String,
-    total_page_count: u32,
+    pub isbn: u64,
+    pub title: String,
+    pub subtitle: String,
+    pub authors: Vec<String>,
+    pub image_url: String,
+    pub total_page_count: u32,
 }
 impl std::fmt::Display for BookInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
