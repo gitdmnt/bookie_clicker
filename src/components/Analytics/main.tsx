@@ -5,7 +5,7 @@ import { Temporal } from "proposal-temporal";
 
 const today = new Date().toISOString().slice(0, 10);
 
-export const Analytics = (props: { isVisible: boolean }) => {
+export const Analytics = () => {
   const [term, setTerm]: [[string, string], any] = useState([today, today]);
   const [query, setQuery]: [Query, any] = useState({
     term,
@@ -48,15 +48,15 @@ export const Analytics = (props: { isVisible: boolean }) => {
     <div className="Analytics">
       <div className="Monthly">
         <h2>今月</h2>
-        <Statisics query={queryMonthly} refresh={props.isVisible} />
+        <Statisics query={queryMonthly} />
       </div>
       <div className="Yearly">
         <h2>今年</h2>
-        <Statisics query={queryYearly} refresh={props.isVisible} />
+        <Statisics query={queryYearly} />
       </div>
       <div className="Total">
         <h2>全期間</h2>
-        <Statisics query={queryTotal} refresh={props.isVisible} />
+        <Statisics query={queryTotal} />
       </div>
       <div className="Any">
         <input
@@ -70,7 +70,7 @@ export const Analytics = (props: { isVisible: boolean }) => {
           value={term[1]}
           onChange={(e) => setTerm([term[0], e.target.value])}
         />
-        <Statisics query={query} refresh={props.isVisible} />
+        <Statisics query={query} />
       </div>
       <div className="Graph">
         <h2>読書量の推移</h2>
@@ -80,7 +80,7 @@ export const Analytics = (props: { isVisible: boolean }) => {
   );
 };
 
-const Statisics = (props: { query: Query; refresh: boolean }) => {
+const Statisics = (props: { query: Query }) => {
   const query = props.query;
 
   const [container, setContainer]: [Container[], any] = useState([]);
@@ -89,7 +89,7 @@ const Statisics = (props: { query: Query; refresh: boolean }) => {
     invoke("get_records", { query }).then((s: any) => {
       setContainer(s);
     });
-  }, [props.refresh]);
+  }, []);
 
   // container is sorted by date in descending order
   const oldest = container.length !== 0 ? container[0].diaries[0].date : today;

@@ -1,40 +1,28 @@
-type Pages = "Search" | "Bookshelf" | "Analytics" | "Settings";
+import { usePageContext } from "../../pageContextHook";
 
-export const Index = (props: { currPage: Pages; handleIndex: any }) => {
-  const { currPage, handleIndex } = props;
+export const Index = () => {
+  const { page, setPage } = usePageContext();
 
   return (
-    <header className="grid grid-rows-4 mx-2 justify-start justify-items-start text-2xl">
-      <EachIndex name="Search" currPage={currPage} handleIndex={handleIndex} />
-      <EachIndex
-        name="Bookshelf"
-        currPage={currPage}
-        handleIndex={handleIndex}
-      />
-      <EachIndex
-        name="Analytics"
-        currPage={currPage}
-        handleIndex={handleIndex}
-      />
-      <EachIndex
-        name="Settings"
-        currPage={currPage}
-        handleIndex={handleIndex}
-      />
+    <header className="grid grid-rows-4 mx-2 justify-start justify-items-start">
+      <EachIndex name="Search" page={page} setPage={setPage} />
+      <EachIndex name="Bookshelf" page={page} setPage={setPage} />
+      <EachIndex name="Analytics" page={page} setPage={setPage} />
+      <EachIndex name="Settings" page={page} setPage={setPage} />
     </header>
   );
 };
 
 const EachIndex = (props: any) => {
   const name = props.name;
-  const currPage = props.currPage;
-  const handleIndex = props.handleIndex;
-  const handleIndexStyle = () => {
-    return currPage === name ? "col-span-1" : "col-span-1 text-stone-300";
+  const page = props.page;
+  const setPage = props.setPage;
+  const setPageStyle = () => {
+    return page === name ? "col-span-1" : "col-span-1 text-stone-300";
   };
 
   return (
-    <div className={handleIndexStyle()} onClick={() => handleIndex(name)}>
+    <div className={setPageStyle()} onClick={() => setPage(name)}>
       {name}
     </div>
   );

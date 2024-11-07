@@ -30,8 +30,8 @@ pub fn run() {
 }
 
 #[tauri::command]
-fn get_book_info(isbn: String) -> Result<Vec<BookInfo>, String> {
-    let result = ndlsearch::fetch(isbn);
+async fn get_book_info(isbn: String) -> Result<Vec<BookInfo>, String> {
+    let result = ndlsearch::fetch(isbn).await;
 
     match result {
         Ok(book_info_container) => Ok(book_info_container),

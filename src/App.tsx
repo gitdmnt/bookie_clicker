@@ -3,65 +3,56 @@ import { Bookshelf } from "./components/Bookshelf/main";
 import { Analytics } from "./components/Analytics/main";
 import { Settings } from "./components/Settings/main";
 import "./App.css";
+import { componentStyle } from "./styles.ts";
 
-import { useEffect, useState } from "react";
 import { Index } from "./components/Index/main";
-
-type Pages = "Search" | "Bookshelf" | "Analytics" | "Settings";
+import { BookProvider } from "./bookContextHook.tsx";
+import { PageProvider, usePageContext } from "./pageContextHook.tsx";
 
 function App() {
-  const [currPage, setCurrPage]: [Pages, any] = useState("Search");
+  const { page, style } = usePageContext();
 
-  useEffect(() => {
-    console.log(currPage);
-  }, [currPage]);
+  const renderPage = (
+    page: "search" | "bookshelf" | "analytics" | "settings"
+  ) => {
+    switch (page) {
+      case "search":
+        return <SearchWindow />;
+      case "bookshelf":
+        return <Bookshelf />;
+      case "analytics":
+        return <Analytics />;
+      case "settings":
+        return <Settings />;
+    }
+  };
 
   return (
-    <div
-      className="w-screen h-screen px-24 py-32 bg-stone-100 font-sans"
-      style={styleContainerGrid}
-    >
-      <h1 className="col-start-1 col-end-3 row-start-1 row-end-2 self-end text-9xl font-title font-bold">
-        <div>Bookie</div>
-        <div>Clicker</div>
-      </h1>
-      <div className="col-start-1 col-end-2 row-start-2 row-end-3 self-start font-title">
-        <Index currPage={currPage} handleIndex={setCurrPage} />
-      </div>
-      <div className="col-start-2 col-end-4 row-start-2 row-end-3">
-        <div id="Search" className={page(currPage === ("Search" as Pages))}>
-          <SearchWindow />
-        </div>
-        <div
-          id="Bookshelf"
-          className={page(currPage === ("Bookshelf" as Pages))}
+    <PageProvider>
+      <div
+        className="w-screen px-24 bg-stone-100 font-sans"
+        style={componentStyle.container[style]}
+      >
+        <h1
+          className="font-title text-9xl font-bold"
+          style={componentStyle.title[style]}
         >
-          <Bookshelf />
-        </div>
+          <div>Bookie</div>
+          <div>Clicker</div>
+        </h1>
         <div
-          id="Analytics"
-          className={page(currPage === ("Analytics" as Pages))}
+          className="col-start-1 col-end-2 self-start font-title"
+          style={componentStyle.index[style]}
         >
-          <Analytics isVisible={currPage === ("Analytics" as Pages)} />
+          <Index />
         </div>
-        <div id="Settings" className={page(currPage === ("Settings" as Pages))}>
-          <Settings />
+        <div className="col-start-2 col-end-4 row-start-2 row-end-3">
+          <BookProvider>{renderPage(page)}</BookProvider>
         </div>
       </div>
-    </div>
+    </PageProvider>
   );
 }
-
-const styleContainerGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, 1fr)",
-  gridTemplateRows: "2fr 1fr",
-  gap: "0rem",
-};
-
-const page = (isVisible: boolean) => {
-  return isVisible ? "" : "hidden";
-};
 
 export default App;
 

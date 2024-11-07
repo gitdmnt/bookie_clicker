@@ -4,12 +4,13 @@ use anyhow::{anyhow, Result};
 use minidom::{Element, NSChoice};
 use quick_xml::{events::Event, Reader};
 use regex::Regex;
-use reqwest::blocking::get;
+use reqwest::get;
+use tauri::async_runtime::block_on;
 
-pub fn fetch(isbn: String) -> Result<Vec<BookInfo>> {
+pub async fn fetch(isbn: String) -> Result<Vec<BookInfo>> {
     let isbn = validate_isbn(isbn);
     let url = format!("https://ndlsearch.ndl.go.jp/api/sru?operation=searchRetrieve&recordSchema=dcndl&recordPacking=xml&query=isbn%3d{}", isbn);
-    let response = get(url)?.text()?;
+    let response = get(url).await?.text().await?;
 
     let book_info_container = parse_response(isbn, response)?;
     Ok(book_info_container)
@@ -139,7 +140,8 @@ fn isbn_validation() {
 
 #[test]
 fn fetching() {
-    let book_info = fetch("9784621089712".to_owned()).unwrap();
+    let fetch = async { fetch("9784621089712".to_owned()).await };
+    let book_info = block_on(fetch).unwrap();
     assert_eq!(book_info.len(), 2);
     assert_eq!(book_info[0].title, "線形代数");
     assert_eq!(book_info[0].subtitle, "東京大学工学教程 ; 基礎系数学");
