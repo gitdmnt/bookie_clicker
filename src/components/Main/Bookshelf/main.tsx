@@ -1,10 +1,85 @@
 import { useEffect, useState } from "react";
+import { SearchWindow } from "./SearchWindow/main.tsx";
 import { Slider } from "@mui/material";
 import { invoke } from "@tauri-apps/api/core";
 import "./type.d.ts";
+import "./main.css";
+
+const today = new Date().toISOString().slice(0, 10);
 
 export const Bookshelf = () => {
-  const today = new Date().toISOString().slice(0, 10);
+  const [query, setQuery] = useState<Query | null>(null);
+  const [books, setBooks] = useState<Container[]>([]);
+
+  useEffect(() => {
+    if (query) {
+      invoke("get_records", { query }).then((b: any) => {
+        setBooks(b);
+      });
+    }
+  }, [query]);
+
+  const [isModalOpen, toggleAddItemModal] = useState(false);
+  const renderModal = () => {
+    if (isModalOpen) {
+      return (
+        <div className="modal">
+          <div className="modalContent">
+            <SearchWindow />
+          </div>
+          <div
+            className="modalBG"
+            onClick={() => toggleAddItemModal(false)}
+          ></div>
+        </div>
+      );
+    }
+  };
+
+  return (
+    <div className="bookshelfContainer">
+      <QueryForm setQuery={setQuery} />
+      <ul className="bookshelf">
+        <li
+          key="inputNewBook"
+          className="bookshelfItem addItem"
+          onClick={() => toggleAddItemModal(true)}
+        >
+          本を追加する
+        </li>
+        {books.map((book: Container) => {
+          return (
+            <li key={book.book.isbn} className="bookshelfItem book">
+              <img src={book.book.image_url} alt={book.book.title} />
+              <div>
+                <h2>{book.book.title}</h2>
+                <h3>{book.book.subtitle}</h3>
+                <p>{book.book.authors.join(", ")}</p>
+                <p>{book.book.total_page_count}ページ</p>
+              </div>
+              <div>
+                {book.diaries.map((diary: Activity) => {
+                  return (
+                    <div key={diary.date} className="Diary">
+                      <p>{diary.date}</p>
+                      <p>{diary.memo}</p>
+                      <p>{diary.rating}</p>
+                      <p>{diary.range.join(" - ")}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      {renderModal()}
+    </div>
+  );
+};
+
+const QueryForm = (props: { setQuery: any }) => {
   const [term, setTerm]: [[string, string], any] = useState([
     "2021-01-01",
     today,
@@ -14,19 +89,14 @@ export const Bookshelf = () => {
   const [key, setKey]: ["Title" | "Rating" | "Date" | "Page", any] =
     useState("Date");
 
-  const [books, setBooks]: [Container[], any] = useState([]);
-
   useEffect(() => {
     const query: Query = { term, rating, order, key };
     console.log("query", query);
-    invoke("get_records", { query }).then((b) => {
-      console.log("books", b);
-      setBooks(b);
-    });
+    props.setQuery(query);
   }, [term, rating, order, key]);
 
   return (
-    <div className="Bookshelf">
+    <div>
       <input
         type="date"
         value={term[0]}
@@ -56,31 +126,6 @@ export const Bookshelf = () => {
         <option value="Date">Date</option>
         <option value="Page">Page</option>
       </select>
-      {books.map((book: Container) => {
-        return (
-          <div key={book.book.isbn} className="Book">
-            <img src={book.book.image_url} alt={book.book.title} />
-            <div className="Info">
-              <h2>{book.book.title}</h2>
-              <h3>{book.book.subtitle}</h3>
-              <p>{book.book.authors.join(", ")}</p>
-              <p>{book.book.total_page_count}ページ</p>
-            </div>
-            <div className="Diaries">
-              {book.diaries.map((diary: Activity) => {
-                return (
-                  <div key={diary.date} className="Diary">
-                    <p>{diary.date}</p>
-                    <p>{diary.memo}</p>
-                    <p>{diary.rating}</p>
-                    <p>{diary.range.join(" - ")}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 };

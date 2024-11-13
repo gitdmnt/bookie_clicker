@@ -3,12 +3,12 @@ import { useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 import { componentStyle } from "./styles.ts";
-import { useBookContext } from "../../bookContextHook.tsx";
-import { Search } from "./search";
-import { ShowBookInfo } from "./showbookinfo";
-import { Activity } from "./activity";
+import { useBookContext } from "../../../../hooks/bookContextHook.tsx";
+import { Search } from "./search.tsx";
+import { ShowBookInfo } from "./showbookinfo.tsx";
+import { Activity } from "./activity.tsx";
 import "./type.d.ts";
-import { usePageContext } from "../../pageContextHook.tsx";
+import { usePageContext } from "../../../../hooks/pageContextHook.tsx";
 
 // バックエンドに書き込むコンポーネント
 

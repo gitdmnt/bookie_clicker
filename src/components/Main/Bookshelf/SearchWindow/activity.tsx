@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { RangeSlider, RatingSlider } from "./slider.tsx";
 import { ToggleButton } from "@mui/material";
 import { Temporal } from "proposal-temporal";
-import { useBookContext } from "../../bookContextHook.tsx";
+import { useBookContext } from "../../../../hooks/bookContextHook.tsx";
 
 const today = new Date().toISOString().slice(0, 10);
 const defaultBookInfo: BookInfo = {
