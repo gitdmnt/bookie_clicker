@@ -2,6 +2,7 @@
 mod bookshelf;
 mod config;
 mod ndlsearch;
+mod sruapi;
 mod test;
 
 use bookshelf::{Activity, BookInfo, Bookshelf, Container, Query};

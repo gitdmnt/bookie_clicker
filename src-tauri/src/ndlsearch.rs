@@ -1,4 +1,5 @@
 use super::bookshelf::BookInfo;
+use crate::sruapi::SruApiQuery;
 
 use anyhow::{anyhow, Result};
 use minidom::{Element, NSChoice};
@@ -9,7 +10,9 @@ use tauri::async_runtime::block_on;
 
 pub async fn fetch(isbn: String) -> Result<Vec<BookInfo>> {
     let isbn = validate_isbn(isbn);
-    let url = format!("https://ndlsearch.ndl.go.jp/api/sru?operation=searchRetrieve&recordSchema=dcndl&recordPacking=xml&query=isbn%3d{}", isbn);
+    let sru_query = SruApiQuery::new(format!("isbn%3d{}", isbn));
+    let query_params = sru_query.to_query_params();
+    let url = format!("https://ndlsearch.ndl.go.jp/api/sru?{}", query_params);
     let response = get(url).await?.text().await?;
 
     let book_info_container = parse_response(isbn, response)?;
