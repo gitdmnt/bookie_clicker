@@ -14,8 +14,7 @@ pub async fn fetch(isbn: String) -> Result<Vec<BookInfo>> {
     let query_params = sru_query.to_query_params();
     let url = format!("https://ndlsearch.ndl.go.jp/api/sru?{}", query_params);
     let response = get(url).await?.text().await?;
-
-    let book_info_container = parse_response(isbn, response)?;
+    let book_info_container = parse_response(response)?;
     Ok(book_info_container)
 }
 
@@ -27,9 +26,9 @@ fn validate_isbn(isbn: String) -> u64 {
     isbn.parse::<u64>().unwrap()
 }
 
-fn parse_response(isbn: u64, response: String) -> Result<Vec<BookInfo>> {
+fn parse_response(response: String) -> Result<Vec<BookInfo>> {
     let records = trim_response(response)?;
-    let book_info_container = contain_book_info(isbn, records)?;
+    let book_info_container = contain_book_info(records)?;
     Ok(book_info_container)
 }
 
@@ -54,11 +53,11 @@ fn trim_response(response: String) -> Result<Vec<String>> {
     Ok(records)
 }
 
-fn contain_book_info(isbn: u64, records: Vec<String>) -> Result<Vec<BookInfo>> {
+fn contain_book_info(records: Vec<String>) -> Result<Vec<BookInfo>> {
     let mut book_info_container = Vec::new();
 
     for record in records {
-        if let Ok(b) = record_to_book_info(isbn, record) {
+        if let Ok(b) = record_to_book_info(record) {
             book_info_container.push(b);
         }
     }
@@ -66,7 +65,7 @@ fn contain_book_info(isbn: u64, records: Vec<String>) -> Result<Vec<BookInfo>> {
     Ok(book_info_container)
 }
 
-fn record_to_book_info(isbn: u64, record: String) -> Result<BookInfo> {
+fn record_to_book_info(record: String) -> Result<BookInfo> {
     let record = format!(
         "{}{}{}",
         &record[0..7],
@@ -81,6 +80,16 @@ fn record_to_book_info(isbn: u64, record: String) -> Result<BookInfo> {
         .ok_or(anyhow!(""))?
         .remove_child("BibResource", NSChoice::Any)
         .ok_or(anyhow!(""))?;
+    let isbn = record
+        .children()
+        .find_map(|child| {
+            if child.name() == "identifier" && child.attr("rdf:datatype") == Some("http://ndl.go.jp/dcndl/terms/ISBN") {
+                child.text().parse::<u64>().ok()
+            } else {
+                None
+            }
+        })
+        .ok_or(anyhow!("ISBN not found"))?;
     let title = record
         .get_child("title", "http://purl.org/dc/elements/1.1/")
         .ok_or(anyhow!("Title not found"))?
@@ -163,12 +172,14 @@ fn test_record_to_book_info() {
         <dcterms:creator><foaf:Agent><foaf:name>dummy</foaf:name></foaf:Agent></dcterms:creator>
         <dcterms:creator><foaf:Agent><foaf:name>dummy2</foaf:name></foaf:Agent></dcterms:creator>
         <dcterms:extent>10p ; 999cm</dcterms:extent>    
+        <dcterms:identifier rdf:datatype="http://ndl.go.jp/dcndl/terms/ISBN">9780000000000</dcterms:identifier>
       </dcndl:BibResource>
     </rdf:RDF>
   </recordData>
 </record>"#
         .to_owned();
-    let book_info = record_to_book_info(9780000000000, record).unwrap();
+    let book_info = record_to_book_info(record).unwrap();
+    assert_eq!(book_info.isbn, 9780000000000);
     assert_eq!(book_info.title, "title");
     assert_eq!(book_info.subtitle, "subtitle");
     assert_eq!(book_info.authors.len(), 2);
