@@ -18,12 +18,13 @@ pub async fn fetch(isbn: String) -> Result<Vec<BookInfo>> {
     Ok(book_info_container)
 }
 
-fn validate_isbn(isbn: String) -> u64 {
-    let mut isbn = isbn.replace("-", "");
+fn validate_isbn(query: String) -> Result<u64, anyhow::Error> {
+    let mut isbn = query
+        .replace("-", "");
     if isbn.len() != 13 {
         isbn = format!("978{}", isbn);
     }
-    isbn.parse::<u64>().unwrap()
+    isbn.parse::<u64>().map_err(|e| anyhow!("Invalid ISBN: {}", e))
 }
 
 fn parse_response(response: String) -> Result<Vec<BookInfo>> {
@@ -84,7 +85,7 @@ fn record_to_book_info(record: String) -> Result<BookInfo> {
         .children()
         .find_map(|child| {
             if child.name() == "identifier" && child.attr("rdf:datatype") == Some("http://ndl.go.jp/dcndl/terms/ISBN") {
-                child.text().parse::<u64>().ok()
+                validate_isbn(child.text().to_string()).ok()
             } else {
                 None
             }
@@ -146,8 +147,8 @@ fn record_to_book_info(record: String) -> Result<BookInfo> {
 
 #[test]
 fn isbn_validation() {
-    assert_eq!(validate_isbn("978-0-00-000000-0".to_owned()), 9780000000000);
-    assert_eq!(validate_isbn("0-00-000000-0".to_owned()), 9780000000000);
+    assert_eq!(validate_isbn("978-0-00-000000-0".to_owned()).unwrap(), 9780000000000);
+    assert_eq!(validate_isbn("0-00-000000-0".to_owned()).unwrap(), 9780000000000);
 }
 
 #[test]
