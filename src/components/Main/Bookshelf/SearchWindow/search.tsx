@@ -56,7 +56,17 @@ export const Search = (props: { setStyle: any }) => {
       setBookInfoContainer([]);
       return;
     }
-    invoke("get_book_info", { isbn }).then((b: any) => {
+
+    const query: SruApiQuery = {
+      operation: "searchRetrieve",
+      query: `isbn%3d${isbn}`,
+      start_record: 1,
+      maximum_records: 5,
+      record_packing: "xml",
+      record_schema: "dcndl",
+    };
+
+    invoke("get_book_info", { query }).then((b: any) => {
       const books: BookInfo[] = b;
       console.log(
         "book info:",

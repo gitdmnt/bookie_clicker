@@ -8,10 +8,8 @@ use regex::Regex;
 use reqwest::get;
 use tauri::async_runtime::block_on;
 
-pub async fn fetch(isbn: String) -> Result<Vec<BookInfo>> {
-    let isbn = validate_isbn(isbn);
-    let sru_query = SruApiQuery::new(format!("isbn%3d{}", isbn));
-    let query_params = sru_query.to_query_params();
+pub async fn fetch(query: SruApiQuery) -> Result<Vec<BookInfo>> {
+    let query_params = query.to_query_params();
     let url = format!("https://ndlsearch.ndl.go.jp/api/sru?{}", query_params);
     let response = get(url).await?.text().await?;
     let book_info_container = parse_response(response)?;
@@ -153,7 +151,8 @@ fn isbn_validation() {
 
 #[test]
 fn fetching() {
-    let fetch = async { fetch("9784621089712".to_owned()).await };
+    let query = SruApiQuery::new(format!("isbn%3d9784621089712"));
+    let fetch = async { fetch(query).await };
     let book_info = block_on(fetch).unwrap();
     assert_eq!(book_info.len(), 2);
     assert_eq!(book_info[0].title, "線形代数");

@@ -15,3 +15,11 @@ interface Activity {
   rating: number;
 }
 
+interface SruApiQuery {
+  operation: string;
+  query: string;
+  start_record?: number;
+  maximum_records?:number;
+  record_packing?: string;
+  record_schema?: string;
+}

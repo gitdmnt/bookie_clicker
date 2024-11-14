@@ -9,6 +9,7 @@ use bookshelf::{Activity, BookInfo, Bookshelf, Container, Query};
 use config::Config;
 
 use anyhow::Result;
+use sruapi::SruApiQuery;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -31,14 +32,15 @@ pub fn run() {
 }
 
 #[tauri::command]
-async fn get_book_info(isbn: String) -> Result<Vec<BookInfo>, String> {
-    let result = ndlsearch::fetch(isbn).await;
+async fn get_book_info(query: SruApiQuery) -> Result<Vec<BookInfo>, String> {
+    let result = ndlsearch::fetch(query).await;
 
     match result {
         Ok(book_info_container) => Ok(book_info_container),
         Err(e) => Err(e.to_string()),
     }
 }
+
 // レコードを追加する
 #[tauri::command]
 fn add_record(
