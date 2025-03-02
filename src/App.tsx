@@ -8,9 +8,11 @@ function App() {
   const [books, setBooks]: [TableElement[], any] = useState([]);
 
   const query = async (q: Query) => {
-    invoke("query", { query: q }).then((e) => setBooks(e));
+    invoke("query", { query: q }).then((e) => console.log(e));
   };
-  const add = async (e: TableElement) => {};
+  const add = async (e: TableElement) => {
+    invoke("add", { element: e });
+  };
 
   const bookshelf = books.map((book: TableElement, index) => (
     <li key={index} className="Book w-24 h-32 bg-slate-300">
@@ -20,23 +22,10 @@ function App() {
     </li>
   ));
 
+  // モーダル
   const [isModalVisible, setIsModalVisible] = useState(false);
   const openModal = () => setIsModalVisible(true);
   const closeModal = () => setIsModalVisible(false);
-
-  const Bookshelf = (
-    <ul className="Bookshelf bg-slate-200 flex flex-wrap flex-row gap-4 p-4">
-      <li
-        id="AddBookButton"
-        className="Book w-24 h-32 bg-slate-300"
-        onClick={openModal}
-      >
-        <img alt="Add Book" />
-        <h2>Add Book</h2>
-      </li>
-      {bookshelf}
-    </ul>
-  );
 
   const BookAddModal = isModalVisible ? (
     <div id="BookAdd" className="absolute">
@@ -52,10 +41,24 @@ function App() {
     <></>
   );
 
+  const BookshelfWindow = (
+    <ul className="Bookshelf bg-slate-200 flex flex-wrap flex-row gap-4 p-4">
+      <li
+        id="AddBookButton"
+        className="Book w-24 h-32 bg-slate-300"
+        onClick={openModal}
+      >
+        <img alt="Add Book" />
+        <h2>Add Book</h2>
+      </li>
+      {bookshelf}
+    </ul>
+  );
+
   return (
     <>
       {BookAddModal}
-      {Bookshelf}
+      {BookshelfWindow}
     </>
   );
 }
