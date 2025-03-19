@@ -38,9 +38,12 @@ type WebNovel = {
 };
 */
 
+type ElementType = "book" | "readingLog";
+
 interface TableElement {
-  type: "Book" | "ReadingLog";
-  content: Book | ReadingLog | {};
+  elementType: ElementType;
+  book?: Book;
+  readingLog?: ReadingLog;
 }
 
 interface Book {
@@ -61,7 +64,7 @@ interface ReadingLog {
 
 interface Query {
   // Metadata
-  elementType: TableElement;
+  elementType: ElementType;
   user?: number;
 
   // Book fields

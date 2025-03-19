@@ -11,30 +11,47 @@ pub struct Database {
     db: Mutex<Surreal<Db>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(tag = "type", content = "content", rename_all_fields = "camelCase")]
-pub enum Element {
-    Book {
-        isbn: u64,
-        title: String,
-        authors: Vec<String>,
-        publisher: String,
-        year: u16,
-        page_count: u16,
-        image_url: String,
-    },
-    ReadingLog {
-        user: u64,
-        isbn: u64,
-    },
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[serde(rename_all = "camelCase")]
+pub enum Table {
+    Book,
+    ReadingLog,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Element {
+    element_type: Table,
+    // #[serde(flatten)] <- Internally tagged として認識される
+    book: Option<Book>,
+    // #[serde(flatten)]
+    reading_log: Option<ReadingLog>,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Book {
+    isbn: u64, // Primary Key
+    title: String,
+    authors: Vec<String>,
+    publisher: String,
+    year: u32,
+    page_count: u32,
+    image_url: String,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingLog {
+    user: u64,
+    isbn: u64,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Query {
     // メタデータ
-    #[serde(deserialize_with = "element_deserializer")]
-    element_type: Element,
+    element_type: Table,
     user: Option<u64>,
     date_from: Option<u32>,
     date_to: Option<u32>,
@@ -54,6 +71,9 @@ impl Database {
 
         // 名前空間・データベースの指定
         db.use_ns("bookie_clicker").use_db("bookie_clicker").await?;
+
+        db.query("DEFINE INDEX unique_isbn ON books FIELDS isbn UNIQUE;")
+            .await?;
 
         let db = Mutex::new(db);
 
@@ -75,19 +95,52 @@ impl Database {
 
     pub async fn add(&self, e: Element) -> Result<(), surrealdb::Error> {
         let db = self.db.lock().await;
-        let table = match e {
-            Element::Book { .. } => "books",
-            Element::ReadingLog { .. } => "reading_logs",
+        let table = match e.element_type {
+            Table::Book => "books",
+            Table::ReadingLog => "reading_logs",
         };
-        let _: Option<Element> = db.create(table).content(e).await?;
 
+        match e.element_type {
+            Table::Book => {
+                let book = e.book.unwrap();
+                let _: Option<Book> = db.create(table).content(book).await?;
+            }
+            Table::ReadingLog => {
+                let reading_log = e.reading_log.unwrap();
+                let _: Option<ReadingLog> = db.create(table).content(reading_log).await?;
+            }
+        };
         Ok(())
     }
 
     pub async fn select(&self, query: Query) -> Result<Vec<Element>, surrealdb::Error> {
-        let query = query.to_string();
+        let query_str = query.to_string();
         let db = self.db.lock().await;
-        db.query(query).await?.take::<Vec<Element>>(0)
+
+        match query.element_type {
+            Table::Book => db.query(query_str).await?.take::<Vec<Book>>(0).map(|v| {
+                v.into_iter()
+                    .map(|book| Element {
+                        element_type: Table::Book,
+                        book: Some(book),
+                        reading_log: None,
+                    })
+                    .collect()
+            }),
+            Table::ReadingLog => db
+                .query(query_str)
+                .await?
+                .take::<Vec<ReadingLog>>(0)
+                .map(|v| {
+                    v.into_iter()
+                        .map(|reading_log| Element {
+                            element_type: Table::ReadingLog,
+                            book: None,
+                            reading_log: Some(reading_log),
+                        })
+                        .collect()
+                }),
+        }
     }
 
     pub async fn delete(&self, query: Query) -> Result<(), surrealdb::Error> {
@@ -107,7 +160,7 @@ impl Element {
         }
     }
     fn empty_book() -> Element {
-        Element::Book {
+        let book = Book {
             isbn: 0,
             title: "".to_string(),
             authors: vec![],
@@ -115,27 +168,21 @@ impl Element {
             year: 0,
             page_count: 0,
             image_url: "".to_string(),
+        };
+        Element {
+            element_type: Table::Book,
+            book: Some(book),
+            reading_log: None,
         }
     }
     fn empty_reading_log() -> Element {
-        Element::ReadingLog { user: 0, isbn: 0 }
+        let reading_log = ReadingLog { user: 0, isbn: 0 };
+        Element {
+            element_type: Table::ReadingLog,
+            book: None,
+            reading_log: Some(reading_log),
+        }
     }
-}
-
-fn element_deserializer<'de, D>(deserializer: D) -> Result<Element, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    #[derive(serde::Deserialize)]
-    struct Helper {
-        #[serde(rename = "type")]
-        element_type: String,
-        #[serde(rename = "content", skip)]
-        _content: serde_json::Value,
-    }
-
-    let helper = Helper::deserialize(deserializer)?;
-    Ok(Element::empty_element(&helper.element_type))
 }
 
 impl std::fmt::Display for Query {
@@ -154,19 +201,17 @@ impl std::fmt::Display for Query {
 
 impl Query {
     fn to_delete(&self) -> String {
-        let query = format!("DELETE {}", &self.table())
+        format!("DELETE {}", &self.table())
             + match &self.condition() {
                 Some(v) => v,
                 None => "",
             }
-            + ";";
-
-        query
+            + ";"
     }
     fn table(&self) -> String {
         match &self.element_type {
-            Element::Book { .. } => "books".to_owned(),
-            Element::ReadingLog { .. } => "reading_logs".to_owned(),
+            Table::Book { .. } => "books".to_owned(),
+            Table::ReadingLog { .. } => "reading_logs".to_owned(),
         }
     }
 
@@ -194,6 +239,18 @@ impl Query {
             Some(" WHERE".to_string() + " " + &query)
         }
     }
+    fn for_all() -> Query {
+        Query {
+            element_type: Table::Book,
+            user: None,
+            date_from: None,
+            date_to: None,
+            isbn: None,
+            title: None,
+            author: None,
+            publisher: None,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -201,38 +258,89 @@ mod tests {
 
     use super::*;
     #[test]
-    fn add_book() {
-        let test = async {
+    fn serde_element_book() {
+        let book = Book {
+            isbn: 1,
+            title: "t".to_string(),
+            authors: vec!["a".to_string()],
+            publisher: "p".to_string(),
+            year: 2,
+            page_count: 3,
+            image_url: "i".to_string(),
+        };
+        let element = Element {
+            element_type: Table::Book,
+            book: Some(book),
+            reading_log: None,
+        };
+        let json = r#"
+        {
+            "elementType": "book",
+            "book": {
+                "isbn": 1,
+                "title": "t",
+                "authors": ["a"],
+                "publisher": "p",
+                "year": 2,
+                "pageCount": 3,
+                "imageUrl": "i"
+            }
+        }
+        "#;
+        let deserialized: Element = serde_json::from_str(json).unwrap();
+        assert_eq!(element, deserialized);
+    }
+
+    #[test]
+    fn tauri_add_book() {
+        let task = async {
             let db = Database::connect("test".to_string()).await.unwrap();
-            let e = Element::Book {
-                #[allow(clippy::inconsistent_digit_grouping)]
-                isbn: 978_4_00_000000_0,
-                title: "テスト".to_string(),
-                authors: vec!["テス山ト次郎".to_string()],
-                publisher: "テスト社".to_string(),
-                year: 2024,
-                page_count: 777,
-                image_url: "https://www.example.com".to_string(),
+            let query = Query::for_all();
+            let _ = db.delete(query).await.unwrap();
+
+            let book = Book {
+                isbn: 1,
+                title: "t".to_string(),
+                authors: vec!["a".to_string()],
+                publisher: "p".to_string(),
+                year: 2,
+                page_count: 3,
+                image_url: "i".to_string(),
             };
-            db.add(e).await.unwrap();
-            let q = Query {
-                element_type: Element::empty_book(),
+            let element = Element {
+                element_type: Table::Book,
+                book: Some(book),
+                reading_log: None,
+            };
+
+            db.add(element).await.unwrap();
+            let query = Query {
+                element_type: Table::Book,
                 user: None,
-                isbn: None,
+                date_from: None,
+                date_to: None,
+                isbn: Some(1),
                 title: None,
                 author: None,
                 publisher: None,
-                date_from: None,
-                date_to: None,
             };
-
-            let q_str = q.to_string();
-            dbg!(q_str);
-
-            let res = &db.query(q).await.unwrap();
-
-            dbg!(res);
+            let result = db.select(query).await.unwrap();
+            let book = Book {
+                isbn: 1,
+                title: "t".to_string(),
+                authors: vec!["a".to_string()],
+                publisher: "p".to_string(),
+                year: 2,
+                page_count: 3,
+                image_url: "i".to_string(),
+            };
+            let element = Element {
+                element_type: Table::Book,
+                book: Some(book),
+                reading_log: None,
+            };
+            assert_eq!(result[0], element);
         };
-        tauri::async_runtime::block_on(test);
+        tauri::async_runtime::block_on(task);
     }
 }
