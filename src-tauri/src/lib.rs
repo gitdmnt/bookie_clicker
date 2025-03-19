@@ -1,5 +1,3 @@
-use std::sync::Mutex;
-
 use tauri::async_runtime::block_on;
 use tauri::{Builder, Manager, State};
 
@@ -14,8 +12,13 @@ async fn add(db: State<'_, Database>, e: Element) -> Result<(), surrealdb::Error
 }
 
 #[tauri::command]
-async fn query(db: State<'_, Database>, query: Query) -> Result<Vec<Element>, surrealdb::Error> {
-    db.query(query).await
+async fn select(db: State<'_, Database>, query: Query) -> Result<Vec<Element>, surrealdb::Error> {
+    db.select(query).await
+}
+
+#[tauri::command]
+async fn delete(db: State<'_, Database>, query: Query) -> Result<(), surrealdb::Error> {
+    db.delete(query).await
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -29,10 +32,10 @@ pub fn run() {
     Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            app.manage(Mutex::new(db));
+            app.manage(db);
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![add, query])
+        .invoke_handler(tauri::generate_handler![add, select, delete])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -37,7 +37,11 @@ type WebNovel = {
   imageUrl: string | null;
 };
 */
-type TableElement = Book | Record;
+
+interface TableElement {
+  type: "Book" | "ReadingLog";
+  content: Book | ReadingLog | {};
+}
 
 interface Book {
   isbn: number;
@@ -49,7 +53,7 @@ interface Book {
   imageUrl?: string;
 }
 
-interface Record {
+interface ReadingLog {
   id: number;
   user: number;
   isbn: number;
@@ -57,7 +61,7 @@ interface Record {
 
 interface Query {
   // Metadata
-  elementType: Element;
+  elementType: TableElement;
   user?: number;
 
   // Book fields
@@ -66,7 +70,7 @@ interface Query {
   author?: string;
   publisher?: string;
 
-  // Record fields
+  // ReadingLog fields
   id?: number;
   term?: number;
 }
