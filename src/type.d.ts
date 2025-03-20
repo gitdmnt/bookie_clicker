@@ -57,9 +57,11 @@ interface Book {
 }
 
 interface ReadingLog {
-  id: number;
-  user: number;
   isbn: number;
+  time: [string, string];
+  page: [number, number];
+  note: string;
+  rating?: number;
 }
 
 interface Query {

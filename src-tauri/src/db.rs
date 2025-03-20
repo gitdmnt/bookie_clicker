@@ -43,8 +43,11 @@ pub struct Book {
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ReadingLog {
-    user: u64,
     isbn: u64,
+    time: [String; 2],
+    page: [u16; 2],
+    note: String,
+    rating: Option<u8>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -176,7 +179,13 @@ impl Element {
         }
     }
     fn empty_reading_log() -> Element {
-        let reading_log = ReadingLog { user: 0, isbn: 0 };
+        let reading_log = ReadingLog {
+            isbn: 0,
+            time: ["".to_owned(), "".to_owned()],
+            page: [0, 0],
+            note: "".to_string(),
+            rating: None,
+        };
         Element {
             element_type: Table::ReadingLog,
             book: None,

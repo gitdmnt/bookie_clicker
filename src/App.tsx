@@ -3,6 +3,8 @@ import "./type.d.ts";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 import { XMLParser } from "fast-xml-parser";
+import bg from "./assets/bg.jpg";
+import { Temporal } from "temporal-polyfill";
 
 const Bookshelf = () => {
   const [books, setBooks]: [Book[], any] = useState([]);
@@ -205,6 +207,7 @@ const Bookshelf = () => {
     loadBooks();
   };
 
+  // バックエンドのDBから本の詳細を読み込み
   const handleShowBookDetail = async (isbn: number) => {
     console.log("Show book details for ISBN: ", isbn);
 
@@ -227,37 +230,309 @@ const Bookshelf = () => {
     });
   };
 
-  const BookDetailPage = ({ onClose, onDelete, book, log }: any) => (
-    <div className="fixed inset-0 z-50 ">
-      <div className="absolute inset-0 bg-white">
-        <div className="flex justify-between p-4">
-          <button onClick={() => onClose(false)}>Close</button>
+  const loadLogs = async () => {
+    await invoke("select", {
+      query: {
+        elementType: "readingLog",
+        isbn: books[bookDetailsIndex].isbn,
+      },
+    }).then((result: any) => {
+      setDisplayBookLogs(result.map((r: any) => r.readingLog));
+    });
+  };
+
+  // 記録登録フォーム
+  const ReadingLogRegistrationForm = ({
+    isbn,
+    maxPage,
+    loadLogs,
+  }: {
+    isbn: number;
+    maxPage: number;
+    loadLogs: () => void;
+  }) => {
+    const [activeCard, setActiveCard] = useState(0);
+    const totalCards = 2;
+
+    const nextCard = () => {
+      setActiveCard((prev) => (prev + 1) % totalCards);
+    };
+
+    const prevCard = () => {
+      setActiveCard((prev) => (prev - 1 + totalCards) % totalCards);
+    };
+
+    const [dateStart, setDateStart] = useState(Temporal.Now.plainDateISO());
+    const [dateEnd, setDateEnd] = useState(Temporal.Now.plainDateISO());
+    const [timeStart, setTimeStart] = useState(Temporal.Now.plainTimeISO());
+    const [timeEnd, setTimeEnd] = useState(Temporal.Now.plainTimeISO());
+    const [pageStart, setPageStart] = useState(1);
+    const [pageEnd, setPageEnd] = useState(maxPage);
+    const [note, setNote] = useState("");
+    const [rating, setRating] = useState(0);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      const readingLog: ReadingLog = {
+        isbn: isbn,
+        time: [
+          dateStart.toString() + "T" + timeStart.toString(),
+          dateEnd.toString() + "T" + timeEnd.toString(),
+        ],
+        page: [pageStart, pageEnd],
+        note: note,
+        rating: rating,
+      };
+      console.log(readingLog);
+      await invoke("add", { e: { elementType: "readingLog", readingLog } });
+      await loadLogs();
+    };
+    return (
+      <div className="relative">
+        <div className="relative">
+          {/* カード */}
+          <div className="m-4">
+            <div
+              className="flex gap-3 transition-transform duration-300 ease-in-out w-full"
+              style={{
+                transform: `translateX(calc(-${activeCard * 100}% - ${
+                  activeCard * 0.75
+                }rem))`,
+              }}
+            >
+              <div className="p-4 card w-full flex-shrink-0 overflow-hidden">
+                <p>記録</p>
+                <form className="flex flex-wrap gap-4">
+                  <div className="mb-4 flex justify-start items-center flex-wrap">
+                    <label htmlFor="date" className="block mb-1"></label>
+                    <input
+                      type="date"
+                      id="date"
+                      name="date"
+                      className="rounded-lg border border-gray-300 p-2 focus:outline-none focus:border-gray-400 border-2 box-content transition-colors"
+                      value={dateStart.toString()}
+                      onChange={(e) =>
+                        setDateStart(Temporal.PlainDate.from(e.target.value))
+                      }
+                    />
+                    <label htmlFor="time" className="block mb-1"></label>
+                    <input
+                      type="time"
+                      id="time"
+                      name="time"
+                      className="rounded-lg border border-gray-300 p-2 focus:outline-none focus:border-gray-400 border-2 box-content transition-colors"
+                      value={timeStart.toString({ smallestUnit: "minute" })}
+                      onChange={(e) =>
+                        setTimeStart(Temporal.PlainTime.from(e.target.value))
+                      }
+                    />
+                    <div className="flex justify-start items-center flex-nowrap">
+                      <p className="p-1">p.</p>
+                      <label htmlFor="page" className="block mb-1"></label>
+                      <input
+                        type="number"
+                        id="page"
+                        name="page"
+                        placeholder="1"
+                        className="rounded-lg border border-gray-300 p-2 focus:outline-none focus:border-gray-400 border-2 box-content transition-colors w-12"
+                        value={pageStart}
+                        onChange={(e) => setPageStart(parseInt(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                  <div className="mb-4 flex justify-start items-center flex-wrap">
+                    <label htmlFor="date" className="block mb-1"></label>
+                    <input
+                      type="date"
+                      id="date"
+                      name="date"
+                      className="rounded-lg border border-gray-300 p-2 focus:outline-none focus:border-gray-400 border-2 box-content transition-colors"
+                      value={dateEnd.toString()}
+                      onChange={(e) =>
+                        setDateEnd(Temporal.PlainDate.from(e.target.value))
+                      }
+                    />
+                    <label htmlFor="time" className="block mb-1"></label>
+                    <input
+                      type="time"
+                      id="time"
+                      name="time"
+                      className="rounded-lg border border-gray-300 p-2 focus:outline-none focus:border-gray-400 border-2 box-content transition-colors"
+                      value={timeEnd.toString({ smallestUnit: "minute" })}
+                      onChange={(e) =>
+                        setTimeEnd(Temporal.PlainTime.from(e.target.value))
+                      }
+                    />
+                    <div className="flex justify-start items-center flex-nowrap">
+                      <p className="p-1">p.</p>
+                      <label htmlFor="page" className="block mb-1"></label>
+                      <input
+                        type="number"
+                        id="page"
+                        name="page"
+                        placeholder="2"
+                        className="rounded-lg border border-gray-300 p-2 focus:outline-none focus:border-gray-400 border-2 box-content transition-colors w-12"
+                        value={pageEnd}
+                        onChange={(e) => setPageEnd(parseInt(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                  <textarea
+                    className="w-full rounded-lg border border-gray-300 p-2 focus:outline-none focus:border-gray-400 border-2 box-content transition-colors"
+                    placeholder="読んだこと"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  ></textarea>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value={rating}
+                    onChange={(e) => setRating(parseInt(e.target.value))}
+                    className="w-full"
+                  />
+                  <div className="flex justify-center items-center flex-wrap">
+                    <button
+                      type="submit"
+                      className="bg-gray-600 text-white hover:bg-gray-800 font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
+                      onClick={(e) => handleSubmit(e)}
+                    >
+                      登録
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <div className="p-4 card w-full flex-shrink-0">
+                <p>読む</p>
+              </div>
+            </div>
+          </div>
+          {/* 矢印ナビゲーション */}
+          <div className="flex justify-between absolute top-1/2 left-0 right-0">
+            <button
+              onClick={prevCard}
+              className="bg-white bg-opacity-70 rounded-full p-2 shadow-md hover:bg-opacity-80"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-full w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={nextCard}
+              className="bg-white bg-opacity-70 rounded-full p-2 shadow-md hover:bg-opacity-80"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* インジケーター */}
+        <div className="flex justify-center mt-2">
+          {[...Array(totalCards)].map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setActiveCard(index)}
+              className={`h-2 w-2 mx-1 rounded-full bg-white ${
+                activeCard === index ? "" : "bg-opacity-70"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const ReadingLogCards = ({ logs }: any) => {
+    return (
+      <ul className="flex flex-col gap-4 m-4 card">
+        {logs.map((log: ReadingLog, i: number) => (
+          <li key={i}>
+            <p>{log.time[0]}</p>
+            <p>記録{i}</p>
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  const BookDetailPage = ({ onClose, onDelete, book, logs }: any) => (
+    <div className="absolute inset-0 z-10">
+      <img className="fixed inset-0 object-cover w-full h-full" src={bg} />
+
+      <div className="min-h-screen w-full overflow-x-hidden flex flex-col">
+        {/* ヘッダー */}
+        <div className="flex justify-between p-4 z-20 bg-slate-100 rounded-b-lg">
+          <button onClick={() => onClose(false)}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
           <button onClick={() => onDelete(book?.isbn)}>Delete</button>
         </div>
         {/* 本の情報 */}
-        <div className="grid grid-cols-2 gap-4 p-4">
+        <div className="grid grid-cols-2 justify-center gap-4 m-4 card">
           <div>
-            <img src={book?.imageUrl} alt="book cover" className="w-full" />
+            <img
+              src={book?.imageUrl}
+              alt="book cover"
+              className="w-60 rounded-lg"
+            />
           </div>
-          <div>
+          <div className="flex flex-col justify-center gap-4">
             <h1 className="text-2xl font-bold">{book?.title}</h1>
-            <p>{(book?.authors ?? []).join(", ")}</p>
+            <p className="text-gray-400">{(book?.authors ?? []).join(", ")}</p>
             <p>{book?.publisher}</p>
             <p>{book?.year}</p>
             <p>{book?.pageCount}</p>
           </div>
         </div>
-
         {/* 読書記録登録フォーム */}
+        <div className="z-20 bg-slate-100 rounded-t-lg shadow-lg">
+          <ReadingLogRegistrationForm
+            isbn={book?.isbn}
+            maxPage={book?.pageCount}
+            loadLogs={loadLogs}
+          />
 
-        {/* 読書記録一覧 */}
-        <ul>
-          {log?.map((log: ReadingLog, i: number) => (
-            <li key={i}>
-              <p>記録{i}</p>
-            </li>
-          ))}
-        </ul>
+          {/* 読書記録一覧 */}
+          <ReadingLogCards logs={logs ?? []} />
+        </div>
       </div>
     </div>
   );
@@ -311,13 +586,15 @@ const Bookshelf = () => {
           onClose={setIsBookDetailVisible}
           onDelete={handleDeleteBook}
           book={books[bookDetailsIndex]}
-          log={displayBookLogs}
+          logs={displayBookLogs}
         />
       )}
       {BookshelfMain}
     </div>
   );
 };
+
+const Config = () => {};
 
 function App() {
   return (
@@ -328,4 +605,3 @@ function App() {
 }
 
 export default App;
-
