@@ -57,6 +57,7 @@ interface Book {
 }
 
 interface ReadingLog {
+  id?: string;
   isbn: number;
   time: [string, string];
   page: [number, number];

@@ -4,7 +4,7 @@ use tauri::async_runtime::Mutex;
 
 use serde::{Deserialize, Serialize};
 use surrealdb::engine::local::{Db, RocksDb};
-use surrealdb::Surreal;
+use surrealdb::{RecordId, Surreal};
 
 pub struct Database {
     path: PathBuf,
@@ -43,6 +43,7 @@ pub struct Book {
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ReadingLog {
+    id: Option<String>,
     isbn: u64,
     time: [String; 2],
     page: [u16; 2],
@@ -109,7 +110,8 @@ impl Database {
                 let _: Option<Book> = db.create(table).content(book).await?;
             }
             Table::ReadingLog => {
-                let reading_log = e.reading_log.unwrap();
+                let mut reading_log = e.reading_log.unwrap();
+                reading_log.id = None;
                 let _: Option<ReadingLog> = db.create(table).content(reading_log).await?;
             }
         };
@@ -180,6 +182,7 @@ impl Element {
     }
     fn empty_reading_log() -> Element {
         let reading_log = ReadingLog {
+            id: None,
             isbn: 0,
             time: ["".to_owned(), "".to_owned()],
             page: [0, 0],

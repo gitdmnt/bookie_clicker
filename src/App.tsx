@@ -14,9 +14,7 @@ const Bookshelf = () => {
     const query: Query = {
       elementType: "book",
     };
-    console.log(query);
     invoke("select", { query }).then((result: any) => {
-      console.log(result);
       let books = result.map((r: any) => r.book);
       setBooks(books);
     });
@@ -142,7 +140,7 @@ const Bookshelf = () => {
         elementType: "book",
         book: book,
       };
-      console.log(tableElement);
+      console.log("add:", tableElement);
       await invoke("add", { e: tableElement });
       onClose();
     };
@@ -274,6 +272,7 @@ const Bookshelf = () => {
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       const readingLog: ReadingLog = {
+        id: "",
         isbn: isbn,
         time: [
           dateStart.toString() + "T" + timeStart.toString(),
@@ -467,6 +466,7 @@ const Bookshelf = () => {
     );
   };
 
+  // 読書ログの表示
   const ReadingLogCards = ({ logs }: { logs: ReadingLog[] }) => {
     // ログを時間順にソート
     logs.sort((a, b) => {
@@ -485,43 +485,40 @@ const Bookshelf = () => {
     const dates = datetimes.map((dt: any) => [dt[0].month, dt[0].day]);
     const durs = datetimes.map((dt: any) => dt[2].total({ unit: "minute" }));
 
-    const pageCounts = logs.map((log: ReadingLog) => {
-      const pageStart = log.page[0];
-      const pageEnd = log.page[1];
-      const count = pageEnd - pageStart + 1;
-      return count;
-    });
-
     const logChunkByYear = (() => {
       const yearList = Array.from(new Set(years));
       return logs
-        .map((_, i) => ({
+        .map((log, i) => ({
           yearIndex: yearList.indexOf(years[i]),
-          date: dates[i],
-          dur: durs[i],
-          pageCount: pageCounts[i],
+          data: {
+            id: log.id,
+            date: dates[i],
+            dur: durs[i],
+            page: log.page,
+            note: log.note,
+            rating: log.rating,
+          },
         }))
-        .reduce((acc: any, cur: any, i: number) => {
+        .reduce((acc: any, cur: any) => {
           if (acc[cur.yearIndex] === undefined) {
             acc.push({
               year: yearList[cur.yearIndex],
-              logs: [
-                { date: dates[i], dur: durs[i], pageCount: pageCounts[i] },
-              ],
+              logs: [cur.data],
             });
           } else {
-            acc[cur.yearIndex].logs.push({
-              date: dates[i],
-              dur: durs[i],
-              pageCount: pageCounts[i],
-            });
+            acc[cur.yearIndex].logs.push(cur.data);
           }
           return acc;
         }, []);
     })();
 
+    const deleteLog = (id: string) => {
+      invoke("delete", { query: { elementType: "readingLog", id: id } });
+      loadLogs();
+    };
+
     return (
-      <div className="m-4 bg-white rounded-lg shadow-md p-4 card">
+      <div className="m-4 card">
         <h3 className="text-lg font-semibold text-gray-700 mb-4">読書記録</h3>
         <ul className="">
           {logChunkByYear.map((chunk: any, i: number) => (
@@ -536,21 +533,43 @@ const Bookshelf = () => {
                 {chunk.logs.map((log: any, j: number) => (
                   <li
                     key={j}
-                    className="flex gap-1 py-2  hover:bg-blue-50 rounded transition-colors duration-150"
+                    className="flex gap-1 justify-start hover:bg-blue-50 rounded transition-colors duration-150"
                   >
-                    <div className="text-sm font-medium text-gray-400  px-2 py-1 rounded mr-2">
+                    <div className="text-sm font-medium text-gray-400 px-2 rounded">
                       {`${log.date[0]}/${log.date[1]}`}
                     </div>
-                    <div className="text-sm font-medium text-gray-400 px-2 py-1 rounded mr-2">
-                      {Math.floor(log.dur / 24 / 60) &&
-                        `${Math.floor(log.dur / 24 / 60)}日`}
-                      {Math.floor((log.dur / 60) % 24) &&
-                        `${Math.floor((log.dur / 60) % 24)}時間`}
-                      {`${Math.round(log.dur % 60)}分`}
+                    <div className="flex flex-col gap-1">
+                      {log.note && <div>{log.note}</div>}
+                      <div className="flex gap-1">
+                        <div className="text-sm font-medium text-gray-400 rounded">
+                          {Math.floor(log.dur / 24 / 60) > 0 &&
+                            `${Math.floor(log.dur / 24 / 60)}日`}
+                          {Math.floor((log.dur / 60) % 24) > 0 &&
+                            `${Math.floor((log.dur / 60) % 24)}時間`}
+                          {Math.floor(log.dur % 60) > 0 &&
+                            `${Math.floor(log.dur % 60)}分`}
+                          {Math.floor(log.dur) === 0 && "0分"}
+                        </div>
+                        <div className="text-sm font-medium text-gray-400 rounded">
+                          {`${log.page[0]} ~ ${log.page[1]}ページ`}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                      <span className="mr-1">📄</span>p.{log.pageCount}
-                    </div>
+                    <button onClick={() => console.log(log.id)}>id</button>
+                    <svg
+                      className="w-6 h-6 ml-auto"
+                      onClick={() => deleteLog(log.id)}
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
                   </li>
                 ))}
               </ul>
@@ -654,13 +673,6 @@ const Bookshelf = () => {
 
   return (
     <div className="p-4">
-      <button
-        onClick={() => {
-          console.log(books);
-        }}
-      >
-        refresh
-      </button>
       {isModalVisible && <AddBookModal onClose={closeModal} />}
       {isBookDetailVisible && (
         <BookDetailPage
