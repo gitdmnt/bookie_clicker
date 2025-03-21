@@ -467,16 +467,97 @@ const Bookshelf = () => {
     );
   };
 
-  const ReadingLogCards = ({ logs }: any) => {
+  const ReadingLogCards = ({ logs }: { logs: ReadingLog[] }) => {
+    // ログを時間順にソート
+    logs.sort((a, b) => {
+      const aStart = Temporal.PlainDateTime.from(a.time[0]);
+      const bStart = Temporal.PlainDateTime.from(b.time[0]);
+      return aStart.since(bStart).total({ unit: "minute" });
+    });
+
+    const datetimes = logs.map((log: ReadingLog) => {
+      const start = Temporal.PlainDateTime.from(log.time[0]);
+      const end = Temporal.PlainDateTime.from(log.time[1]);
+      const duration = Temporal.Duration.from(end.since(start));
+      return [start, end, duration];
+    });
+    const years = datetimes.map((dt: any) => dt[0].year);
+    const dates = datetimes.map((dt: any) => [dt[0].month, dt[0].day]);
+    const durs = datetimes.map((dt: any) => dt[2].total({ unit: "minute" }));
+
+    const pageCounts = logs.map((log: ReadingLog) => {
+      const pageStart = log.page[0];
+      const pageEnd = log.page[1];
+      const count = pageEnd - pageStart + 1;
+      return count;
+    });
+
+    const logChunkByYear = (() => {
+      const yearList = Array.from(new Set(years));
+      return logs
+        .map((_, i) => ({
+          yearIndex: yearList.indexOf(years[i]),
+          date: dates[i],
+          dur: durs[i],
+          pageCount: pageCounts[i],
+        }))
+        .reduce((acc: any, cur: any, i: number) => {
+          if (acc[cur.yearIndex] === undefined) {
+            acc.push({
+              year: yearList[cur.yearIndex],
+              logs: [
+                { date: dates[i], dur: durs[i], pageCount: pageCounts[i] },
+              ],
+            });
+          } else {
+            acc[cur.yearIndex].logs.push({
+              date: dates[i],
+              dur: durs[i],
+              pageCount: pageCounts[i],
+            });
+          }
+          return acc;
+        }, []);
+    })();
+
     return (
-      <ul className="flex flex-col gap-4 m-4 card">
-        {logs.map((log: ReadingLog, i: number) => (
-          <li key={i}>
-            <p>{log.time[0]}</p>
-            <p>記録{i}</p>
-          </li>
-        ))}
-      </ul>
+      <div className="m-4 bg-white rounded-lg shadow-md p-4 card">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">読書記録</h3>
+        <ul className="">
+          {logChunkByYear.map((chunk: any, i: number) => (
+            <li key={i} className="mb-4">
+              <div className="flex items-center mb-4">
+                <h2 className="text-xl font-bold text-blue-600">
+                  {chunk.year}
+                </h2>
+              </div>
+
+              <ul className="flex flex-col gap-1">
+                {chunk.logs.map((log: any, j: number) => (
+                  <li
+                    key={j}
+                    className="flex gap-1 py-2  hover:bg-blue-50 rounded transition-colors duration-150"
+                  >
+                    <div className="text-sm font-medium text-gray-400  px-2 py-1 rounded mr-2">
+                      {`${log.date[0]}/${log.date[1]}`}
+                    </div>
+                    <div className="text-sm font-medium text-gray-400 px-2 py-1 rounded mr-2">
+                      {Math.floor(log.dur / 24 / 60) &&
+                        `${Math.floor(log.dur / 24 / 60)}日`}
+                      {Math.floor((log.dur / 60) % 24) &&
+                        `${Math.floor((log.dur / 60) % 24)}時間`}
+                      {`${Math.round(log.dur % 60)}分`}
+                    </div>
+                    <div className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                      <span className="mr-1">📄</span>p.{log.pageCount}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </div>
     );
   };
 
