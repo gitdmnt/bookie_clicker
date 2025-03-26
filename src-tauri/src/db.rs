@@ -34,6 +34,7 @@ pub struct Element {
 pub struct Book {
     isbn: u64, // Primary Key
     title: String,
+    series_title: Option<String>,
     authors: Vec<String>,
     publisher: String,
     year: u32,
@@ -73,6 +74,7 @@ pub struct Query {
     // Book の場合
     isbn: Option<u64>, // Primary Key
     title: Option<String>,
+    series_title: Option<String>,
     author: Option<String>,
     publisher: Option<String>,
 
@@ -183,6 +185,7 @@ impl Element {
         let book = Book {
             isbn: 0,
             title: "".to_string(),
+            series_title: None,
             authors: vec![],
             publisher: "".to_string(),
             year: 0,
@@ -281,6 +284,9 @@ impl Query {
             self.user.map(|v| format!("user = {}", v)),
             self.isbn.map(|v| format!("isbn = {}", v)),
             self.title.as_ref().map(|v| format!("title = {}", v)),
+            self.series_title
+                .as_ref()
+                .map(|v| format!("series_title = {}", v)),
             self.author.as_ref().map(|v| format!("author = {}", v)),
             self.publisher
                 .as_ref()
@@ -308,6 +314,7 @@ impl Query {
             date_to: None,
             isbn: None,
             title: None,
+            series_title: None,
             author: None,
             publisher: None,
             id: None,
@@ -330,6 +337,7 @@ mod tests {
         let book = Book {
             isbn: 1,
             title: "t".to_string(),
+            series_title: None,
             authors: vec!["a".to_string()],
             publisher: "p".to_string(),
             year: 2,
@@ -347,6 +355,7 @@ mod tests {
             "book": {
                 "isbn": 1,
                 "title": "t",
+                "seriesTitle": null,
                 "authors": ["a"],
                 "publisher": "p",
                 "year": 2,
@@ -369,6 +378,7 @@ mod tests {
             let book = Book {
                 isbn: 1,
                 title: "t".to_string(),
+                series_title: None,
                 authors: vec!["a".to_string()],
                 publisher: "p".to_string(),
                 year: 2,
@@ -389,6 +399,7 @@ mod tests {
                 date_to: None,
                 isbn: Some(1),
                 title: None,
+                series_title: None,
                 author: None,
                 publisher: None,
                 id: None,
@@ -397,6 +408,7 @@ mod tests {
             let book = Book {
                 isbn: 1,
                 title: "t".to_string(),
+                series_title: None,
                 authors: vec!["a".to_string()],
                 publisher: "p".to_string(),
                 year: 2,
