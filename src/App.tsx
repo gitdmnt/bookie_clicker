@@ -513,6 +513,7 @@ const Bookshelf = () => {
     })();
 
     const deleteLog = (id: string) => {
+      console.log("deleting log with id: ", id);
       invoke("delete", { query: { elementType: "readingLog", id: id } });
       loadLogs();
     };
@@ -698,3 +699,4 @@ function App() {
 }
 
 export default App;
+

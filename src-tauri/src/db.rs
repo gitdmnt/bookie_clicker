@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
+use std::str::FromStr;
 use tauri::async_runtime::Mutex;
 
 use serde::{Deserialize, Serialize};
@@ -51,21 +52,34 @@ pub struct ReadingLog {
     rating: Option<u8>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingLogForStore {
+    id: Option<RecordId>,
+    isbn: u64,
+    time: [String; 2],
+    page: [u16; 2],
+    note: String,
+    rating: Option<u8>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Query {
     // メタデータ
     element_type: Table,
     user: Option<u64>,
-    date_from: Option<u32>,
-    date_to: Option<u32>,
 
     // Book の場合
     isbn: Option<u64>, // Primary Key
     title: Option<String>,
     author: Option<String>,
     publisher: Option<String>,
+
     // ReadingLog の場合
+    id: Option<String>,
+    date_from: Option<u32>,
+    date_to: Option<u32>,
 }
 
 impl Database {
@@ -112,7 +126,8 @@ impl Database {
             Table::ReadingLog => {
                 let mut reading_log = e.reading_log.unwrap();
                 reading_log.id = None;
-                let _: Option<ReadingLog> = db.create(table).content(reading_log).await?;
+                let reading_log: ReadingLogForStore = reading_log.into();
+                let _: Option<ReadingLogForStore> = db.create(table).content(reading_log).await?;
             }
         };
         Ok(())
@@ -135,13 +150,13 @@ impl Database {
             Table::ReadingLog => db
                 .query(query_str)
                 .await?
-                .take::<Vec<ReadingLog>>(0)
+                .take::<Vec<ReadingLogForStore>>(0)
                 .map(|v| {
                     v.into_iter()
                         .map(|reading_log| Element {
                             element_type: Table::ReadingLog,
                             book: None,
-                            reading_log: Some(reading_log),
+                            reading_log: Some(reading_log.into()),
                         })
                         .collect()
                 }),
@@ -197,6 +212,39 @@ impl Element {
     }
 }
 
+impl From<ReadingLogForStore> for ReadingLog {
+    fn from(reading_log: ReadingLogForStore) -> ReadingLog {
+        ReadingLog {
+            id: reading_log.id.map(|key| key.to_string()),
+            isbn: reading_log.isbn,
+            time: reading_log.time,
+            page: reading_log.page,
+            note: reading_log.note,
+            rating: reading_log.rating,
+        }
+    }
+}
+
+impl From<ReadingLog> for ReadingLogForStore {
+    fn from(reading_log: ReadingLog) -> ReadingLogForStore {
+        //id validation
+        let id = reading_log.id.as_ref().and_then(|id| {
+            let parts: Vec<&str> = id.split(':').collect();
+            (parts.len() == 2 && parts[0] == "reading_logs")
+                .then(|| RecordId::from_table_key(parts[0], parts[1]))
+        });
+
+        ReadingLogForStore {
+            id,
+            isbn: reading_log.isbn,
+            time: reading_log.time,
+            page: reading_log.page,
+            note: reading_log.note,
+            rating: reading_log.rating,
+        }
+    }
+}
+
 impl std::fmt::Display for Query {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let query = format!("SELECT * FROM {}", &self.table())
@@ -239,6 +287,7 @@ impl Query {
                 .map(|v| format!("publisher = {}", v)),
             self.date_from.map(|v| format!("date >= {}", v)),
             self.date_to.map(|v| format!("date <= {}", v)),
+            self.id.as_ref().map(|v| format!("id = {}", v)),
         ]
         .into_iter()
         .flatten()
@@ -251,7 +300,7 @@ impl Query {
             Some(" WHERE".to_string() + " " + &query)
         }
     }
-    fn for_all() -> Query {
+    fn for_all_books() -> Query {
         Query {
             element_type: Table::Book,
             user: None,
@@ -261,6 +310,13 @@ impl Query {
             title: None,
             author: None,
             publisher: None,
+            id: None,
+        }
+    }
+    fn for_all_logs() -> Query {
+        Query {
+            element_type: Table::ReadingLog,
+            ..Query::for_all_books()
         }
     }
 }
@@ -307,7 +363,7 @@ mod tests {
     fn tauri_add_book() {
         let task = async {
             let db = Database::connect("test".to_string()).await.unwrap();
-            let query = Query::for_all();
+            let query = Query::for_all_books();
             let _ = db.delete(query).await.unwrap();
 
             let book = Book {
@@ -335,6 +391,7 @@ mod tests {
                 title: None,
                 author: None,
                 publisher: None,
+                id: None,
             };
             let result = db.select(query).await.unwrap();
             let book = Book {
@@ -352,6 +409,63 @@ mod tests {
                 reading_log: None,
             };
             assert_eq!(result[0], element);
+        };
+        tauri::async_runtime::block_on(task);
+    }
+
+    #[test]
+    fn delete_log() {
+        let log1 = ReadingLog {
+            id: None,
+            isbn: 1,
+            time: ["2021-01-01".to_string(), "2021-01-02".to_string()],
+            page: [1, 2],
+            note: "note".to_string(),
+            rating: Some(3),
+        };
+        let log2 = ReadingLog {
+            id: None,
+            isbn: 2,
+            time: ["2021-01-01".to_string(), "2021-01-02".to_string()],
+            page: [1, 2],
+            note: "note".to_string(),
+            rating: Some(3),
+        };
+        let task = async {
+            let db = Database::connect("test".to_string()).await.unwrap();
+            db.delete(Query::for_all_books()).await.unwrap();
+            db.delete(Query::for_all_logs()).await.unwrap();
+
+            db.add(Element {
+                element_type: Table::ReadingLog,
+                book: None,
+                reading_log: Some(log1),
+            })
+            .await
+            .unwrap();
+            db.add(Element {
+                element_type: Table::ReadingLog,
+                book: None,
+                reading_log: Some(log2),
+            })
+            .await
+            .unwrap();
+            let query = Query::for_all_logs();
+            let result = db.select(query).await.unwrap();
+            assert_eq!(result.len(), 2);
+
+            let id1 = result[0].reading_log.as_ref().unwrap().id.clone();
+            let query = Query {
+                id: id1,
+                ..Query::for_all_logs()
+            };
+
+            db.delete(query).await.unwrap();
+            let query = Query::for_all_logs();
+            let result = db.select(query).await.unwrap();
+            assert_eq!(result.len(), 1);
+
+            db.delete(Query::for_all_logs()).await.unwrap();
         };
         tauri::async_runtime::block_on(task);
     }

@@ -78,6 +78,7 @@ interface Query {
 
   // ReadingLog fields
   id?: number;
-  term?: number;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
