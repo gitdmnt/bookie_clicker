@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { deleteElements, selectElements } from "../utils/api";
+import { deleteElements, selectElements } from "@/utils/api";
 import AddBookModal from "./AddBookModal";
 import BookDetailPage from "./BookDetailPage";
 import BookCard from "./BookCard";
-import { Book } from "../types";
+import { Book } from "types";
 
 const Bookshelf = () => {
   const [books, setBooks] = useState<Book[]>([]);

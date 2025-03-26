@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { XMLParser } from "fast-xml-parser";
-import { Book } from "../types";
-import { addElement } from "../utils/api";
+import { Book } from "@/types";
+import { addElement } from "@/utils/api";
 
 interface AddBookModalProps {
   onClose: () => void;

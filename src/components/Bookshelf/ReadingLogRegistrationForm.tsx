@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Temporal } from "temporal-polyfill";
-import { ReadingLog } from "../types";
-import { addElement } from "../utils/api";
+import { ReadingLog } from "@/types";
+import { addElement } from "@/utils/api";
 
 interface ReadingLogRegistrationFormProps {
   isbn: number;

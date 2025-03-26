@@ -1,9 +1,9 @@
 import React from "react";
-import bg from "../assets/bg.jpg";
+import bg from "@/assets/bg.jpg";
 import ReadingLogRegistrationForm from "./ReadingLogRegistrationForm";
 import ReadingLogCards from "./ReadingLogCards";
-import { Book } from "../types";
-import useReadingLogs from "../hooks/useReadingLogs";
+import { Book } from "@/types";
+import useReadingLogs from "@/hooks/useReadingLogs";
 
 interface BookDetailPageProps {
   book: Book;

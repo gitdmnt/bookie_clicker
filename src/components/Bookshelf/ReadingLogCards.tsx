@@ -1,7 +1,7 @@
 import React from "react";
 import { Temporal } from "temporal-polyfill";
-import { ReadingLog } from "../types";
-import { deleteElements } from "../utils/api";
+import { ReadingLog } from "@/types";
+import { deleteElements } from "@/utils/api";
 
 interface ReadingLogCardsProps {
   logs: ReadingLog[];
