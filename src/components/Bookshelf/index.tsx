@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { deleteElements, selectElements } from "@/utils/api";
+import { selectElements } from "@/utils/api";
 import AddBookModal from "./AddBookModal";
 import BookDetailPage from "./BookDetailPage";
 import BookCard from "./BookCard";
 import { Book } from "types";
+import useStopwatch from "@/hooks/useStopwatch";
 
 const Bookshelf = () => {
+  // このへんうまいことhooksに切り出せないかなあ
   const [books, setBooks] = useState<Book[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -33,30 +35,26 @@ const Bookshelf = () => {
   };
 
   // Show detail and load reading logs for the selected book
-  const handleShowBookDetail = async (isbn: number) => {
+  const handleOpenBookDetail = async (isbn: number) => {
     const book = books.find((b) => b.isbn === isbn);
     if (!book) return;
     setSelectedBook(book);
   };
 
-  // Delete a book then reload the list
-  const handleDeleteBook = async (isbn: number | null | undefined) => {
-    if (!isbn) return;
-    await deleteElements({ elementType: "book", isbn });
+  const handleCloseBookDetail = () => {
     setSelectedBook(null);
     loadBooks();
   };
+
+  const { StopwatchElement, time } = useStopwatch();
 
   return (
     <div className="p-4">
       {isModalVisible && <AddBookModal onClose={handleCloseAddBookModal} />}
       {selectedBook && (
-        <BookDetailPage
-          book={selectedBook}
-          onClose={() => setSelectedBook(null)}
-          onDelete={handleDeleteBook}
-        />
+        <BookDetailPage book={selectedBook} onClose={handleCloseBookDetail} />
       )}
+      <StopwatchElement />
       <div className="flex flex-wrap gap-4">
         <button
           onClick={handleOpenAddBookModal}
@@ -69,7 +67,7 @@ const Bookshelf = () => {
           <BookCard
             key={book.isbn}
             book={book}
-            onClick={() => handleShowBookDetail(book.isbn)}
+            onClick={() => handleOpenBookDetail(book.isbn)}
           />
         ))}
       </div>
@@ -78,3 +76,4 @@ const Bookshelf = () => {
 };
 
 export default Bookshelf;
+

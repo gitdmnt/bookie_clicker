@@ -4,19 +4,21 @@ import ReadingLogRegistrationForm from "./ReadingLogRegistrationForm";
 import ReadingLogCards from "./ReadingLogCards";
 import { Book } from "@/types";
 import useReadingLogs from "@/hooks/useReadingLogs";
+import { deleteElements } from "@/utils/api";
 
 interface BookDetailPageProps {
   book: Book;
   onClose: () => void;
-  onDelete: (isbn: number | null | undefined) => void;
 }
 
-const BookDetailPage: React.FC<BookDetailPageProps> = ({
-  book,
-  onClose,
-  onDelete,
-}) => {
+const BookDetailPage: React.FC<BookDetailPageProps> = ({ book, onClose }) => {
   const { logs, loadLogs } = useReadingLogs(book.isbn);
+
+  const onDelete = async (isbn: number | null) => {
+    if (!isbn) return;
+    await deleteElements({ elementType: "book", isbn });
+    onClose();
+  };
   return (
     <div className="absolute inset-0 z-10">
       <img
@@ -78,3 +80,4 @@ const BookDetailPage: React.FC<BookDetailPageProps> = ({
 };
 
 export default BookDetailPage;
+

@@ -1,7 +1,7 @@
 export interface Book {
   isbn: number;
-    title: string;
-    seriesTitle?: string;
+  title: string;
+  seriesTitle?: string;
   authors: string[];
   imageUrl: string;
   pageCount: number;
@@ -23,3 +23,4 @@ export interface Query {
   isbn?: number;
   [key: string]: any;
 }
+
