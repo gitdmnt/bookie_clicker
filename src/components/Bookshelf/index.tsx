@@ -1,28 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { selectElements } from "@/utils/api";
+import { useState } from "react";
 import AddBookModal from "./AddBookModal";
 import BookDetailPage from "./BookDetailPage";
 import BookCard from "./BookCard";
 import { Book } from "types";
 import useStopwatch from "@/hooks/useStopwatch";
+import useLoadBooks from "@/hooks/useLoadBooks";
 
 const Bookshelf = () => {
+  const { books, loadBooks } = useLoadBooks();
+  const { time, StopwatchElement } = useStopwatch();
+
   // このへんうまいことhooksに切り出せないかなあ
-  const [books, setBooks] = useState<Book[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-
-  // Load books from backend
-  const loadBooks = async () => {
-    const query = { elementType: "book" };
-    const result: any = await selectElements(query);
-    const fetchedBooks = result.map((r: any) => r.book);
-    setBooks(fetchedBooks);
-  };
-
-  useEffect(() => {
-    loadBooks();
-  }, []);
 
   // Modal open/close handlers
   const handleOpenAddBookModal = () => {
@@ -45,8 +35,6 @@ const Bookshelf = () => {
     setSelectedBook(null);
     loadBooks();
   };
-
-  const { StopwatchElement, time } = useStopwatch();
 
   return (
     <div className="p-4">

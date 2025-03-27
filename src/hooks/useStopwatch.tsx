@@ -112,7 +112,7 @@ const useStopwatch = () => {
     </div>
   );
 
-  return { StopwatchElement, time, isRunning };
+  return { time, isRunning, StopwatchElement };
 };
 
 export default useStopwatch;
