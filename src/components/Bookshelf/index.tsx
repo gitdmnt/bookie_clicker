@@ -3,12 +3,11 @@ import AddBookModal from "./AddBookModal";
 import BookDetailPage from "./BookDetailPage";
 import BookCard from "./BookCard";
 import { Book } from "types";
-import useStopwatch from "@/hooks/useStopwatch";
+import LapNote from "./LapNote";
 import useLoadBooks from "@/hooks/useLoadBooks";
 
 const Bookshelf = () => {
   const { books, loadBooks } = useLoadBooks();
-  const { time, StopwatchElement } = useStopwatch();
 
   // このへんうまいことhooksに切り出せないかなあ
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -42,7 +41,7 @@ const Bookshelf = () => {
       {selectedBook && (
         <BookDetailPage book={selectedBook} onClose={handleCloseBookDetail} />
       )}
-      <StopwatchElement />
+      <LapNote />
       <div className="flex flex-wrap gap-4">
         <button
           onClick={handleOpenAddBookModal}

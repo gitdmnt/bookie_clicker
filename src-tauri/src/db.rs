@@ -1,6 +1,5 @@
 use std::fs;
 use std::path::PathBuf;
-use std::str::FromStr;
 use tauri::async_runtime::Mutex;
 
 use serde::{Deserialize, Serialize};

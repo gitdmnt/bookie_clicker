@@ -1,5 +1,5 @@
 import React, { memo, useState } from "react";
-import useInterval from "./useInterval";
+import useInterval from "@/hooks/useInterval";
 
 // 型定義
 interface Time {
@@ -79,7 +79,7 @@ const ResetSVG = memo(() => (
   </svg>
 ));
 
-const useStopwatch = ({ onStart, onStop, onLap, onReset }: any) => {
+const Stopwatch = ({ onLap, onReset }: any) => {
   const [isRunning, setIsRunning] = useState(false);
   const [time, setTime] = useState<Time>({ hh: 0, mm: 0, ss: 0 });
 
@@ -104,11 +104,6 @@ const useStopwatch = ({ onStart, onStop, onLap, onReset }: any) => {
 
   // ボタンハンドラー
   const handleStartStop = () => {
-    if (isRunning) {
-      onStop(time);
-    } else {
-      onStart();
-    }
     setIsRunning((prev) => !prev);
   };
 
@@ -123,7 +118,7 @@ const useStopwatch = ({ onStart, onStop, onLap, onReset }: any) => {
     }
   };
 
-  const StopwatchElement = () => (
+  return (
     <div className="w-full h-full flex justify-center">
       <div className="w-64 m-4 mt-12 align-middle">
         <div className="text-5xl text-center">{formatTime(time)}</div>
@@ -138,9 +133,7 @@ const useStopwatch = ({ onStart, onStop, onLap, onReset }: any) => {
       </div>
     </div>
   );
-
-  return { time, isRunning, StopwatchElement };
 };
 
-export default useStopwatch;
+export default Stopwatch;
 

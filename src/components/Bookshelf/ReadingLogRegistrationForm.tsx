@@ -125,7 +125,9 @@ const ReadingLogRegistrationForm: React.FC<ReadingLogRegistrationFormProps> = ({
                 className="w-full rounded-lg border border-gray-300 p-2 transition-colors"
                 placeholder="読んだこと"
                 value={note}
-                onChange={(e) => setNote(e.target.value)}
+                onChange={(e) => {
+                  setNote(e.target.value);
+                }}
               ></textarea>
               <input
                 type="range"
@@ -152,10 +154,10 @@ const ReadingLogRegistrationForm: React.FC<ReadingLogRegistrationFormProps> = ({
           </div>
         </div>
         {/* Arrow Navigation */}
-        <div className="flex justify-between absolute top-1/2 left-0 right-0">
+        <div className="pointer-events-none flex justify-between absolute top-1/2 left-0 right-0">
           <button
             onClick={prevCard}
-            className="bg-white bg-opacity-70 rounded-full p-2 shadow-md hover:bg-opacity-80"
+            className="pointer-events-auto bg-white bg-opacity-70 rounded-full p-2 shadow-md hover:bg-opacity-80"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -174,7 +176,7 @@ const ReadingLogRegistrationForm: React.FC<ReadingLogRegistrationFormProps> = ({
           </button>
           <button
             onClick={nextCard}
-            className="bg-white bg-opacity-70 rounded-full p-2 shadow-md hover:bg-opacity-80"
+            className="pointer-events-auto bg-white bg-opacity-70 rounded-full p-2 shadow-md hover:bg-opacity-80"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -210,3 +212,4 @@ const ReadingLogRegistrationForm: React.FC<ReadingLogRegistrationFormProps> = ({
 };
 
 export default ReadingLogRegistrationForm;
+
