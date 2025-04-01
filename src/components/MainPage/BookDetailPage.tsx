@@ -13,27 +13,26 @@ const BookDetailPage = ({ book, onClose }: any) => {
     onClose();
   };
   return (
-    <div className="absolute inset-0 z-10 bg-red-200 bg-opacity-80 backdrop-blur-sm w-screen">
+    <div className="absolute top-0 z-10 bg-slate-300 bg-opacity-80 backdrop-blur-sm w-full rounded-t-lg shadow-lg">
       <div className=" w-full overflow-x-hidden flex flex-col">
         {/* Header */}
-        <div className="flex justify-between p-4 z-20 bg-slate-100 rounded-b-lg">
+        <div className="flex justify-center p-2 z-20 bg-white bg-opacity-90 backdrop-blur-sm rounded-t-lg">
           <button onClick={onClose}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
+              className="h-3 w-6"
               fill="none"
-              viewBox="0 0 24 24"
+              viewBox="0 0 24 12"
               stroke="currentColor"
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M15 19l-7-7 7-7"
+                d="M5 2l7 7 7 -7"
               />
             </svg>
           </button>
-          <button onClick={() => onDelete(book?.isbn)}>Delete</button>
         </div>
         {/* Book Information */}
         <div className="grid grid-cols-2 justify-center gap-4 m-4 card">
@@ -54,14 +53,13 @@ const BookDetailPage = ({ book, onClose }: any) => {
           </div>
         </div>
         {/* Reading Log Section */}
-        <div className="z-20 bg-slate-100 rounded-t-lg shadow-lg">
-          <ReadingLogRegistrationForm
-            isbn={book?.isbn}
-            maxPage={book?.pageCount}
-            loadLogs={loadLogs}
-          />
-          <ReadingLogCards logs={logs} reloadLogs={loadLogs} />
-        </div>
+        <ReadingLogRegistrationForm
+          isbn={book?.isbn}
+          maxPage={book?.pageCount}
+          loadLogs={loadLogs}
+        />
+        <ReadingLogCards logs={logs} reloadLogs={loadLogs} />
+        <div className="h-16"></div>
       </div>
     </div>
   );
