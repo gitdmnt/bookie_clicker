@@ -13,7 +13,7 @@ const BookDetailPage = ({ book, onClose }: any) => {
     onClose();
   };
   return (
-    <div className="absolute inset-0 z-10 bg-white bg-opacity-80 backdrop-blur-sm">
+    <div className="absolute inset-0 z-10 bg-red-200 bg-opacity-80 backdrop-blur-sm w-screen">
       <div className=" w-full overflow-x-hidden flex flex-col">
         {/* Header */}
         <div className="flex justify-between p-4 z-20 bg-slate-100 rounded-b-lg">

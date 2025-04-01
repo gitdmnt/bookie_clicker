@@ -40,28 +40,26 @@ const MainPage = () => {
   };
 
   const BookshelfMain = () => (
-    <>
-      <div className="flex flex-wrap gap-4">
-        <button
-          onClick={handleOpenAddBookModal}
-          className="flex flex-col items-center justify-center md:h-48 md:w-32 h-36 w-24 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          <span className="text-4xl mb-2">+</span>
-          <span>Add Book</span>
-        </button>
-        {books.map((book) => (
-          <BookCard
-            key={book.isbn}
-            book={book}
-            onClick={() => handleOpenBookDetail(book.isbn)}
-          />
-        ))}
-      </div>
-    </>
+    <div className="flex flex-wrap gap-4 p-4">
+      <button
+        onClick={handleOpenAddBookModal}
+        className="flex flex-col items-center justify-center md:h-48 md:w-32 h-36 w-24 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+      >
+        <span className="text-4xl mb-2">+</span>
+        <span>Add Book</span>
+      </button>
+      {books.map((book) => (
+        <BookCard
+          key={book.isbn}
+          book={book}
+          onClick={() => handleOpenBookDetail(book.isbn)}
+        />
+      ))}
+    </div>
   );
 
   return (
-    <div className="p-4">
+    <div>
       {isModalVisible && <AddBookModal onClose={handleCloseAddBookModal} />}
       <LapNotepad
         isTimerRunning={isTimerRunning}
@@ -70,7 +68,7 @@ const MainPage = () => {
         lapNotes={lapNotes}
         setLapNotes={setLapNotes}
       />
-      <div className="relative flex flex-col gap-4">
+      <div className="relative">
         <BookshelfMain />
         {selectedBook !== null && (
           <BookDetailPage
