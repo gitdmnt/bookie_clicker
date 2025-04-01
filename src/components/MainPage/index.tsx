@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import AddBookModal from "./AddBookModal";
 import BookDetailPage from "./BookDetailPage";
 import BookCard from "./BookCard";
-import { Book } from "types";
-import LapNote from "./LapNote";
+import { Book, StopwatchTime, LapNote } from "types";
+import LapNotepad from "./LapNotepad";
 import useLoadBooks from "@/hooks/useLoadBooks";
 
-const Bookshelf = () => {
+const MainPage = () => {
   const { books, loadBooks } = useLoadBooks();
 
   // このへんうまいことhooksに切り出せないかなあ
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const time = useRef<StopwatchTime>({ h: 0, m: 0, s: 0 });
+  const [lapNotes, setLapNotes] = useState<LapNote[]>([]);
 
   // Modal open/close handlers
   const handleOpenAddBookModal = () => {
@@ -35,13 +39,8 @@ const Bookshelf = () => {
     loadBooks();
   };
 
-  return (
-    <div className="p-4">
-      {isModalVisible && <AddBookModal onClose={handleCloseAddBookModal} />}
-      {selectedBook && (
-        <BookDetailPage book={selectedBook} onClose={handleCloseBookDetail} />
-      )}
-      <LapNote />
+  const BookshelfMain = () => (
+    <>
       <div className="flex flex-wrap gap-4">
         <button
           onClick={handleOpenAddBookModal}
@@ -58,9 +57,35 @@ const Bookshelf = () => {
           />
         ))}
       </div>
+    </>
+  );
+
+  return (
+    <div className="p-4">
+      {isModalVisible && <AddBookModal onClose={handleCloseAddBookModal} />}
+      <LapNotepad
+        isTimerRunning={isTimerRunning}
+        setIsTimerRunning={setIsTimerRunning}
+        time={time}
+        lapNotes={lapNotes}
+        setLapNotes={setLapNotes}
+      />
+      <div className="relative flex flex-col gap-4">
+        <BookshelfMain />
+        {selectedBook !== null && (
+          <BookDetailPage
+            book={selectedBook}
+            onClose={handleCloseBookDetail}
+            isTimerRunning={isTimerRunning}
+            setIsTimerRunning={setIsTimerRunning}
+            time={time}
+            lapNotes={lapNotes}
+            setLapNotes={setLapNotes}
+          />
+        )}
+      </div>
     </div>
   );
 };
 
-export default Bookshelf;
-
+export default MainPage;

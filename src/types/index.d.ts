@@ -1,3 +1,5 @@
+import { Temporal } from "temporal-polyfill";
+
 export interface Book {
   isbn: number;
   title: string;
@@ -10,7 +12,7 @@ export interface Book {
 }
 
 export interface ReadingLog {
-  id: string;
+  id?: string;
   isbn: number;
   time: [string, string]; // Start and end time as ISO formatted strings
   page: [number, number];
@@ -24,3 +26,14 @@ export interface Query {
   [key: string]: any;
 }
 
+export interface LapNote {
+  timestamp: StopwatchTime;
+  note: string;
+  refPage: number;
+}
+
+export interface StopwatchTime {
+  h: number;
+  m: number;
+  s: number;
+}

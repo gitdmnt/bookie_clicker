@@ -3,18 +3,8 @@ import { Temporal } from "temporal-polyfill";
 import { ReadingLog } from "@/types";
 import { addElement } from "@/utils/api";
 
-interface ReadingLogRegistrationFormProps {
-  isbn: number;
-  maxPage: number;
-  loadLogs: () => Promise<void>;
-}
-
-const ReadingLogRegistrationForm: React.FC<ReadingLogRegistrationFormProps> = ({
-  isbn,
-  maxPage,
-  loadLogs,
-}) => {
-  const totalCards = 2;
+const ReadingLogRegistrationForm = ({ isbn, maxPage, loadLogs }: any) => {
+  const totalCards = 1;
   const [activeCard, setActiveCard] = useState(0);
 
   // Start and end date/time inputs
@@ -148,10 +138,6 @@ const ReadingLogRegistrationForm: React.FC<ReadingLogRegistrationFormProps> = ({
               </div>
             </form>
           </div>
-          {/* Card 2: Placeholder for “読む” (Reading) if needed */}
-          <div className="p-4 card w-full flex-shrink-0">
-            <p>読む</p>
-          </div>
         </div>
         {/* Arrow Navigation */}
         <div className="pointer-events-none flex justify-between absolute top-1/2 left-0 right-0">
@@ -212,4 +198,3 @@ const ReadingLogRegistrationForm: React.FC<ReadingLogRegistrationFormProps> = ({
 };
 
 export default ReadingLogRegistrationForm;
-

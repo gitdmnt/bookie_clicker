@@ -1,17 +1,10 @@
-import React from "react";
 import bg from "@/assets/bg.jpg";
 import ReadingLogRegistrationForm from "./ReadingLogRegistrationForm";
 import ReadingLogCards from "./ReadingLogCards";
-import { Book } from "@/types";
 import useReadingLogs from "@/hooks/useReadingLogs";
 import { deleteElements } from "@/utils/api";
 
-interface BookDetailPageProps {
-  book: Book;
-  onClose: () => void;
-}
-
-const BookDetailPage: React.FC<BookDetailPageProps> = ({ book, onClose }) => {
+const BookDetailPage = ({ book, onClose }: any) => {
   const { logs, loadLogs } = useReadingLogs(book.isbn);
 
   const onDelete = async (isbn: number | null) => {
@@ -20,13 +13,8 @@ const BookDetailPage: React.FC<BookDetailPageProps> = ({ book, onClose }) => {
     onClose();
   };
   return (
-    <div className="absolute inset-0 z-10">
-      <img
-        className="fixed inset-0 object-cover w-full h-full"
-        src={bg}
-        alt="background"
-      />
-      <div className="min-h-screen w-full overflow-x-hidden flex flex-col">
+    <div className="absolute inset-0 z-10 bg-white bg-opacity-80 backdrop-blur-sm">
+      <div className=" w-full overflow-x-hidden flex flex-col">
         {/* Header */}
         <div className="flex justify-between p-4 z-20 bg-slate-100 rounded-b-lg">
           <button onClick={onClose}>
@@ -80,4 +68,3 @@ const BookDetailPage: React.FC<BookDetailPageProps> = ({ book, onClose }) => {
 };
 
 export default BookDetailPage;
-
