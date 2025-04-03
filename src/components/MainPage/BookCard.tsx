@@ -10,7 +10,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onClick }) => {
   return (
     <button
       onClick={onClick}
-      className="relative flex flex-col md:h-48 md:w-32 h-36 w-24 bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow"
+      className="relative flex flex-col flex-grow md:h-48 md:w-32 h-36 w-24 bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow"
     >
       {book.imageUrl && (
         <img
@@ -29,3 +29,4 @@ const BookCard: React.FC<BookCardProps> = ({ book, onClick }) => {
 };
 
 export default BookCard;
+

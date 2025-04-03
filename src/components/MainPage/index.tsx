@@ -43,7 +43,7 @@ const MainPage = () => {
     <div className="flex flex-wrap gap-4 p-4">
       <button
         onClick={handleOpenAddBookModal}
-        className="flex flex-col items-center justify-center md:h-48 md:w-32 h-36 w-24 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+        className="flex flex-col flex-grow items-center justify-center md:h-48 md:w-32 h-36 w-24 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
       >
         <span className="text-4xl mb-2">+</span>
         <span>Add Book</span>
@@ -87,3 +87,4 @@ const MainPage = () => {
 };
 
 export default MainPage;
+
