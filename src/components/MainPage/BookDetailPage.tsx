@@ -4,7 +4,12 @@ import ReadingLogCards from "./ReadingLogCards";
 import useReadingLogs from "@/hooks/useReadingLogs";
 import { deleteElements } from "@/utils/api";
 
-const BookDetailPage = ({ book, onClose }: any) => {
+const BookDetailPage = ({
+  book,
+  onClose,
+  lapNoteLogs,
+  setLapNoteLogs,
+}: any) => {
   const { logs, loadLogs } = useReadingLogs(book.isbn);
 
   const onDelete = async (isbn: number | null) => {
@@ -12,6 +17,7 @@ const BookDetailPage = ({ book, onClose }: any) => {
     await deleteElements({ elementType: "book", isbn });
     onClose();
   };
+
   return (
     <div className="absolute top-0 z-10 bg-slate-300 bg-opacity-80 backdrop-blur-sm w-full rounded-t-lg shadow-lg">
       <div className=" w-full overflow-x-hidden flex flex-col">
@@ -56,6 +62,8 @@ const BookDetailPage = ({ book, onClose }: any) => {
         <ReadingLogRegistrationForm
           isbn={book?.isbn}
           maxPage={book?.pageCount}
+          setLapNoteLogs={setLapNoteLogs}
+          lapNoteLogs={lapNoteLogs}
           loadLogs={loadLogs}
         />
         <ReadingLogCards logs={logs} reloadLogs={loadLogs} />
@@ -66,3 +74,4 @@ const BookDetailPage = ({ book, onClose }: any) => {
 };
 
 export default BookDetailPage;
+

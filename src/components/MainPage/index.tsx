@@ -71,7 +71,12 @@ const MainPage = () => {
       <div className="relative">
         <BookshelfMain />
         {selectedBook !== null && (
-          <BookDetailPage book={selectedBook} onClose={handleCloseBookDetail} />
+          <BookDetailPage
+            book={selectedBook}
+            onClose={handleCloseBookDetail}
+            lapNoteLogs={lapNoteLogs}
+            setLapNoteLogs={setLapNoteLogs}
+          />
         )}
       </div>
     </div>
