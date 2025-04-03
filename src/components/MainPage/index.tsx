@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import AddBookModal from "./AddBookModal";
 import BookDetailPage from "./BookDetailPage";
 import BookCard from "./BookCard";
-import { Book, StopwatchTime, LapNote } from "types";
+import { Book, StopwatchTime, LapNoteLog } from "types";
 import LapNotepad from "./LapNotepad";
 import useLoadBooks from "@/hooks/useLoadBooks";
 
@@ -15,7 +15,7 @@ const MainPage = () => {
 
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const time = useRef<StopwatchTime>({ h: 0, m: 0, s: 0 });
-  const [lapNotes, setLapNotes] = useState<LapNote[]>([]);
+  const [lapNoteLogs, setLapNoteLogs] = useState<LapNoteLog[]>([]);
 
   // Modal open/close handlers
   const handleOpenAddBookModal = () => {
@@ -43,7 +43,7 @@ const MainPage = () => {
     <div className="flex flex-wrap gap-4 p-4">
       <button
         onClick={handleOpenAddBookModal}
-        className="flex flex-col flex-grow items-center justify-center md:h-48 md:w-32 h-36 w-24 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+        className="flex flex-col flex-grow items-center justify-center md:h-48 md:w-32 h-36 w-24 bg-neutral-200 rounded-lg hover:bg-neutral-200 transition-colors"
       >
         <span className="text-4xl mb-2">+</span>
         <span>Add Book</span>
@@ -59,27 +59,19 @@ const MainPage = () => {
   );
 
   return (
-    <div>
+    <div className="bg-neutral-100 min-h-screen">
       {isModalVisible && <AddBookModal onClose={handleCloseAddBookModal} />}
       <LapNotepad
         isTimerRunning={isTimerRunning}
         setIsTimerRunning={setIsTimerRunning}
         time={time}
-        lapNotes={lapNotes}
-        setLapNotes={setLapNotes}
+        lapNoteLogs={lapNoteLogs}
+        setLapNoteLogs={setLapNoteLogs}
       />
       <div className="relative">
         <BookshelfMain />
         {selectedBook !== null && (
-          <BookDetailPage
-            book={selectedBook}
-            onClose={handleCloseBookDetail}
-            isTimerRunning={isTimerRunning}
-            setIsTimerRunning={setIsTimerRunning}
-            time={time}
-            lapNotes={lapNotes}
-            setLapNotes={setLapNotes}
-          />
+          <BookDetailPage book={selectedBook} onClose={handleCloseBookDetail} />
         )}
       </div>
     </div>

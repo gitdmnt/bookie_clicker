@@ -37,3 +37,10 @@ export interface StopwatchTime {
   m: number;
   s: number;
 }
+
+export interface LapNoteLog {
+  startDateTime: Temporal.PlainDateTime;
+  endDateTime: Temporal.PlainDateTime | null;
+  lapNotes: LapNote[];
+}
+
