@@ -19,17 +19,18 @@ const BookDetailPage = ({
   };
 
   return (
-    <div className="absolute top-0 z-10 bg-slate-300 bg-opacity-80 backdrop-blur-sm w-full rounded-t-lg shadow-lg">
+    <div className="absolute top-0 z-10 bg-neutral-200 bg-opacity-80 backdrop-blur-sm w-full rounded-t-lg shadow-lg">
       <div className=" w-full overflow-x-hidden flex flex-col">
         {/* Header */}
-        <div className="flex justify-center p-2 z-20 bg-white bg-opacity-90 backdrop-blur-sm rounded-t-lg">
+        <div className="flex justify-center p-2">
           <button onClick={onClose}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-3 w-6"
+              className="h-4 w-8"
               fill="none"
               viewBox="0 0 24 12"
-              stroke="currentColor"
+              stroke="black"
+              strokeWidth={2}
             >
               <path
                 strokeLinecap="round"

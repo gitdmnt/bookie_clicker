@@ -126,75 +126,82 @@ const ReadingLogRegistrationForm = ({
 
   return (
     <div className="relative mx-4">
-      <div className="p-4 card w-full flex-shrink-0 overflow-hidden">
-        <p className="mb-2">記録</p>
-        <form className="flex flex-wrap gap-4" onSubmit={handleSubmit}>
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <input
-              type="date"
-              className="rounded-lg border border-gray-300 p-2 transition-colors"
-              value={dateStart.toString()}
-              onChange={(e) =>
-                setDateStart(Temporal.PlainDate.from(e.target.value))
-              }
-            />
-            <input
-              type="time"
-              className="rounded-lg border border-gray-300 p-2 transition-colors"
-              value={timeStart.toString({ smallestUnit: "minute" })}
-              onChange={(e) =>
-                setTimeStart(Temporal.PlainTime.from(e.target.value))
-              }
-            />
-            <div className="flex items-center">
-              <span className="p-1">p.</span>
+      <div className="p-4 card w-full flex justify-center flex-shrink-0 overflow-hidden">
+        <form
+          className="w-72 flex flex-col items-stretch gap-4"
+          onSubmit={handleSubmit}
+        >
+          <div className="flex flex-col gap-2">
+            <div className="w-full flex flex-nowrap justify-end items-center text-sm">
+              <span className="mr-2">From</span>
               <input
-                type="number"
-                placeholder="1"
-                className="rounded-lg border border-gray-300 p-2 w-12 transition-colors"
-                value={pageStart}
-                onChange={(e) => setPageStart(parseInt(e.target.value))}
+                type="date"
+                className="bg-transparent"
+                value={dateStart.toString()}
+                onChange={(e) =>
+                  setDateStart(Temporal.PlainDate.from(e.target.value))
+                }
               />
+              <input
+                type="time"
+                className="bg-transparent"
+                value={timeStart.toString({ smallestUnit: "minute" })}
+                onChange={(e) =>
+                  setTimeStart(Temporal.PlainTime.from(e.target.value))
+                }
+              />
+              <div className="ml-6 flex items-stretch">
+                <div className="self-center">p.</div>
+                <input
+                  type="number"
+                  placeholder="1"
+                  className="bg-transparent w-16"
+                  value={pageStart}
+                  onChange={(e) => setPageStart(parseInt(e.target.value))}
+                />
+              </div>
             </div>
-          </div>
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <input
-              type="date"
-              className="rounded-lg border border-gray-300 p-2 transition-colors"
-              value={dateEnd.toString()}
-              onChange={(e) =>
-                setDateEnd(Temporal.PlainDate.from(e.target.value))
-              }
-            />
-            <input
-              type="time"
-              className="rounded-lg border border-gray-300 p-2 transition-colors"
-              value={timeEnd.toString({ smallestUnit: "minute" })}
-              onChange={(e) =>
-                setTimeEnd(Temporal.PlainTime.from(e.target.value))
-              }
-            />
-            <div className="flex items-center">
-              <span className="p-1">p.</span>
+            <div className="w-full flex flex-nowrap justify-end items-center text-sm">
+              <span className="mr-2">To</span>
               <input
-                type="number"
-                placeholder="2"
-                className="rounded-lg border border-gray-300 p-2 w-12 transition-colors"
-                value={pageEnd}
-                onChange={(e) => setPageEnd(parseInt(e.target.value))}
+                type="date"
+                className="bg-transparent"
+                value={dateEnd.toString()}
+                onChange={(e) =>
+                  setDateEnd(Temporal.PlainDate.from(e.target.value))
+                }
               />
+              <input
+                type="time"
+                className="bg-transparent"
+                value={timeEnd.toString({ smallestUnit: "minute" })}
+                onChange={(e) =>
+                  setTimeEnd(Temporal.PlainTime.from(e.target.value))
+                }
+              />
+              <div className="ml-6 flex items-stretch">
+                <span className="self-center">p.</span>
+                <input
+                  type="number"
+                  placeholder="2"
+                  className="bg-transparent w-16"
+                  value={pageEnd}
+                  onChange={(e) => setPageEnd(parseInt(e.target.value))}
+                />
+              </div>
             </div>
           </div>
           <textarea
-            className="w-full rounded-lg border border-gray-300 p-2 transition-colors"
+            className="w-full rounded-lg bg-neutral-100 shadow-inner p-2"
             placeholder="読んだこと"
             value={note}
             onChange={(e) => {
               setNote(e.target.value);
             }}
           ></textarea>
+
           <Slider
-            className="w-full mx-4"
+            className="w-full"
             value={rating}
             min={1}
             max={5}
