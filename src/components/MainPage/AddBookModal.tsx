@@ -1,23 +1,29 @@
 import React, { useState } from "react";
 import { Book } from "@/types";
-import { addElement, searchBooks } from "@/utils/api";
+import { addElement, searchBooksByISBN, fetchWikipediaData } from "@/utils/api";
 
 interface AddBookModalProps {
   onClose: () => void;
 }
 
 const AddBookModal: React.FC<AddBookModalProps> = ({ onClose }) => {
-  const [searchResults, setSearchResults] = useState<Book[]>([]);
+  const [searchResultBooks, setSearchResultBooks] = useState<Book[]>([]);
 
   const handleSearchBooks = async (isbn: string) => {
-    const books = await searchBooks(isbn);
-    setSearchResults(books);
+    const books = await searchBooksByISBN(isbn);
+    setSearchResultBooks(books);
   };
 
   // Add book to backend DB
   const handleAddBook = async (book: Book) => {
     await addElement("book", book);
     onClose();
+  };
+
+  const handleSearchWikipedia = async (e: any) => {
+    e.preventDefault();
+    const title = e.target.title.value;
+    await fetchWikipediaData(title);
   };
 
   return (
@@ -34,8 +40,21 @@ const AddBookModal: React.FC<AddBookModalProps> = ({ onClose }) => {
             placeholder="Search by ISBN"
             onChange={(e) => handleSearchBooks(e.target.value)}
           />
+          <form className="w-full" onSubmit={(e) => handleSearchWikipedia(e)}>
+            <input
+              className="p-2 border border-gray-300 rounded-lg"
+              placeholder="Search Wikipedia Article by Title"
+              name="title"
+            />
+            <button
+              type="submit"
+              className="p-2 bg-blue-500 text-white rounded-lg"
+            >
+              検索
+            </button>
+          </form>
           <ul>
-            {searchResults.map((book) => (
+            {searchResultBooks.map((book) => (
               <li key={book.isbn}>
                 <button
                   onClick={() => handleAddBook(book)}

@@ -31,6 +31,7 @@ pub fn run() {
 
     Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_http::init())
         .setup(|app| {
             app.manage(db);
             Ok(())

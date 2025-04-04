@@ -59,7 +59,7 @@ export async function deleteElements(query: Query): Promise<any> {
  * @returns
  */
 
-export const searchBooks = async (isbn: string) => {
+export const searchBooksByISBN = async (isbn: string) => {
   // Only use digits from input, then try to match ISBN-10/13 format.
   let i = isbn.replace(/\D/g, "").match(/^((97)(8|9))?(\d{10})$/)?.[0];
   if (!i) {
@@ -151,3 +151,14 @@ export const searchBooks = async (isbn: string) => {
   return books;
 };
 
+import { fetch } from "@tauri-apps/plugin-http";
+
+export const fetchWikipediaData = async (title: string) => {
+  const url = `https://ja.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch=${encodeURIComponent(
+    title
+  )}`;
+  const response = await fetch(url);
+  const data = await response.json();
+  const pages = data.query.search;
+  return pages;
+};
