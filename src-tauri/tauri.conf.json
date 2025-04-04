@@ -14,7 +14,8 @@
       {
         "title": "Bookie Clicker",
         "width": 360,
-        "height": 800
+        "height": 800,
+        "decorations": false
       }
     ],
     "security": {
@@ -36,4 +37,3 @@
     }
   }
 }
-

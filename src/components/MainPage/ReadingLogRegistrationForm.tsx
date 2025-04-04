@@ -21,7 +21,10 @@ const ReadingLogRegistrationForm = ({
 }: props) => {
   // Start and end date/time inputs
   const [dateStart, setDateStart] = useState(
-    lapNoteLogs[0]?.startDateTime?.toPlainDate() ?? Temporal.Now.plainDateISO()
+    lapNoteLogs[0]?.startDateTime?.toPlainDate() ??
+      Temporal.Now.plainDateISO().subtract({
+        hours: 1,
+      })
   );
   const [timeStart, setTimeStart] = useState(
     lapNoteLogs[0]?.startDateTime?.toPlainTime() ?? Temporal.Now.plainTimeISO()
@@ -48,30 +51,18 @@ const ReadingLogRegistrationForm = ({
 
   // Stateの更新
   useEffect(() => {
-    setDateStart(
-      lapNoteLogs[0]?.startDateTime?.toPlainDate() ??
-        Temporal.Now.plainDateISO()
-    );
-    setTimeStart(
-      lapNoteLogs[0]?.startDateTime?.toPlainTime() ??
-        Temporal.Now.plainTimeISO()
-    );
-    setDateEnd(
-      lapNoteLogs.at(-1)?.endDateTime?.toPlainDate() ??
-        Temporal.Now.plainDateISO()
-    );
-    setTimeEnd(
-      lapNoteLogs.at(-1)?.endDateTime?.toPlainTime() ??
-        Temporal.Now.plainTimeISO()
-    );
+    setDateStart(lapNoteLogs[0]?.startDateTime?.toPlainDate() ?? dateStart);
+    setTimeStart(lapNoteLogs[0]?.startDateTime?.toPlainTime() ?? timeStart);
+    setDateEnd(lapNoteLogs.at(-1)?.endDateTime?.toPlainDate() ?? dateEnd);
+    setTimeEnd(lapNoteLogs.at(-1)?.endDateTime?.toPlainTime() ?? timeEnd);
 
     // 毎回1から舐めるのは非効率ではある
     const flattenLapNotes = lapNoteLogs
       .map((l) => l.lapNotes)
       .flat()
       .map((l) => l.refPage);
-    setPageStart(Math.min(...flattenLapNotes) ?? 1);
-    setPageEnd(Math.max(...flattenLapNotes) ?? maxPage);
+    setPageStart(Math.min(...flattenLapNotes) ?? pageStart);
+    setPageEnd(Math.max(...flattenLapNotes) ?? pageEnd);
   }, [lapNoteLogs]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -132,8 +123,7 @@ const ReadingLogRegistrationForm = ({
           onSubmit={handleSubmit}
         >
           <div className="flex flex-col gap-2">
-            <div className="w-full flex flex-nowrap justify-end items-center text-sm">
-              <span className="mr-2">From</span>
+            <div className="w-full flex flex-nowrap justify-start items-center text-sm">
               <input
                 type="date"
                 className="bg-transparent"
@@ -162,7 +152,6 @@ const ReadingLogRegistrationForm = ({
               </div>
             </div>
             <div className="w-full flex flex-nowrap justify-end items-center text-sm">
-              <span className="mr-2">To</span>
               <input
                 type="date"
                 className="bg-transparent"
@@ -227,4 +216,3 @@ const ReadingLogRegistrationForm = ({
 };
 
 export default ReadingLogRegistrationForm;
-

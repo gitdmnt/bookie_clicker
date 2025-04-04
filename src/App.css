@@ -16,6 +16,8 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+
+  scrollbar-width: none;
 }
 
 @layer components {
@@ -28,4 +30,3 @@
     padding: 1rem;
   }
 }
-
