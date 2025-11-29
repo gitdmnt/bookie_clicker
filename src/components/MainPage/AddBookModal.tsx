@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Book } from "@/types";
 import { addElement, searchBooksByISBN, fetchWikipediaData } from "@/utils/api";
 
 interface AddBookModalProps {

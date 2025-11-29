@@ -1,6 +1,5 @@
 import React from "react";
 import BookCard from "./BookCard";
-import type { Book } from "@/types/";
 
 type Props = {
   books: Book[];

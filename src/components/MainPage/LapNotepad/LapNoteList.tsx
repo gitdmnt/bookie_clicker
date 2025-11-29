@@ -1,4 +1,3 @@
-import { LapNoteLog, LapNote } from "@/types";
 import { Temporal } from "temporal-polyfill";
 
 const temporalToMMSS = (date: Temporal.PlainDateTime | null) => {

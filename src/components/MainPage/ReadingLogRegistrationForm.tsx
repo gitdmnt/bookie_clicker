@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Temporal } from "temporal-polyfill";
-import { LapNoteLog } from "@/types";
 import { addElement } from "@/utils/api";
 import { Slider } from "@mui/material";
 

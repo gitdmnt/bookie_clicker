@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import { Temporal } from "temporal-polyfill";
-import { LapNote } from "@/types";
 
 import { Stopwatch } from "./Stopwatch";
 import { ControlPanel } from "./ControlPanel";

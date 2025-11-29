@@ -1,5 +1,4 @@
 import React from "react";
-import { Book } from "@/types";
 
 interface BookCardProps {
   book: Book;
@@ -29,4 +28,3 @@ const BookCard: React.FC<BookCardProps> = ({ book, onClick }) => {
 };
 
 export default BookCard;
-

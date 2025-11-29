@@ -1,5 +1,4 @@
 import { useCallback, useState } from "react";
-import { Book, LapNoteLog } from "types";
 import useTimer from "@/hooks/useTimer";
 
 export default function useMainPageState(

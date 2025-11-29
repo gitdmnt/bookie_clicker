@@ -1,5 +1,3 @@
-import { StopwatchTime } from "@/types";
-
 export const Stopwatch = ({ time }: { time: StopwatchTime }) => {
   const pad2 = (n: number) => `${n}`.padStart(2, "0");
   const s = pad2(time.s);

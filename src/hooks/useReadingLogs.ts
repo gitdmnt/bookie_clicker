@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { ReadingLog, Query } from "../types";
-import { selectElements,deleteElements } from "../utils/api";
+import { selectElements, deleteElements } from "../utils/api";
 
 const useReadingLogs = (isbn: number) => {
   const [logs, setLogs] = useState<ReadingLog[]>([]);

@@ -1,45 +1,46 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import AddBookModal from "./AddBookModal";
 import BookDetailPage from "./BookDetailPage";
 import LapNotepad from "./LapNotepad/index";
 import Bookshelf from "./Bookshelf";
 import useLoadBooks from "@/hooks/useLoadBooks";
-import useMainPageState from "@/hooks/useMainPageState";
+// { 既存 useMainPageState を使っていた箇所を分割したフックで置換 }
+import useAddBookModal from "@/hooks/useAddBookModal";
+import useBookSelection from "@/hooks/useBookSelection";
+import useTimer from "@/hooks/useTimer";
 
 const MainPage = () => {
   const { books, loadBooks } = useLoadBooks();
   const {
-    isModalVisible,
-    handleOpenAddBookModal,
-    handleCloseAddBookModal,
+    isAddBookModalVisible,
+    open: openAddBookModal,
+    close: closeAddBookModal,
+  } = useAddBookModal();
+  const {
     selectedBook,
-    handleOpenBookDetail,
-    handleCloseBookDetail,
-    isTimerRunning,
-    startTimer,
-    stopTimer,
-    resetTimer,
-    time,
-    lapNoteLogs,
-    setLapNoteLogs,
-  } = useMainPageState(books, loadBooks);
+    openByIsbn,
+    close: closeBookDetail,
+  } = useBookSelection();
+  const { isRunning, start, stop, reset, time } = useTimer();
 
-  // 参照安定化
-  const onAddClick = useCallback(
-    () => handleOpenAddBookModal(),
-    [handleOpenAddBookModal]
-  );
+  const [lapNoteLogs, setLapNoteLogs] = useState<LapNoteLog[]>([]);
+
+  const isTimerRunning = isRunning;
+  const startTimer = start;
+  const stopTimer = stop;
+  const resetTimer = reset;
+
+  const onAddClick = useCallback(() => openAddBookModal(), [openAddBookModal]);
   const onCardClick = useCallback(
-    (isbn: number) => handleOpenBookDetail(isbn),
-    [handleOpenBookDetail]
+    (isbn: number) => openByIsbn(isbn, books),
+    [openByIsbn, books]
   );
 
-  // もし books のマップが重ければ useMemo でメモ化
   const memoizedBooks = useMemo(() => books, [books]);
 
   return (
     <div className="bg-neutral-100 min-h-screen">
-      {isModalVisible && <AddBookModal onClose={handleCloseAddBookModal} />}
+      {isAddBookModalVisible && <AddBookModal onClose={closeAddBookModal} />}
       <LapNotepad
         isTimerRunning={isTimerRunning}
         startTimer={startTimer}
@@ -58,7 +59,7 @@ const MainPage = () => {
         {selectedBook !== null && (
           <BookDetailPage
             book={selectedBook}
-            onClose={handleCloseBookDetail}
+            onClose={closeBookDetail}
             lapNoteLogs={lapNoteLogs}
             setLapNoteLogs={setLapNoteLogs}
           />

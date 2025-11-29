@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Book } from "@/types";
 import { selectElements } from "@/utils/api";
 
 const useLoadBooks = () => {
@@ -19,4 +18,3 @@ const useLoadBooks = () => {
 };
 
 export default useLoadBooks;
-
