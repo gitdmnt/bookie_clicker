@@ -1,7 +1,8 @@
+import { useCallback, useMemo } from "react";
 import AddBookModal from "./AddBookModal";
 import BookDetailPage from "./BookDetailPage";
-import BookCard from "./BookCard";
 import LapNotepad from "./LapNotepad/index";
+import Bookshelf from "./Bookshelf";
 import useLoadBooks from "@/hooks/useLoadBooks";
 import useMainPageState from "@/hooks/useMainPageState";
 
@@ -23,24 +24,18 @@ const MainPage = () => {
     setLapNoteLogs,
   } = useMainPageState(books, loadBooks);
 
-  const BookshelfMain = () => (
-    <div className="flex flex-wrap gap-4 p-4">
-      <button
-        onClick={handleOpenAddBookModal}
-        className="flex flex-col flex-grow items-center justify-center md:h-48 md:w-32 h-36 w-24 bg-neutral-200 rounded-lg hover:bg-neutral-200 transition-colors"
-      >
-        <span className="text-4xl mb-2">+</span>
-        <span>Add Book</span>
-      </button>
-      {books.map((book) => (
-        <BookCard
-          key={book.isbn}
-          book={book}
-          onClick={() => handleOpenBookDetail(book.isbn)}
-        />
-      ))}
-    </div>
+  // 参照安定化
+  const onAddClick = useCallback(
+    () => handleOpenAddBookModal(),
+    [handleOpenAddBookModal]
   );
+  const onCardClick = useCallback(
+    (isbn: number) => handleOpenBookDetail(isbn),
+    [handleOpenBookDetail]
+  );
+
+  // もし books のマップが重ければ useMemo でメモ化
+  const memoizedBooks = useMemo(() => books, [books]);
 
   return (
     <div className="bg-neutral-100 min-h-screen">
@@ -55,7 +50,11 @@ const MainPage = () => {
         setLapNoteLogs={setLapNoteLogs}
       />
       <div className="relative">
-        <BookshelfMain />
+        <Bookshelf
+          books={memoizedBooks}
+          onAddClick={onAddClick}
+          onCardClick={onCardClick}
+        />
         {selectedBook !== null && (
           <BookDetailPage
             book={selectedBook}

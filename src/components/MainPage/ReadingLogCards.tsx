@@ -84,7 +84,7 @@ const ReadingLogCards: React.FC<ReadingLogCardsProps> = ({
                       </div>
                     </div>
                     <button
-                      onClick={() => deleteLog(log.id)}
+                      onClick={() => deleteLog(log.id ?? "")}
                       className="ml-auto"
                     >
                       <svg
