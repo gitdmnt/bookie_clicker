@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Query, Book } from "@/types";
 import { XMLParser } from "fast-xml-parser";
+import { fetch } from "@tauri-apps/plugin-http";
 
 /**
  * Select elements from the backend that match the given query.
@@ -150,8 +151,6 @@ export const searchBooksByISBN = async (isbn: string) => {
   const books = formatBookInfo(records);
   return books;
 };
-
-import { fetch } from "@tauri-apps/plugin-http";
 
 export const fetchWikipediaData = async (title: string) => {
   const url = `https://ja.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch=${encodeURIComponent(

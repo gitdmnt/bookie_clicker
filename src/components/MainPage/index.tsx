@@ -1,43 +1,27 @@
-import { useRef, useState } from "react";
 import AddBookModal from "./AddBookModal";
 import BookDetailPage from "./BookDetailPage";
 import BookCard from "./BookCard";
-import { Book, StopwatchTime, LapNoteLog } from "types";
-import LapNotepad from "./LapNotepad";
+import LapNotepad from "./LapNotepad/index";
 import useLoadBooks from "@/hooks/useLoadBooks";
+import useMainPageState from "@/hooks/useMainPageState";
 
 const MainPage = () => {
   const { books, loadBooks } = useLoadBooks();
-
-  // このへんうまいことhooksに切り出せないかなあ
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const time = useRef<StopwatchTime>({ h: 0, m: 0, s: 0 });
-  const [lapNoteLogs, setLapNoteLogs] = useState<LapNoteLog[]>([]);
-
-  // Modal open/close handlers
-  const handleOpenAddBookModal = () => {
-    setIsModalVisible(true);
-  };
-
-  const handleCloseAddBookModal = () => {
-    setIsModalVisible(false);
-    loadBooks();
-  };
-
-  // Show detail and load reading logs for the selected book
-  const handleOpenBookDetail = async (isbn: number) => {
-    const book = books.find((b) => b.isbn === isbn);
-    if (!book) return;
-    setSelectedBook(book);
-  };
-
-  const handleCloseBookDetail = () => {
-    setSelectedBook(null);
-    loadBooks();
-  };
+  const {
+    isModalVisible,
+    handleOpenAddBookModal,
+    handleCloseAddBookModal,
+    selectedBook,
+    handleOpenBookDetail,
+    handleCloseBookDetail,
+    isTimerRunning,
+    startTimer,
+    stopTimer,
+    resetTimer,
+    time,
+    lapNoteLogs,
+    setLapNoteLogs,
+  } = useMainPageState(books, loadBooks);
 
   const BookshelfMain = () => (
     <div className="flex flex-wrap gap-4 p-4">
@@ -63,7 +47,9 @@ const MainPage = () => {
       {isModalVisible && <AddBookModal onClose={handleCloseAddBookModal} />}
       <LapNotepad
         isTimerRunning={isTimerRunning}
-        setIsTimerRunning={setIsTimerRunning}
+        startTimer={startTimer}
+        stopTimer={stopTimer}
+        resetTimer={resetTimer}
         time={time}
         lapNoteLogs={lapNoteLogs}
         setLapNoteLogs={setLapNoteLogs}
@@ -84,4 +70,3 @@ const MainPage = () => {
 };
 
 export default MainPage;
-

@@ -8,7 +8,10 @@
     "opener:default",
     {
       "identifier": "http:default",
-      "allow": [{ "url": "https://ja.wikipedia.org/" }],
+      "allow": [
+        { "url": "https://ja.wikipedia.org/" },
+        { "url": "https://ndlsearch.ndl.go.jp/" }
+      ],
       "deny": []
     }
   ]
