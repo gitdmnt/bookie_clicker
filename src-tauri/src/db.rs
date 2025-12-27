@@ -1,10 +1,31 @@
 use std::fs;
 use std::path::PathBuf;
+use tauri::async_runtime::block_on;
 use tauri::async_runtime::Mutex;
+use tauri::{Builder, Manager, State};
 
 use serde::{Deserialize, Serialize};
 use surrealdb::engine::local::{Db, RocksDb};
 use surrealdb::{RecordId, Surreal};
+
+#[tauri::command]
+pub async fn add(db: State<'_, Database>, e: Element) -> Result<(), surrealdb::Error> {
+    db.add(e).await?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn select(
+    db: State<'_, Database>,
+    query: Query,
+) -> Result<Vec<Element>, surrealdb::Error> {
+    db.select(query).await
+}
+
+#[tauri::command]
+pub async fn delete(db: State<'_, Database>, query: Query) -> Result<(), surrealdb::Error> {
+    db.delete(query).await
+}
 
 pub struct Database {
     path: PathBuf,

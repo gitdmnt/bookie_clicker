@@ -1,25 +1,13 @@
 use tauri::async_runtime::block_on;
-use tauri::{Builder, Manager, State};
+use tauri::{Builder, Manager};
 
 mod db;
-use db::{Database, Element, Query};
+use db::Database;
+
+mod timer;
+use timer::TimerState;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-async fn add(db: State<'_, Database>, e: Element) -> Result<(), surrealdb::Error> {
-    db.add(e).await?;
-    Ok(())
-}
-
-#[tauri::command]
-async fn select(db: State<'_, Database>, query: Query) -> Result<Vec<Element>, surrealdb::Error> {
-    db.select(query).await
-}
-
-#[tauri::command]
-async fn delete(db: State<'_, Database>, query: Query) -> Result<(), surrealdb::Error> {
-    db.delete(query).await
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -34,9 +22,10 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .setup(|app| {
             app.manage(db);
+            app.manage(TimerState::new());
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![add, select, delete])
+        .invoke_handler(tauri::generate_handler![db::add, db::select, db::delete])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
