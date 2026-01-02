@@ -13,23 +13,18 @@ use tauri::{Manager, Window};
 pub struct LapNote {
     pub timestamp_ms: u128,
     pub note: String,
-    pub ref_page: i32,
+    pub ref_page: u32,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct LapNoteLog {
-    pub start_timestamp_ms: u128,
-    pub end_timestamp_ms: Option<u128>,
-    pub lap_notes: Vec<LapNote>,
-}
+type Time = u128;
 
 #[derive(Default)]
 struct TimerInner {
     is_running: bool,
-    elapsed_ms: u128,
-    start_instant_ms: Option<u128>,
     tick_handle: Option<JoinHandle<()>>,
-    laps: Vec<LapNoteLog>,
+    lap_starts: Vec<Time>,
+    lap_ends: Vec<Time>,
+    lap_notes: Vec<LapNote>,
 }
 
 #[derive(Default)]
@@ -39,10 +34,10 @@ impl TimerState {
     pub fn new() -> Self {
         Self(Arc::new(Mutex::new(TimerInner {
             is_running: false,
-            elapsed_ms: 0,
-            start_instant_ms: None,
             tick_handle: None,
-            laps: vec![],
+            lap_starts: vec![],
+            lap_ends: vec![],
+            lap_notes: vec![],
         })))
     }
 }
@@ -57,26 +52,21 @@ fn now_ms() -> u128 {
 
 // Start emits "timer-tick" events every second to the given window
 #[tauri::command]
-pub fn start_timer(state: tauri::State<'_, TimerState>, window: Window) -> Result<(), String> {
-    let state_arc = state.0.clone();
-    let mut s = state_arc.lock().unwrap();
-    if s.is_running {
+pub fn start_timer(
+    timer_state: tauri::State<'_, TimerState>,
+    window: Window,
+) -> Result<(), String> {
+    let timer_state_arc = timer_state.0.clone();
+    let mut timer = timer_state_arc.lock().unwrap();
+    if timer.is_running {
         return Ok(());
     }
 
-    s.is_running = true;
-    s.start_instant_ms = Some(now_ms());
-    // Create a new lap log session
-    let ms = s.start_instant_ms.unwrap();
-    s.laps.push(LapNoteLog {
-        start_timestamp_ms: ms,
-        end_timestamp_ms: None,
-        lap_notes: vec![],
-    });
-
+    timer.is_running = true;
+    timer.lap_starts.push(now_ms());
     // Clone for thread
     let window_clone = window.clone();
-    let state_for_thread = state_arc.clone();
+    let state_for_thread = timer_state_arc.clone();
 
     // Spawn thread to emit ticks
     let handle = thread::spawn(move || {
@@ -84,85 +74,76 @@ pub fn start_timer(state: tauri::State<'_, TimerState>, window: Window) -> Resul
             let guard = state_for_thread.lock().unwrap();
             guard.is_running
         } {
-            {
-                // Update elapsed
-                let mut guard = state_for_thread.lock().unwrap();
-                let start = guard.start_instant_ms.unwrap_or(now_ms());
-                guard.elapsed_ms = now_ms() - start;
-            }
             // Emit event with elapsed (ms) and current laps
             let guard = state_for_thread.lock().unwrap();
             let payload = serde_json::json!({
-              "elapsedMs": guard.elapsed_ms,
-              "laps": guard.laps
+              "elapsedMs": now_ms() - guard.lap_starts.last().cloned().unwrap_or(now_ms()),
+              "laps": guard.lap_notes,
             });
             let _ = window_clone.emit("timer-tick", payload);
             thread::sleep(Duration::from_millis(1000));
         }
     });
 
-    s.tick_handle = Some(handle);
+    timer.tick_handle = Some(handle);
     Ok(())
 }
 
 #[tauri::command]
-pub fn stop_timer(state: tauri::State<'_, TimerState>) -> Result<(), String> {
-    let mut s = state.0.lock().unwrap();
-    if !s.is_running {
+pub fn stop_timer(timer_state: tauri::State<'_, TimerState>) -> Result<(), String> {
+    let mut timer = timer_state.0.lock().unwrap();
+    if !timer.is_running {
         return Ok(());
     }
-    s.is_running = false;
-    // mark end timestamp for current lap session
-    if let Some(last) = s.laps.last_mut() {
-        last.end_timestamp_ms = Some(now_ms());
-    }
+    timer.is_running = false;
+    timer.lap_ends.push(now_ms());
     // join thread handle (best-effort)
-    if let Some(handle) = s.tick_handle.take() {
+    if let Some(handle) = timer.tick_handle.take() {
         let _ = handle.join();
     }
     Ok(())
 }
 
 #[tauri::command]
-pub fn reset_timer(state: tauri::State<'_, TimerState>) -> Result<(), String> {
-    let mut s = state.0.lock().unwrap();
-    s.is_running = false;
-    s.elapsed_ms = 0;
-    s.start_instant_ms = None;
-    s.laps.clear();
+pub fn reset_timer(timer_state: tauri::State<'_, TimerState>) -> Result<(), String> {
+    let mut timer = timer_state.0.lock().unwrap();
+    timer.is_running = false;
+    timer.lap_starts.clear();
+    timer.lap_ends.clear();
+    timer.lap_notes.clear();
     // join and clean up thread
-    if let Some(handle) = s.tick_handle.take() {
+    if let Some(handle) = timer.tick_handle.take() {
         let _ = handle.join();
     }
     Ok(())
 }
 
 #[tauri::command]
-pub fn get_time(state: tauri::State<'_, TimerState>) -> Result<u128, String> {
-    let s = state.0.lock().unwrap();
-    Ok(s.elapsed_ms)
+pub fn get_time(timer_state: tauri::State<'_, TimerState>) -> Result<u128, String> {
+    let timer = timer_state.0.lock().unwrap();
+    unimplemented!()
 }
 
 #[tauri::command]
 pub fn add_lap_note(
-    state: tauri::State<'_, TimerState>,
+    timer_state: tauri::State<'_, TimerState>,
     note: String,
-    ref_page: i32,
+    ref_page: u32,
 ) -> Result<(), String> {
-    let mut s = state.0.lock().unwrap();
+    let mut timer = timer_state.0.lock().unwrap();
     let timestamp_ms = now_ms();
-    if let Some(last) = s.laps.last_mut() {
-        last.lap_notes.push(LapNote {
-            timestamp_ms,
-            note,
-            ref_page,
-        });
-    }
+
+    timer.lap_notes.push(LapNote {
+        timestamp_ms,
+        note,
+        ref_page,
+    });
+
     Ok(())
 }
 
 #[tauri::command]
-pub fn get_laps(state: tauri::State<'_, TimerState>) -> Result<Vec<LapNoteLog>, String> {
-    let s = state.0.lock().unwrap();
-    Ok(s.laps.clone())
+pub fn get_laps(timer_state: tauri::State<'_, TimerState>) -> Result<Vec<LapNote>, String> {
+    let timer = timer_state.0.lock().unwrap();
+    Ok(timer.lap_notes.clone())
 }

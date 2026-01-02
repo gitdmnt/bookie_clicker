@@ -5,7 +5,8 @@ use tauri::async_runtime::Mutex;
 use tauri::{Builder, Manager, State};
 
 use serde::{Deserialize, Serialize};
-use surrealdb::engine::local::{Db, RocksDb};
+use surrealdb::engine::any::Any;
+use surrealdb::engine::local::Db;
 use surrealdb::{RecordId, Surreal};
 
 #[tauri::command]
@@ -29,7 +30,7 @@ pub async fn delete(db: State<'_, Database>, query: Query) -> Result<(), surreal
 
 pub struct Database {
     path: PathBuf,
-    db: Mutex<Surreal<Db>>,
+    db: Mutex<Surreal<Any>>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -107,7 +108,16 @@ pub struct Query {
 impl Database {
     pub async fn connect(path: String) -> Result<Database, surrealdb::Error> {
         let path = dirs::data_dir().unwrap().join("bookie_clicker").join(path);
-        let db = Surreal::new::<RocksDb>(path.clone()).await?;
+
+        #[cfg(not(feature = "release-storage"))]
+        // Use the unit type which implements IntoEndpoint for an in-memory DB
+        let endpoint = "memory".to_owned();
+
+        #[cfg(feature = "release-storage")]
+        // For RocksDB, construct a Config (which implements IntoEndpoint)
+        let endpoint = format!("rocksdb://{}", path.to_str().unwrap());
+
+        let db = surrealdb::engine::any::connect(endpoint).await?;
 
         // 名前空間・データベースの指定
         db.use_ns("bookie_clicker").use_db("bookie_clicker").await?;

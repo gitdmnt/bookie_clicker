@@ -22,7 +22,11 @@ tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-surrealdb = { version = "2", features = ["kv-rocksdb"] }
+surrealdb = { version = "2.0", default-features = false, features = ["kv-mem"] }
 dirs = "6"
 tokio = "1"
 tauri-plugin-http = "2"
+
+[features]
+# 本番ビルド時に `--features release-storage` をつけることでRocksDBを有効化
+release-storage = ["surrealdb/kv-rocksdb"]
