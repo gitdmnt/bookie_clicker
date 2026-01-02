@@ -1,4 +1,12 @@
 /// Database module handling SurrealDB operations including Tauri commands for frontend interaction.
+/// 構造は次のようになっています:
+/// - database.rs: Database struct and its methods for connecting, adding, selecting, and deleting data.
+/// - book.rs: Book data structure definition.
+/// - readinglog.rs: ReadingLog data structure definition.
+/// - table.rs: Table enum defining different database tables.
+/// - element.rs: Element struct representing a unified data structure for different tables.
+/// - query.rs: Query struct for building database queries.
+/// - mod.rs: This file, which re-exports the sub-modules and defines Tauri commands.
 mod database;
 pub use database::Database;
 
