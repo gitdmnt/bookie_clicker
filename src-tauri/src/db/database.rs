@@ -16,6 +16,9 @@ pub struct Database {
 }
 
 impl Database {
+    /// Database connection establishment
+    /// in release-storage mode, use RocksDB at the specified path
+    /// otherwise, use in-memory database
     pub async fn connect(path: String) -> Result<Database, surrealdb::Error> {
         let path = dirs::data_dir().unwrap().join("bookie_clicker").join(path);
 
@@ -40,6 +43,7 @@ impl Database {
         Ok(Database { path, db })
     }
 
+    /// Export the database to a JSON file
     pub async fn export(&self) -> Result<(), Box<dyn std::error::Error>> {
         let db = self.db.lock().await;
         let export_data = db.query("SELECT * FROM books");

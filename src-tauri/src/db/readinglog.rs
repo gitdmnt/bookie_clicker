@@ -1,3 +1,4 @@
+/// Sub-module defining the ReadingLog data structure for database storage.
 use serde::{Deserialize, Serialize};
 use surrealdb::RecordId;
 

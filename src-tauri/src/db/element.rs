@@ -1,3 +1,4 @@
+/// Element represents a unified data structure for different tables in the database.
 use crate::db::book::Book;
 use crate::db::readinglog::ReadingLog;
 use crate::db::table::Table;

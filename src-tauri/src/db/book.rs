@@ -1,3 +1,4 @@
+/// Sub-module defining the Book data structure for database storage.
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -14,6 +15,7 @@ pub struct Book {
 }
 
 impl Book {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         isbn: u64,
         title: String,
