@@ -312,7 +312,7 @@ mod tests {
             <dcterms:creator><rdf:Description><foaf:Agent><foaf:name>山田, 太郎</foaf:name></foaf:Agent></rdf:Description></dcterms:creator>
             <dcterms:publisher><foaf:Agent><foaf:name>出版社名</foaf:name></foaf:Agent></dcterms:publisher>
             <dcterms:issued>2001</dcterms:issued>
-            <dcterms:extent>256 p.</dcterms:extent>
+            <dcterms:extent>203p ; 26cm</dcterms:extent>
             <dc:identifier>ISBN 4102130225</dc:identifier>
           </dcndl:BibResource>
         </rdf:RDF>
@@ -330,7 +330,7 @@ mod tests {
         assert_eq!(b.authors[0], "太郎 山田");
         assert_eq!(b.publisher, "出版社名");
         assert_eq!(b.year, 2001);
-        assert_eq!(b.page_count, 256);
+        assert_eq!(b.page_count, 203);
         // ISBN 4102130225 -> ISBN-13 9784102130223 (starts with 978)
         assert!(b.isbn.to_string().starts_with("978"));
     }
