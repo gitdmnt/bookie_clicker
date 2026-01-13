@@ -27,8 +27,10 @@ declare global {
     [key: string]: any;
   }
 
-  export interface LapNote {
-    timestamp: StopwatchTime;
+  export interface Lap {
+    createdAt?: Temporal.PlainDateTime;
+    elapsedMs: number;
+    id: number;
     note: string;
     refPage: number;
   }

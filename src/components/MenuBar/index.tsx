@@ -6,8 +6,27 @@ const MenuBar: React.FC<MenuBarProps> = ({ setPage }) => {
   return (
     <div className="fixed bottom-0 left-0 w-full z-10">
       <div className="flex justify-between card m-2">
-        {/* Bookshelf Icon */}
+        {/* Lapnote Icon */}
         <button onClick={() => setPage(0)}>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8c-.519.598-1.488 1-2.599 1M12 16c-1.11 0-2.08-.402-2.599-1M12 16c.519-.598 1.488-1 2.599-1m0-4c0 .667-.895 1-2.599 1s-
+        
+2.599-.333-2.599-1  .895-1 2.599-1 2.599.333 2.599 1z"
+            />
+          </svg>
+        </button>
+        {/* Bookshelf Icon */}
+        <button onClick={() => setPage(1)}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-6 w-6"
@@ -70,4 +89,3 @@ const MenuBar: React.FC<MenuBarProps> = ({ setPage }) => {
 };
 
 export default MenuBar;
-

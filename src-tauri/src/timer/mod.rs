@@ -1,10 +1,11 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use tauri::Emitter;
-use tokio::task::JoinHandle;
+use tauri::{async_runtime, Emitter};
+use tokio::time;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Lap {
     pub id: usize,
     pub elapsed_ms: u64,
@@ -91,7 +92,7 @@ pub struct TimerManager(Arc<Mutex<Inner>>);
 
 struct Inner {
     timer: Timer,
-    tick_handle: Option<JoinHandle<()>>, // handle for the tick loop
+    tick_handle: Option<async_runtime::JoinHandle<()>>, // handle for the tick loop
 }
 
 impl TimerManager {
@@ -110,24 +111,19 @@ impl TimerManager {
         let app_handle = app.clone();
 
         // spawn tick loop
-        let handle = tokio::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_millis(1000));
+        let handle = async_runtime::spawn(async move {
+            let mut interval = time::interval(Duration::from_millis(1000));
             loop {
                 interval.tick().await;
                 // check running state
-                let elapsed = {
+
+                let payload = {
                     let inner = arc.lock().unwrap();
                     if !inner.timer.running {
                         break;
                     }
-                    inner.timer.elapsed_ms()
+                    inner.get_tick()
                 };
-                // elapsed is milliseconds -> convert to seconds for h/m/s
-                let secs = elapsed / 1000;
-                let h = secs / 3600;
-                let m = (secs % 3600) / 60;
-                let s = secs % 60;
-                let payload = TimerTick { elapsed, h, m, s };
                 let _ = app_handle.emit("timer:tick", payload);
             }
             // loop finished: clear tick_handle to avoid stale reference
@@ -175,46 +171,41 @@ impl TimerManager {
         let inner = self.0.lock().unwrap();
         inner.timer.get_laps()
     }
+
+    pub fn is_running(&self) -> bool {
+        let inner = self.0.lock().unwrap();
+        inner.timer.running
+    }
+
+    pub fn get_tick(&self) -> TimerTick {
+        let inner = self.0.lock().unwrap();
+        inner.get_tick()
+    }
+}
+
+impl Inner {
+    fn get_tick(&self) -> TimerTick {
+        let elapsed = self.timer.elapsed_ms();
+        let secs = elapsed / 1000;
+        let h = secs / 3600;
+        let m = (secs % 3600) / 60;
+        let s = secs % 60;
+        TimerTick {
+            elapsed,
+            h,
+            m,
+            s,
+            is_running: self.timer.running,
+        }
+    }
 }
 
 #[derive(Clone, Serialize)]
-struct TimerTick {
+#[serde(rename_all = "camelCase")]
+pub struct TimerTick {
     elapsed: u64,
     h: u64,
     m: u64,
     s: u64,
-}
-
-// Make Lap cloneable/serializable for commands
-impl Clone for Lap {
-    fn clone(&self) -> Self {
-        Self {
-            id: self.id,
-            elapsed_ms: self.elapsed_ms,
-            note: self.note.clone(),
-            ref_page: self.ref_page,
-            created_at: self.created_at.clone(),
-        }
-    }
-}
-
-#[derive(serde::Serialize)]
-pub struct LapRecord {
-    pub id: usize,
-    pub elapsed_ms: u64,
-    pub note: Option<String>,
-    pub ref_page: Option<u32>,
-    pub created_at: String,
-}
-
-impl From<Lap> for LapRecord {
-    fn from(l: Lap) -> Self {
-        LapRecord {
-            id: l.id,
-            elapsed_ms: l.elapsed_ms,
-            note: l.note,
-            ref_page: l.ref_page,
-            created_at: l.created_at,
-        }
-    }
+    is_running: bool,
 }

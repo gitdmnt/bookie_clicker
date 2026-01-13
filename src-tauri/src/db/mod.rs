@@ -32,17 +32,17 @@ impl Database {
         Ok(Database { path, db })
     }
 
-    pub async fn export(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn export(&self) -> Result<PathBuf, Box<dyn std::error::Error>> {
         let db = self.db.lock().await;
         let export_data = db.query("SELECT * FROM books");
         let export_data: Vec<Element> = export_data.await?.take(0)?;
         let json = serde_json::to_string_pretty(&export_data)?;
-        let path = &self.path.join("lib.json");
-        fs::write(path, json)?;
+        let export_path = self.path.join("bookie_clicker_export.json");
+        fs::write(&export_path, json)?;
 
-        println!("Database exported to bookie_clicker_export.json");
+        println!("Database exported to {:?}", export_path);
 
-        Ok(())
+        Ok(export_path)
     }
 
     pub async fn add(&self, e: Element) -> Result<(), surrealdb::Error> {

@@ -1,4 +1,3 @@
-import bg from "@/assets/bg.jpg";
 import ReadingLogRegistrationForm from "./ReadingLogRegistrationForm";
 import ReadingLogCards from "./ReadingLogCards";
 import useReadingLogs from "@/hooks/useReadingLogs";
@@ -19,60 +18,56 @@ const BookDetailPage = ({
   };
 
   return (
-    <div className="absolute top-0 z-10 bg-neutral-200 bg-opacity-80 backdrop-blur-sm w-full rounded-t-lg shadow-lg">
-      <div className=" w-full overflow-x-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex justify-center p-2">
-          <button onClick={onClose}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-8"
-              fill="none"
-              viewBox="0 0 24 12"
-              stroke="black"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 2l7 7 7 -7"
-              />
-            </svg>
+    <div className="flex flex-col gap-4 rounded-3xl border border-neutral-200 bg-white/80 p-4 shadow-lg">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">{book?.title}</h1>
+          <p className="text-sm text-neutral-500">
+            {(book?.authors ?? []).join(" / ")} ・ {book?.publisher}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className="text-sm text-blue-600"
+            onClick={onClose}
+          >
+            閉じる
+          </button>
+          <button
+            type="button"
+            className="text-sm text-red-500"
+            onClick={() => onDelete(book?.isbn ?? null)}
+          >
+            削除
           </button>
         </div>
-        {/* Book Information */}
-        <div className="grid grid-cols-2 justify-center gap-4 m-4 card">
-          <div>
-            <img
-              src={book?.imageUrl}
-              alt="book cover"
-              className="w-60 rounded-lg"
-            />
-          </div>
-          <div className="flex flex-col justify-center gap-4">
-            <h1 className="text-2xl font-bold">{book?.title}</h1>
-            <p className="text-gray-400">{book?.seriesTitle}</p>
-            <p className="text-gray-400">{(book?.authors ?? []).join(", ")}</p>
-            <p>{book?.publisher}</p>
-            <p>{book?.year}</p>
-            <p>{book?.pageCount}</p>
-          </div>
-        </div>
-        {/* Reading Log Section */}
-        <ReadingLogRegistrationForm
-          isbn={book?.isbn}
-          maxPage={book?.pageCount}
-          setLapNoteLogs={setLapNoteLogs}
-          lapNoteLogs={lapNoteLogs}
-          loadLogs={loadLogs}
-        />
-        <ReadingLogCards logs={logs} reloadLogs={loadLogs} />
-        <div className="h-16"></div>
       </div>
+      <div className="grid gap-4 md:grid-cols-[auto,1fr]">
+        {book?.imageUrl && (
+          <img
+            src={book.imageUrl}
+            alt={book.title}
+            className="h-40 w-full max-w-[160px] rounded-2xl object-cover"
+          />
+        )}
+        <div className="flex flex-col gap-1 text-sm text-neutral-600">
+          <p>{book?.seriesTitle}</p>
+          <p>発行年: {book?.year ?? "年不明"}</p>
+          <p>ページ数: {book?.pageCount ?? "-"}ページ</p>
+          <p>ISBN: {book?.isbn}</p>
+        </div>
+      </div>
+      <ReadingLogRegistrationForm
+        isbn={book?.isbn}
+        maxPage={book?.pageCount}
+        setLapNoteLogs={setLapNoteLogs}
+        lapNoteLogs={lapNoteLogs}
+        loadLogs={loadLogs}
+      />
+      <ReadingLogCards logs={logs} reloadLogs={loadLogs} />
     </div>
   );
 };
 
 export default BookDetailPage;
-

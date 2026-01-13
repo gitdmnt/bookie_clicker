@@ -18,6 +18,7 @@ pub async fn search(isbn: &str) -> Result<Vec<Book>, String> {
             "https://ndlsearch.ndl.go.jp/api/sru?operation=searchRetrieve&recordSchema=dcndl&recordPacking=xml&query=isbn%3d{}",
             query_isbn
         );
+        dbg!("Querying NDL API URL: {}", &url);
         let resp = client
             .get(&url)
             .send()
@@ -207,17 +208,12 @@ fn parse_record(reader: &mut Reader<&[u8]>) -> Result<Book, String> {
                     if !s.is_empty() {
                         series_title = Some(s);
                     }
-                } else if matches_tag(name.as_slice(), &[b"dcterms:creator", b"dc:creator"]) {
+                } else if name.as_slice() == b"dcterms:creator" {
                     // prefer explicit foaf:name entries, fallback to inner text
                     let names = parse_inner_values(reader, b"foaf:name")?;
-                    if names.is_empty() {
-                        let raw = text_of_element(reader, name.as_slice())?;
-                        if !raw.is_empty() {
-                            authors.push(raw);
-                        }
-                    } else {
-                        authors.extend(names);
-                    }
+                } else if name.as_slice() == b"dc:creator" {
+                    let author = text_of_element(reader, name.as_slice())?;
+                    authors.push(author);
                 } else if matches_tag(name.as_slice(), &[b"dcterms:publisher", b"dc:publisher"]) {
                     publisher = parse_inner_value(reader, b"foaf:name")?;
                     if publisher.is_empty() {

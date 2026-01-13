@@ -33,6 +33,7 @@ pub fn run() {
             commands::db::add,
             commands::db::select,
             commands::db::delete,
+            commands::db::export_db,
             // timer commands
             commands::timer::timer_get,
             commands::timer::timer_start,

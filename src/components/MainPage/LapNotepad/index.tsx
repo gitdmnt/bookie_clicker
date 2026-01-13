@@ -1,10 +1,20 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { Temporal } from "temporal-polyfill";
 
 import { Stopwatch } from "./Stopwatch";
 import { ControlPanel } from "./ControlPanel";
 import { LapNoteList } from "./LapNoteList";
 import { LapNoteInput } from "./LapNoteInput";
+
+interface LapNotepadProps {
+  isTimerRunning: boolean;
+  startTimer: () => void;
+  stopTimer: () => void;
+  resetTimer: () => void;
+  time: StopwatchTime;
+  lapNoteLogs: LapNoteLog[];
+  setLapNoteLogs: Dispatch<SetStateAction<LapNoteLog[]>>;
+}
 
 const LapNotepad = ({
   isTimerRunning,
@@ -14,15 +24,7 @@ const LapNotepad = ({
   time,
   lapNoteLogs,
   setLapNoteLogs,
-}: {
-  isTimerRunning: boolean;
-  startTimer: () => void;
-  stopTimer: () => void;
-  resetTimer: () => void;
-  time: { h: number; m: number; s: number }; // state object
-  lapNoteLogs: any[]; // 型を正しく定義してください
-  setLapNoteLogs: (logs: any[]) => void;
-}) => {
+}: LapNotepadProps) => {
   const [note, setNote] = useState<string>("");
   const [refPage, setRefPage] = useState<number>(1);
   const textareaEl = useRef<HTMLTextAreaElement>(null);
@@ -30,63 +32,85 @@ const LapNotepad = ({
   const onStart = () => {
     startTimer();
     textareaEl.current?.focus();
-    let lapNotes: LapNote[] = [];
-    if (note !== "") {
-      const log = {
-        timestamp: time,
-        note: note,
-        refPage,
-      };
-      lapNotes = [log];
-      setNote("");
-    }
-    const lapNoteLog = {
-      startDateTime: Temporal.Now.plainDateTimeISO(),
-      endDateTime: null,
-      lapNotes: lapNotes,
-    };
-    setLapNoteLogs([...lapNoteLogs, lapNoteLog]);
+    const startNotes = note
+      ? [
+          {
+            timestamp: time,
+            note,
+            refPage,
+          },
+        ]
+      : [];
+    setLapNoteLogs((logs) => [
+      ...logs,
+      {
+        startDateTime: Temporal.Now.plainDateTimeISO(),
+        endDateTime: null,
+        lapNotes: startNotes,
+      },
+    ]);
+    setNote("");
   };
 
   const onStop = () => {
     stopTimer();
-
-    let lastLapNoteLog = lapNoteLogs.pop();
-    let lapNotes = lastLapNoteLog.lapNotes;
-    if (note !== "") {
-      const log = {
-        timestamp: time,
-        note,
-        refPage,
-      };
-      lapNotes = [...lapNotes, log];
-    }
-    lastLapNoteLog = {
-      ...lastLapNoteLog,
-      endDateTime: Temporal.Now.plainDateTimeISO(),
-      lapNotes: lapNotes,
-    };
-    setLapNoteLogs([...lapNoteLogs, lastLapNoteLog]);
+    const capturedNote = note;
+    const capturedRefPage = refPage;
+    setLapNoteLogs((logs) => {
+      if (logs.length === 0) {
+        return logs;
+      }
+      const lastLog = logs[logs.length - 1];
+      const updatedLapNotes = capturedNote
+        ? [
+            ...lastLog.lapNotes,
+            {
+              timestamp: time,
+              note: capturedNote,
+              refPage: capturedRefPage,
+            },
+          ]
+        : lastLog.lapNotes;
+      return [
+        ...logs.slice(0, -1),
+        {
+          ...lastLog,
+          endDateTime: Temporal.Now.plainDateTimeISO(),
+          lapNotes: updatedLapNotes,
+        },
+      ];
+    });
     setNote("");
   };
 
   const onLap = () => {
-    console.log("lap");
-    if (note !== "") {
-      const log = {
-        timestamp: time,
-        note,
-        refPage,
-      };
-      let lastLapNoteLog = lapNoteLogs.pop();
-      lastLapNoteLog = {
-        ...lastLapNoteLog,
-        lapNotes: [...lastLapNoteLog.lapNotes, log],
-      };
-      setLapNoteLogs([...lapNoteLogs, lastLapNoteLog]);
-      setNote("");
-      textareaEl.current?.focus();
+    if (!note) {
+      return;
     }
+    const capturedNote = note;
+    const capturedRefPage = refPage;
+    setLapNoteLogs((logs) => {
+      if (logs.length === 0) {
+        return logs;
+      }
+      const lastLog = logs[logs.length - 1];
+      return [
+        ...logs.slice(0, -1),
+        {
+          ...lastLog,
+          lapNotes: [
+            ...lastLog.lapNotes,
+            {
+              timestamp: time,
+              note: capturedNote,
+              refPage: capturedRefPage,
+            },
+          ],
+        },
+      ];
+    });
+    setNote("");
+    textareaEl.current?.focus();
   };
 
   const onReset = () => {
