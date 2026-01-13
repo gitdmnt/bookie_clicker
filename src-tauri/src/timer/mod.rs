@@ -1,168 +1,220 @@
-/// Timer module for managing a simple timer with lap notes.
-use serde::{Deserialize, Serialize};
-use std::{
-    sync::{Arc, Mutex},
-    thread::{self, JoinHandle},
-    time::{Duration, SystemTime, UNIX_EPOCH},
-};
-
+use serde::Serialize;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 use tauri::Emitter;
-use tauri::{Manager, Window};
+use tokio::task::JoinHandle;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct LapNote {
-    pub timestamp_ms: u128,
-    pub note: String,
-    pub ref_page: i32,
+#[derive(Debug)]
+pub struct Lap {
+    pub id: usize,
+    pub elapsed_ms: u64,
+    pub note: Option<String>,
+    pub ref_page: Option<u32>,
+    pub created_at: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct LapNoteLog {
-    pub start_timestamp_ms: u128,
-    pub end_timestamp_ms: Option<u128>,
-    pub lap_notes: Vec<LapNote>,
+#[derive(Debug)]
+pub struct Timer {
+    pub running: bool,
+    pub start_instant: Option<Instant>,
+    pub elapsed: Duration, // accumulated
+    pub laps: Vec<Lap>,
 }
 
-#[derive(Default)]
-struct TimerInner {
-    is_running: bool,
-    elapsed_ms: u128,
-    start_instant_ms: Option<u128>,
-    tick_handle: Option<JoinHandle<()>>,
-    laps: Vec<LapNoteLog>,
-}
-
-#[derive(Default)]
-pub struct TimerState(Arc<Mutex<TimerInner>>);
-
-impl TimerState {
+impl Timer {
     pub fn new() -> Self {
-        Self(Arc::new(Mutex::new(TimerInner {
-            is_running: false,
-            elapsed_ms: 0,
-            start_instant_ms: None,
-            tick_handle: None,
-            laps: vec![],
-        })))
-    }
-}
-
-// Utility to get ms since epoch
-fn now_ms() -> u128 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_millis()
-}
-
-// Start emits "timer-tick" events every second to the given window
-#[tauri::command]
-pub fn start_timer(state: tauri::State<'_, TimerState>, window: Window) -> Result<(), String> {
-    let state_arc = state.0.clone();
-    let mut s = state_arc.lock().unwrap();
-    if s.is_running {
-        return Ok(());
-    }
-
-    s.is_running = true;
-    s.start_instant_ms = Some(now_ms());
-    // Create a new lap log session
-    let ms = s.start_instant_ms.unwrap();
-    s.laps.push(LapNoteLog {
-        start_timestamp_ms: ms,
-        end_timestamp_ms: None,
-        lap_notes: vec![],
-    });
-
-    // Clone for thread
-    let window_clone = window.clone();
-    let state_for_thread = state_arc.clone();
-
-    // Spawn thread to emit ticks
-    let handle = thread::spawn(move || {
-        while {
-            let guard = state_for_thread.lock().unwrap();
-            guard.is_running
-        } {
-            {
-                // Update elapsed
-                let mut guard = state_for_thread.lock().unwrap();
-                let start = guard.start_instant_ms.unwrap_or(now_ms());
-                guard.elapsed_ms = now_ms() - start;
-            }
-            // Emit event with elapsed (ms) and current laps
-            let guard = state_for_thread.lock().unwrap();
-            let payload = serde_json::json!({
-              "elapsedMs": guard.elapsed_ms,
-              "laps": guard.laps
-            });
-            let _ = window_clone.emit("timer-tick", payload);
-            thread::sleep(Duration::from_millis(1000));
+        Timer {
+            running: false,
+            start_instant: None,
+            elapsed: Duration::ZERO,
+            laps: Vec::new(),
         }
-    });
-
-    s.tick_handle = Some(handle);
-    Ok(())
-}
-
-#[tauri::command]
-pub fn stop_timer(state: tauri::State<'_, TimerState>) -> Result<(), String> {
-    let mut s = state.0.lock().unwrap();
-    if !s.is_running {
-        return Ok(());
     }
-    s.is_running = false;
-    // mark end timestamp for current lap session
-    if let Some(last) = s.laps.last_mut() {
-        last.end_timestamp_ms = Some(now_ms());
-    }
-    // join thread handle (best-effort)
-    if let Some(handle) = s.tick_handle.take() {
-        let _ = handle.join();
-    }
-    Ok(())
-}
 
-#[tauri::command]
-pub fn reset_timer(state: tauri::State<'_, TimerState>) -> Result<(), String> {
-    let mut s = state.0.lock().unwrap();
-    s.is_running = false;
-    s.elapsed_ms = 0;
-    s.start_instant_ms = None;
-    s.laps.clear();
-    // join and clean up thread
-    if let Some(handle) = s.tick_handle.take() {
-        let _ = handle.join();
+    pub fn start(&mut self) -> Result<(), String> {
+        if self.running {
+            return Err("timer already running".to_string());
+        }
+        self.running = true;
+        self.start_instant = Some(Instant::now());
+        Ok(())
     }
-    Ok(())
-}
 
-#[tauri::command]
-pub fn get_time(state: tauri::State<'_, TimerState>) -> Result<u128, String> {
-    let s = state.0.lock().unwrap();
-    Ok(s.elapsed_ms)
-}
+    pub fn stop(&mut self) -> Result<(), String> {
+        if !self.running {
+            return Err("timer not running".to_string());
+        }
+        if let Some(s) = self.start_instant {
+            let dur = s.elapsed();
+            self.elapsed += dur;
+        }
+        self.start_instant = None;
+        self.running = false;
+        Ok(())
+    }
 
-#[tauri::command]
-pub fn add_lap_note(
-    state: tauri::State<'_, TimerState>,
-    note: String,
-    ref_page: i32,
-) -> Result<(), String> {
-    let mut s = state.0.lock().unwrap();
-    let timestamp_ms = now_ms();
-    if let Some(last) = s.laps.last_mut() {
-        last.lap_notes.push(LapNote {
-            timestamp_ms,
+    pub fn reset(&mut self) {
+        self.running = false;
+        self.start_instant = None;
+        self.elapsed = Duration::ZERO;
+        self.laps.clear();
+    }
+
+    pub fn elapsed_ms(&self) -> u64 {
+        let mut e = self.elapsed;
+        if let Some(s) = self.start_instant {
+            e += s.elapsed();
+        }
+        e.as_millis() as u64
+    }
+
+    pub fn add_lap(&mut self, note: Option<String>, ref_page: Option<u32>) -> Lap {
+        let elapsed = self.elapsed_ms();
+        let lap = Lap {
+            id: self.laps.len(),
+            elapsed_ms: elapsed,
             note,
             ref_page,
-        });
+            created_at: chrono::Utc::now().to_rfc3339(),
+        };
+        self.laps.push(lap.clone());
+        lap
     }
-    Ok(())
+
+    pub fn get_laps(&self) -> Vec<Lap> {
+        self.laps.clone()
+    }
 }
 
-#[tauri::command]
-pub fn get_laps(state: tauri::State<'_, TimerState>) -> Result<Vec<LapNoteLog>, String> {
-    let s = state.0.lock().unwrap();
-    Ok(s.laps.clone())
+#[derive(Clone)]
+pub struct TimerManager(Arc<Mutex<Inner>>);
+
+struct Inner {
+    timer: Timer,
+    tick_handle: Option<JoinHandle<()>>, // handle for the tick loop
+}
+
+impl TimerManager {
+    pub fn new() -> Self {
+        TimerManager(Arc::new(Mutex::new(Inner {
+            timer: Timer::new(),
+            tick_handle: None,
+        })))
+    }
+
+    pub fn start(&self, app: tauri::AppHandle) -> Result<(), String> {
+        let mut inner = self.0.lock().unwrap();
+        inner.timer.start()?;
+
+        let arc = self.0.clone();
+        let app_handle = app.clone();
+
+        // spawn tick loop
+        let handle = tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_millis(1000));
+            loop {
+                interval.tick().await;
+                // check running state
+                let elapsed = {
+                    let inner = arc.lock().unwrap();
+                    if !inner.timer.running {
+                        break;
+                    }
+                    inner.timer.elapsed_ms()
+                };
+                // elapsed is milliseconds -> convert to seconds for h/m/s
+                let secs = elapsed / 1000;
+                let h = secs / 3600;
+                let m = (secs % 3600) / 60;
+                let s = secs % 60;
+                let payload = TimerTick { elapsed, h, m, s };
+                let _ = app_handle.emit("timer:tick", payload);
+            }
+            // loop finished: clear tick_handle to avoid stale reference
+            let mut inner = arc.lock().unwrap();
+            inner.tick_handle = None;
+        });
+
+        inner.tick_handle = Some(handle);
+        Ok(())
+    }
+
+    pub fn stop(&self) -> Result<(), String> {
+        let mut inner = self.0.lock().unwrap();
+
+        // stop timer logic
+        inner.timer.stop()?;
+
+        // abort tick task if exists
+        if let Some(handle) = inner.tick_handle.take() {
+            handle.abort();
+        }
+
+        Ok(())
+    }
+
+    pub fn reset(&self) {
+        let mut inner = self.0.lock().unwrap();
+        if let Some(handle) = inner.tick_handle.take() {
+            handle.abort();
+        }
+        inner.timer.reset();
+    }
+
+    pub fn elapsed_ms(&self) -> u64 {
+        let inner = self.0.lock().unwrap();
+        inner.timer.elapsed_ms()
+    }
+
+    pub fn add_lap(&self, note: Option<String>, ref_page: Option<u32>) -> Lap {
+        let mut inner = self.0.lock().unwrap();
+        inner.timer.add_lap(note, ref_page)
+    }
+
+    pub fn get_laps(&self) -> Vec<Lap> {
+        let inner = self.0.lock().unwrap();
+        inner.timer.get_laps()
+    }
+}
+
+#[derive(Clone, Serialize)]
+struct TimerTick {
+    elapsed: u64,
+    h: u64,
+    m: u64,
+    s: u64,
+}
+
+// Make Lap cloneable/serializable for commands
+impl Clone for Lap {
+    fn clone(&self) -> Self {
+        Self {
+            id: self.id,
+            elapsed_ms: self.elapsed_ms,
+            note: self.note.clone(),
+            ref_page: self.ref_page,
+            created_at: self.created_at.clone(),
+        }
+    }
+}
+
+#[derive(serde::Serialize)]
+pub struct LapRecord {
+    pub id: usize,
+    pub elapsed_ms: u64,
+    pub note: Option<String>,
+    pub ref_page: Option<u32>,
+    pub created_at: String,
+}
+
+impl From<Lap> for LapRecord {
+    fn from(l: Lap) -> Self {
+        LapRecord {
+            id: l.id,
+            elapsed_ms: l.elapsed_ms,
+            note: l.note,
+            ref_page: l.ref_page,
+            created_at: l.created_at,
+        }
+    }
 }

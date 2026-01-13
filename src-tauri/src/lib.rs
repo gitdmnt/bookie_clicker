@@ -2,12 +2,11 @@ use tauri::async_runtime::block_on;
 use tauri::{Builder, Manager};
 
 mod commands;
+mod timer;
 
 mod db;
 use db::Database;
-
-mod timer;
-use timer::TimerState;
+use timer::TimerManager;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
@@ -24,13 +23,21 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .setup(|app| {
             app.manage(db);
-            app.manage(TimerState::new());
+            // Manage TimerManager (in-memory timer)
+            app.manage(TimerManager::new());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::db::add,
             commands::db::select,
-            commands::db::delete
+            commands::db::delete,
+            // timer commands
+            commands::timer::timer_get,
+            commands::timer::timer_start,
+            commands::timer::timer_stop,
+            commands::timer::timer_reset,
+            commands::timer::timer_lap,
+            commands::timer::timer_get_laps
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

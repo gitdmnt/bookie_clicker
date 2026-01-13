@@ -633,6 +633,7 @@ dependencies = [
 name = "bookie_clicker"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "dirs",
  "serde",
  "serde_json",
