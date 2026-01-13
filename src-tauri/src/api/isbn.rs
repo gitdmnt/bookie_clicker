@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 fn validate_isbn10(isbn10: &str) -> Result<(), String> {
     if isbn10.len() != 10 {
         return Err("invalid length".to_string());
@@ -62,7 +60,7 @@ fn validate_isbn13(isbn13: &str) -> Result<(), String> {
     }
 }
 
-fn parse_isbn(input: &str) -> Result<u64, String> {
+pub fn parse_isbn(input: &str) -> Result<u64, String> {
     let isbn = input.replace("-", "").replace(" ", "");
     if isbn.len() == 10 {
         validate_isbn10(&isbn)?;
