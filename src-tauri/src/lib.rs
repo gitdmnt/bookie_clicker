@@ -8,6 +8,8 @@ mod db;
 use db::Database;
 use timer::TimerManager;
 
+mod api;
+
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
