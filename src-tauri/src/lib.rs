@@ -1,6 +1,8 @@
 use tauri::async_runtime::block_on;
 use tauri::{Builder, Manager};
 
+mod commands;
+
 mod db;
 use db::Database;
 
@@ -25,7 +27,11 @@ pub fn run() {
             app.manage(TimerState::new());
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![db::add, db::select, db::delete])
+        .invoke_handler(tauri::generate_handler![
+            commands::db::add,
+            commands::db::select,
+            commands::db::delete
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
