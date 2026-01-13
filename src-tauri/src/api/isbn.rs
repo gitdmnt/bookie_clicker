@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 fn validate_isbn10(isbn10: &str) -> Result<(), String> {
     if isbn10.len() != 10 {
         return Err("invalid length".to_string());
@@ -71,5 +73,77 @@ fn parse_isbn(input: &str) -> Result<u64, String> {
             .map_err(|_| "invalid ISBN-13 format".to_string())
     } else {
         Err("ISBN must be either 10 or 13 digits long".to_string())
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_isbn10_valid() {
+        // 新潮文庫 新編銀河鉄道の夜
+        assert!(validate_isbn10("4101092052").is_ok());
+    }
+
+    #[test]
+    fn validate_isbn10_with_x_valid() {
+        // 新潮文庫 香華
+        assert!(validate_isbn10("410113202X").is_ok());
+    }
+
+    #[test]
+    fn validate_isbn10_invalid_length_or_chars() {
+        assert!(validate_isbn10("1234").is_err());
+        assert!(validate_isbn10("ABCDEFGHIJ").is_err());
+        // 'X' only allowed as last character
+        assert!(validate_isbn10("X23456789X").is_err());
+    }
+
+    #[test]
+    fn convert_isbn10_to_isbn13_valid() {
+        // 新潮文庫 劇場
+        // Known mapping: ISBN-10 4102130225 -> ISBN-13 9784102130223
+        assert_eq!(
+            convert_isbn10_to_isbn13("4102130225".to_string()).unwrap(),
+            9_784_102_130_223u64
+        );
+    }
+
+    #[test]
+    fn convert_isbn10_to_isbn13_invalid_format() {
+        // non-digit in the first 9 chars should fail parsing
+        assert!(convert_isbn10_to_isbn13("12345678X9".to_string()).is_err());
+    }
+
+    #[test]
+    fn validate_isbn13_valid_and_invalid() {
+        assert!(validate_isbn13("9784102130223").is_ok());
+        // wrong checksum
+        assert!(validate_isbn13("9784102130228").is_err());
+        // invalid chars and length
+        assert!(validate_isbn13("978410213022").is_err());
+        assert!(validate_isbn13("97841021A0223").is_err());
+    }
+
+    #[test]
+    fn parse_isbn_from_isbn10_and_isbn13() {
+        // from ISBN-10 with hyphens
+        assert_eq!(parse_isbn("4-10-213022-5").unwrap(), 9_784_102_130_223u64);
+        // from ISBN-10 with spaces
+        assert_eq!(parse_isbn(" 4 10 213022 5 ").unwrap(), 9_784_102_130_223u64);
+        // from ISBN-13 directly
+        assert_eq!(parse_isbn("9784102130223").unwrap(), 9_784_102_130_223u64);
+    }
+
+    #[test]
+    fn parse_isbn_validates_isbn10_with_x() {
+        let parsed = parse_isbn("410113202X").unwrap();
+        // ensure the produced ISBN-13 is valid
+        assert!(validate_isbn13(&parsed.to_string()).is_ok());
+    }
+
+    #[test]
+    fn parse_isbn_invalid_length() {
+        assert!(parse_isbn("123").is_err());
     }
 }
