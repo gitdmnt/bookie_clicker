@@ -7,7 +7,8 @@ import { Lapnote } from "./pages/lapnote";
 
 function App() {
   const [page, setPage] = useState(0);
-  const pages = [<Lapnote />, <Bookshelf />, <MainPage />];
+  const [book, setBook] = useState<Book | null>(null);
+  const pages = [<Lapnote book={book} />, <Bookshelf />, <MainPage />];
   return (
     <div className="min-h-screen bg-gray-50">
       {pages[page]}
