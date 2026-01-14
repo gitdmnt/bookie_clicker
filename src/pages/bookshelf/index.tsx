@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import useLoadBooks from "@/hooks/useLoadBooks";
-import { BookshelfGrid } from "./BookshelfGrid.tsx";
+import { BookshelfGrid } from "./BookshelfGrid";
 import { BookshelfHeader } from "./BookshelfHeader";
 import { EmptyState } from "./EmptyState";
 

@@ -1,4 +1,4 @@
-import { formatElapsed } from "../utils";
+import { formatElapsed } from "./utils";
 
 const LapHistory = ({ states }: { states: { laps: Lap[] } }) => (
   <div className="mt-6 space-y-4">
