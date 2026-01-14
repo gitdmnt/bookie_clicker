@@ -4,32 +4,10 @@ import TimerControls from "./components/TimerControls";
 import LapnoteForm from "./components/LapnoteForm";
 import LapHistory from "./components/LapHistory";
 import { useLapnoteTimer } from "@/hooks/useLapnoteTimer";
+import { SaveForm } from "./components/SaveForm";
 
 export const Lapnote = ({ book }: { book: Book | null }) => {
   const lapnoteTimer = useLapnoteTimer();
-  const timerStates = {
-    time: lapnoteTimer.time,
-    isRunning: lapnoteTimer.isRunning,
-  };
-  const timerHandlers = {
-    handleStart: lapnoteTimer.handleStart,
-    handleLap: lapnoteTimer.handleLap,
-    handleStop: lapnoteTimer.handleStop,
-    handleReset: lapnoteTimer.handleReset,
-  };
-
-  const lapStates = {
-    laps: lapnoteTimer.laps,
-    note: lapnoteTimer.note,
-    refPage: lapnoteTimer.refPage,
-  };
-  const lapHandlers = {
-    setNote: lapnoteTimer.setNote,
-    setRefPage: lapnoteTimer.setRefPage,
-    handleSave: lapnoteTimer.handleSave,
-  };
-
-  const textareaEl = lapnoteTimer.textareaRef;
 
   return (
     <main className="min-h-screen bg-neutral-50 p-4">
@@ -39,19 +17,24 @@ export const Lapnote = ({ book }: { book: Book | null }) => {
         <p className="mt-2 text-sm text-gray-500">
           タイマー測定とラップメモをこのページで行います。
         </p>
-        <TimerDisplay time={timerStates.time} />
+        <TimerDisplay time={lapnoteTimer.timerStates.time} />
         <div className="flex items-center gap-2">
           <TimerControls
-            isRunning={timerStates.isRunning}
-            handlers={timerHandlers}
+            isRunning={lapnoteTimer.timerStates.isRunning}
+            handlers={lapnoteTimer.timerHandlers}
           />
         </div>
         <LapnoteForm
-          states={lapStates}
-          textareaRef={textareaEl}
-          handlers={lapHandlers}
+          states={lapnoteTimer.lapStates}
+          textareaRef={lapnoteTimer.textareaEl}
+          handlers={lapnoteTimer.lapHandlers}
         />
-        <LapHistory states={lapStates} />
+        <LapHistory states={lapnoteTimer.lapStates} />
+        <SaveForm
+          states={lapnoteTimer.saveStates}
+          handlers={lapnoteTimer.saveHandlers}
+          book={book}
+        />
       </section>
     </main>
   );

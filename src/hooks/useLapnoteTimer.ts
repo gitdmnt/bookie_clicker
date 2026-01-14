@@ -21,6 +21,13 @@ export const useLapnoteTimer = () => {
   // ref to textarea
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // reading log states
+  const [firstPage, setFirstPage] = useState(1);
+  const [isFPUpdatedByUser, setIsFPUpdatedByUser] = useState(false);
+  const [lastPage, setLastPage] = useState(1);
+  const [isLPUpdatedByUser, setIsLPUpdatedByUser] = useState(false);
+  const [rating, setRating] = useState(5);
+
   // helpers to refresh time and lap notes
   const refreshTime = async () => {
     await invoke<TimerTick>("timer_get")
@@ -47,8 +54,8 @@ export const useLapnoteTimer = () => {
   // Handlers to Start / Stop / Lap / Reset
   const handleStart = async () => {
     try {
-      await invoke<TimerTick>("timer_start").then((tick) => {
-        setIsRunning(tick.isRunning);
+      await invoke<TimerTick>("timer_start").then(() => {
+        setIsRunning(true);
         textareaRef.current?.focus();
       });
     } catch (error) {
@@ -62,6 +69,19 @@ export const useLapnoteTimer = () => {
     try {
       await invoke<Lap>("timer_lap", { note, refPage });
       await refreshLapnoteLogs();
+
+      if (!isFPUpdatedByUser) {
+        const smallestPage = laps.reduce((min, lap) => {
+          return lap.refPage < min ? lap.refPage : min;
+        }, refPage);
+        setFirstPage(smallestPage);
+      }
+      if (!isLPUpdatedByUser) {
+        const largestPage = laps.reduce((max, lap) => {
+          return lap.refPage > max ? lap.refPage : max;
+        }, refPage);
+        setLastPage(largestPage);
+      }
     } catch (error) {
       console.error("timer_lap failed", error);
     }
@@ -91,7 +111,16 @@ export const useLapnoteTimer = () => {
     }
   };
 
-  // Handler to Save Lap Note
+  // Handlers to Save Lap Note
+  const handleFirstPageChange = (value: number) => {
+    setFirstPage(value);
+    setIsFPUpdatedByUser(true);
+  };
+  const handleLastPageChange = (value: number) => {
+    setLastPage(value);
+    setIsLPUpdatedByUser(true);
+  };
+
   const handleSave = async (
     book: Book | null,
     firstPage: number,
@@ -140,22 +169,53 @@ export const useLapnoteTimer = () => {
     void refreshLapnoteLogs();
   }, []);
 
-  return {
-    // states
+  const timerStates = {
     isRunning,
     time,
-    laps,
-    note,
-    setNote,
-    refPage,
-    setRefPage,
-    // handlers
+  };
+  const timerHandlers = {
     handleStart,
     handleLap,
     handleStop,
     handleReset,
+  };
+
+  const lapStates = {
+    laps,
+    note,
+    refPage,
+  };
+  const lapHandlers = {
+    setNote,
+    setRefPage,
+  };
+
+  const textareaEl = textareaRef;
+
+  const saveStates = {
+    firstPage,
+    lastPage,
+    rating,
+  };
+  const saveHandlers = {
+    handleFirstPageChange,
+    handleLastPageChange,
+    setRating,
     handleSave,
+  };
+
+  return {
+    // states
+    timerStates,
+    lapStates,
+    saveStates,
+
+    // handlers
+    timerHandlers,
+    lapHandlers,
+    saveHandlers,
+
     // refs
-    textareaRef,
+    textareaEl,
   };
 };

@@ -23,7 +23,6 @@ const TimerControls = ({
       type="button"
       className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:bg-blue-300"
       onClick={handleLap}
-      disabled={!isRunning}
     >
       Lap
     </button>
