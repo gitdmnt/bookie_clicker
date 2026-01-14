@@ -1,8 +1,8 @@
 import { formatElapsed } from "../utils";
 
-const LapHistory = ({ logs }: { logs: Lap[] }) => (
+const LapHistory = ({ states }: { states: { laps: Lap[] } }) => (
   <div className="mt-6 space-y-4">
-    {logs.map((log, index) => (
+    {states.laps.map((log, index) => (
       <div
         key={index}
         className="rounded-lg border border-neutral-200 bg-neutral-50 p-4"

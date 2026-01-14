@@ -1,17 +1,19 @@
 import type { RefObject } from "react";
 
 const LapnoteForm = ({
-  note,
-  refPage,
+  states: { note, refPage },
   textareaRef,
-  onNoteChange,
-  onRefPageChange,
+  handlers: { setNote, setRefPage },
 }: {
-  note: string;
-  refPage: number;
+  states: {
+    note: string;
+    refPage: number;
+  };
   textareaRef: RefObject<HTMLTextAreaElement>;
-  onNoteChange: (value: string) => void;
-  onRefPageChange: (value: number) => void;
+  handlers: {
+    setNote: (value: string) => void;
+    setRefPage: (value: number) => void;
+  };
 }) => (
   <div className="mt-4 flex flex-col gap-2">
     <label className="text-sm font-semibold text-gray-600">メモ</label>
@@ -20,7 +22,7 @@ const LapnoteForm = ({
       className="w-full rounded-lg border border-neutral-300 p-2 text-sm"
       rows={3}
       value={note}
-      onChange={(e) => onNoteChange(e.target.value)}
+      onChange={(e) => setNote(e.target.value)}
       placeholder="内容を記録してから Lap または Stop を押します"
     />
     <label className="text-sm font-semibold text-gray-600">参照ページ</label>
@@ -29,7 +31,7 @@ const LapnoteForm = ({
       className="w-full rounded-lg border border-neutral-300 p-2 text-sm"
       value={refPage}
       min={1}
-      onChange={(e) => onRefPageChange(Number(e.target.value) || 1)}
+      onChange={(e) => setRefPage(Number(e.target.value) || 1)}
     />
   </div>
 );

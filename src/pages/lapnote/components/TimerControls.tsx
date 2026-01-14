@@ -1,21 +1,20 @@
 const TimerControls = ({
   isRunning,
-  onStart,
-  onLap,
-  onStop,
-  onReset,
+  handlers: { handleStart, handleLap, handleStop, handleReset },
 }: {
   isRunning: boolean;
-  onStart: () => void;
-  onLap: () => void;
-  onStop: () => void;
-  onReset: () => void;
+  handlers: {
+    handleStart: () => void;
+    handleLap: () => void;
+    handleStop: () => void;
+    handleReset: () => void;
+  };
 }) => (
   <div className="mt-4 flex flex-wrap gap-2">
     <button
       type="button"
       className="px-4 py-2 rounded-lg bg-green-600 text-white disabled:bg-green-300"
-      onClick={onStart}
+      onClick={handleStart}
       disabled={isRunning}
     >
       Start
@@ -23,7 +22,7 @@ const TimerControls = ({
     <button
       type="button"
       className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:bg-blue-300"
-      onClick={onLap}
+      onClick={handleLap}
       disabled={!isRunning}
     >
       Lap
@@ -31,7 +30,7 @@ const TimerControls = ({
     <button
       type="button"
       className="px-4 py-2 rounded-lg bg-red-600 text-white disabled:bg-red-300"
-      onClick={onStop}
+      onClick={handleStop}
       disabled={!isRunning}
     >
       Stop
@@ -39,7 +38,7 @@ const TimerControls = ({
     <button
       type="button"
       className="px-4 py-2 rounded-lg bg-gray-600 text-white"
-      onClick={onReset}
+      onClick={handleReset}
     >
       Reset
     </button>

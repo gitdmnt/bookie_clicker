@@ -15,16 +15,10 @@ declare global {
   export interface ReadingLog {
     id?: string;
     isbn: number;
-    time: [string, string]; // Start and end time as ISO formatted strings
+    createdAt: Temporal.PlainDateTime;
+    sessionDurationSec: number;
     page: [number, number];
-    note: string;
     rating: number;
-  }
-
-  export interface Query {
-    elementType: string;
-    isbn?: number;
-    [key: string]: any;
   }
 
   export interface Lap {
@@ -33,6 +27,12 @@ declare global {
     elapsedMs: number;
     note: string;
     refPage: number;
+  }
+
+  export interface Query {
+    elementType: string;
+    isbn?: number;
+    [key: string]: any;
   }
 
   export interface StopwatchTime {

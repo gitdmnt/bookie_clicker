@@ -26,9 +26,9 @@ pub struct Book {
 pub struct ReadingLog {
     pub id: Option<String>,
     pub isbn: u64,
-    pub time: [String; 2],
+    pub created_at: String,
+    pub session_duration_sec: u64,
     pub page: [u16; 2],
-    pub note: String,
     pub rating: Option<u8>,
 }
 
@@ -37,9 +37,9 @@ pub struct ReadingLog {
 pub struct ReadingLogForStore {
     pub id: Option<RecordId>,
     pub isbn: u64,
-    pub time: [String; 2],
+    pub created_at: String,
+    pub session_duration_sec: u64,
     pub page: [u16; 2],
-    pub note: String,
     pub rating: Option<u8>,
 }
 
@@ -69,9 +69,9 @@ impl From<ReadingLogForStore> for ReadingLog {
         ReadingLog {
             id: reading_log.id.map(|key| key.to_string()),
             isbn: reading_log.isbn,
-            time: reading_log.time,
+            created_at: reading_log.created_at,
+            session_duration_sec: reading_log.session_duration_sec,
             page: reading_log.page,
-            note: reading_log.note,
             rating: reading_log.rating,
         }
     }
@@ -89,9 +89,9 @@ impl From<ReadingLog> for ReadingLogForStore {
         ReadingLogForStore {
             id,
             isbn: reading_log.isbn,
-            time: reading_log.time,
+            created_at: reading_log.created_at,
+            session_duration_sec: reading_log.session_duration_sec,
             page: reading_log.page,
-            note: reading_log.note,
             rating: reading_log.rating,
         }
     }
