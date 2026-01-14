@@ -7,8 +7,10 @@ import { invoke } from "@tauri-apps/api/core";
  */
 export async function selectElements(query: Query): Promise<any> {
   try {
-    const result = await invoke("select", { query });
-    return result;
+    if (query.elementType === "book") {
+      return await invoke("select_books", { query });
+    }
+    return await invoke("select_reading_logs", { query });
   } catch (error) {
     console.error("Error in selectElements:", error);
     throw error;
@@ -23,13 +25,10 @@ export async function selectElements(query: Query): Promise<any> {
  */
 export async function addElement(elementType: string, data: any): Promise<any> {
   try {
-    // Build the payload according to the element type.
-    const payload =
-      elementType === "book"
-        ? { elementType, book: data }
-        : { elementType, readingLog: data };
-    const result = await invoke("add", { e: payload });
-    return result;
+    if (elementType === "book") {
+      return await invoke("add_book", { book: data });
+    }
+    return await invoke("add_reading_log", { readingLog: data });
   } catch (error) {
     console.error("Error in addElement:", error);
     throw error;
@@ -43,8 +42,10 @@ export async function addElement(elementType: string, data: any): Promise<any> {
  */
 export async function deleteElements(query: Query): Promise<any> {
   try {
-    const result = await invoke("delete", { query });
-    return result;
+    if (query.elementType === "book") {
+      return await invoke("delete_books", { query });
+    }
+    return await invoke("delete_reading_logs", { query });
   } catch (error) {
     console.error("Error in deleteElements:", error);
     throw error;

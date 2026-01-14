@@ -1,26 +1,49 @@
 use tauri::State;
 
-use crate::db::Database;
-use crate::db::Element;
-use crate::db::Query;
+use crate::db::{Book, Database, Query, ReadingLog};
 
 #[tauri::command]
-pub async fn add(db: State<'_, Database>, e: Element) -> Result<(), surrealdb::Error> {
-    db.add(e).await?;
+pub async fn add_book(db: State<'_, Database>, book: Book) -> Result<(), surrealdb::Error> {
+    db.add_book(book).await?;
     Ok(())
 }
 
 #[tauri::command]
-pub async fn select(
+pub async fn add_reading_log(
     db: State<'_, Database>,
-    query: Query,
-) -> Result<Vec<Element>, surrealdb::Error> {
-    db.select(query).await
+    reading_log: ReadingLog,
+) -> Result<(), surrealdb::Error> {
+    db.add_reading_log(reading_log).await?;
+    Ok(())
 }
 
 #[tauri::command]
-pub async fn delete(db: State<'_, Database>, query: Query) -> Result<(), surrealdb::Error> {
-    db.delete(query).await
+pub async fn select_books(
+    db: State<'_, Database>,
+    query: Query,
+) -> Result<Vec<Book>, surrealdb::Error> {
+    db.select_books(query).await
+}
+
+#[tauri::command]
+pub async fn select_reading_logs(
+    db: State<'_, Database>,
+    query: Query,
+) -> Result<Vec<ReadingLog>, surrealdb::Error> {
+    db.select_reading_logs(query).await
+}
+
+#[tauri::command]
+pub async fn delete_books(db: State<'_, Database>, query: Query) -> Result<(), surrealdb::Error> {
+    db.delete_books(query).await
+}
+
+#[tauri::command]
+pub async fn delete_reading_logs(
+    db: State<'_, Database>,
+    query: Query,
+) -> Result<(), surrealdb::Error> {
+    db.delete_reading_logs(query).await
 }
 
 #[tauri::command]

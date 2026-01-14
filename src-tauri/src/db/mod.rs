@@ -9,7 +9,7 @@ pub mod query;
 pub use query::Query;
 
 pub mod table;
-pub use table::{Book, Element, ReadingLogForStore, Table};
+pub use table::{Book, ReadingLog, ReadingLogForStore, Table};
 
 pub struct Database {
     path: PathBuf,
@@ -35,7 +35,7 @@ impl Database {
     pub async fn export(&self) -> Result<PathBuf, Box<dyn std::error::Error>> {
         let db = self.db.lock().await;
         let export_data = db.query("SELECT * FROM books");
-        let export_data: Vec<Element> = export_data.await?.take(0)?;
+        let export_data: Vec<Book> = export_data.await?.take(0)?;
         let json = serde_json::to_string_pretty(&export_data)?;
         let export_path = self.path.join("bookie_clicker_export.json");
         fs::write(&export_path, json)?;
@@ -45,59 +45,49 @@ impl Database {
         Ok(export_path)
     }
 
-    pub async fn add(&self, e: Element) -> Result<(), surrealdb::Error> {
+    pub async fn add_book(&self, book: Book) -> Result<(), surrealdb::Error> {
         let db = self.db.lock().await;
-        let table = match e.element_type {
-            Table::Book => "books",
-            Table::ReadingLog => "reading_logs",
-        };
-
-        match e.element_type {
-            Table::Book => {
-                let book = e.book.unwrap();
-                let _: Option<Book> = db.create(table).content(book).await?;
-            }
-            Table::ReadingLog => {
-                let mut reading_log = e.reading_log.unwrap();
-                reading_log.id = None;
-                let reading_log: ReadingLogForStore = reading_log.into();
-                let _: Option<ReadingLogForStore> = db.create(table).content(reading_log).await?;
-            }
-        };
+        let _: Option<Book> = db.create("books").content(book).await?;
         Ok(())
     }
 
-    pub async fn select(&self, query: Query) -> Result<Vec<Element>, surrealdb::Error> {
-        let query_str = query.to_string();
+    pub async fn add_reading_log(
+        &self,
+        mut reading_log: ReadingLog,
+    ) -> Result<(), surrealdb::Error> {
+        reading_log.id = None;
+        let reading_log: ReadingLogForStore = reading_log.into();
         let db = self.db.lock().await;
-
-        match query.element_type {
-            Table::Book => db.query(query_str).await?.take::<Vec<Book>>(0).map(|v| {
-                v.into_iter()
-                    .map(|book| Element {
-                        element_type: Table::Book,
-                        book: Some(book),
-                        reading_log: None,
-                    })
-                    .collect()
-            }),
-            Table::ReadingLog => db
-                .query(query_str)
-                .await?
-                .take::<Vec<ReadingLogForStore>>(0)
-                .map(|v| {
-                    v.into_iter()
-                        .map(|reading_log| Element {
-                            element_type: Table::ReadingLog,
-                            book: None,
-                            reading_log: Some(reading_log.into()),
-                        })
-                        .collect()
-                }),
-        }
+        let _: Option<ReadingLogForStore> = db.create("reading_logs").content(reading_log).await?;
+        Ok(())
     }
 
-    pub async fn delete(&self, query: Query) -> Result<(), surrealdb::Error> {
+    pub async fn select_books(&self, query: Query) -> Result<Vec<Book>, surrealdb::Error> {
+        let query_str = query.to_string();
+        let db = self.db.lock().await;
+        db.query(query_str).await?.take::<Vec<Book>>(0)
+    }
+
+    pub async fn select_reading_logs(
+        &self,
+        query: Query,
+    ) -> Result<Vec<ReadingLog>, surrealdb::Error> {
+        let query_str = query.to_string();
+        let db = self.db.lock().await;
+        db.query(query_str)
+            .await?
+            .take::<Vec<ReadingLogForStore>>(0)
+            .map(|v| v.into_iter().map(|r| r.into()).collect())
+    }
+
+    pub async fn delete_books(&self, query: Query) -> Result<(), surrealdb::Error> {
+        let query = query.to_delete();
+        let db = self.db.lock().await;
+        let _ = db.query(query).await?;
+        Ok(())
+    }
+
+    pub async fn delete_reading_logs(&self, query: Query) -> Result<(), surrealdb::Error> {
         let query = query.to_delete();
         let db = self.db.lock().await;
         let _ = db.query(query).await?;

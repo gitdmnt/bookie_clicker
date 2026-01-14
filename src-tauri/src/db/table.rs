@@ -10,16 +10,6 @@ pub enum Table {
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Element {
-    pub element_type: Table,
-    // #[serde(flatten)] <- Internally tagged として認識される
-    pub book: Option<Book>,
-    // #[serde(flatten)]
-    pub reading_log: Option<ReadingLog>,
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct Book {
     pub isbn: u64, // Primary Key
     pub title: String,
@@ -51,48 +41,6 @@ pub struct ReadingLogForStore {
     pub page: [u16; 2],
     pub note: String,
     pub rating: Option<u8>,
-}
-
-impl Element {
-    fn empty_element(t: &str) -> Element {
-        match t {
-            "Book" => Element::empty_book(),
-            "ReadingLog" => Element::empty_reading_log(),
-            _ => panic!("Invalid table name"),
-        }
-    }
-    fn empty_book() -> Element {
-        let book = Book {
-            isbn: 0,
-            title: "".to_string(),
-            series_title: None,
-            authors: vec![],
-            publisher: "".to_string(),
-            year: 0,
-            page_count: 0,
-            image_url: "".to_string(),
-        };
-        Element {
-            element_type: Table::Book,
-            book: Some(book),
-            reading_log: None,
-        }
-    }
-    fn empty_reading_log() -> Element {
-        let reading_log = ReadingLog {
-            id: None,
-            isbn: 0,
-            time: ["".to_owned(), "".to_owned()],
-            page: [0, 0],
-            note: "".to_string(),
-            rating: None,
-        };
-        Element {
-            element_type: Table::ReadingLog,
-            book: None,
-            reading_log: Some(reading_log),
-        }
-    }
 }
 
 impl From<ReadingLogForStore> for ReadingLog {
