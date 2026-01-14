@@ -11,11 +11,7 @@ function App() {
   const [book, setBook] = useState<Book | null>(null);
   const pages = [
     <Lapnote book={book} />,
-    <Bookshelf
-      book={book}
-      setBook={setBook}
-      toLapnotePage={() => setPage(0)}
-    />,
+    <Bookshelf book={book} setBook={setBook} setPage={setPage} />,
     <Logbook book={book} />,
     <Stats />,
   ];

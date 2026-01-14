@@ -2,12 +2,12 @@ export const BookCard = ({
   book,
   isActive,
   onSelect,
-  toLapnotePage,
+  setPage,
 }: {
   book: Book;
   isActive: boolean;
   onSelect: () => void;
-  toLapnotePage?: () => void;
+  setPage: React.Dispatch<React.SetStateAction<number>>;
 }) => (
   <button
     type="button"
@@ -40,17 +40,29 @@ export const BookCard = ({
         <div className="text-xs text-gray-500">
           {book.publisher} ・ {book.year ?? "年不明"} ・ {book.pageCount}ページ
         </div>
-        {toLapnotePage && (
-          <button
-            type="button"
-            className="text-sm text-blue-600 bg-neutral-300 p-2 rounded-2xl"
-            onClick={(e) => {
-              e.stopPropagation();
-              toLapnotePage();
-            }}
-          >
-            この本を読む
-          </button>
+        {setPage && (
+          <div>
+            <button
+              type="button"
+              className="text-sm text-blue-600 bg-neutral-300 p-2 rounded-2xl"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPage(0);
+              }}
+            >
+              この本を読む
+            </button>
+            <button
+              type="button"
+              className="text-sm text-blue-600 bg-neutral-300 p-2 rounded-2xl"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPage(2);
+              }}
+            >
+              記録を見る
+            </button>
+          </div>
         )}
       </div>
     ) : null}

@@ -4,12 +4,12 @@ export const BookshelfGrid = ({
   books,
   selectedBook,
   onSelect,
-  toLapnotePage,
+  setPage,
 }: {
   books: Book[];
   selectedBook: Book | null;
   onSelect: (book: Book) => void;
-  toLapnotePage: () => void;
+  setPage: React.Dispatch<React.SetStateAction<number>>;
 }) => (
   <div className="flex flex-wrap m-4">
     {books.map((book) => (
@@ -18,7 +18,7 @@ export const BookshelfGrid = ({
         book={book}
         isActive={book.isbn === selectedBook?.isbn}
         onSelect={() => onSelect(book)}
-        toLapnotePage={toLapnotePage}
+        setPage={setPage}
       />
     ))}
   </div>

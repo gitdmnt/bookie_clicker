@@ -10,11 +10,11 @@ import { EmptyState } from "./EmptyState";
 export const Bookshelf = ({
   book,
   setBook,
-  toLapnotePage,
+  setPage,
 }: {
   book: Book | null;
   setBook: React.Dispatch<React.SetStateAction<Book | null>>;
-  toLapnotePage: () => void;
+  setPage: React.Dispatch<React.SetStateAction<number>>;
 }) => {
   const { books, loadBooks } = useLoadBooks();
   const [searchTerm, setSearchTerm] = useState("");
@@ -66,7 +66,7 @@ export const Bookshelf = ({
                 books={filteredBooks}
                 selectedBook={book}
                 onSelect={(book: Book) => setBook(book)}
-                toLapnotePage={toLapnotePage}
+                setPage={setPage}
               />
             )}
           </section>
