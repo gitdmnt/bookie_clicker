@@ -76,3 +76,9 @@ pub async fn export_db(db: State<'_, Database>) -> Result<String, String> {
         .map(|path| path.to_string_lossy().to_string())
         .map_err(|e| e.to_string())
 }
+
+// for debugging
+#[tauri::command]
+pub async fn query_raw(db: State<'_, Database>, query: String) -> Result<String, surrealdb::Error> {
+    db.query_raw(query).await
+}

@@ -63,8 +63,8 @@ impl Query {
             self.publisher
                 .as_ref()
                 .map(|v| format!("publisher = {}", v)),
-            self.date_from.map(|v| format!("date >= {}", v)),
-            self.date_to.map(|v| format!("date <= {}", v)),
+            self.date_from.map(|v| format!("created_at >= {}", v)),
+            self.date_to.map(|v| format!("created_at <= {}", v)),
             self.id.as_ref().map(|v| format!("id = {}", v)),
         ]
         .into_iter()

@@ -95,8 +95,11 @@ impl Database {
 
     pub async fn select_books(&self, query: Query) -> Result<Vec<Book>, surrealdb::Error> {
         let query_str = query.to_string();
+        // println!("select_books query: {}", query_str);
         let db = self.db.lock().await;
-        db.query(query_str).await?.take::<Vec<Book>>(0)
+        let res = db.query(query_str).await?.take::<Vec<Book>>(0);
+        // println!("select_books result: {:?}", res);
+        res
     }
 
     pub async fn select_reading_logs(
@@ -104,11 +107,15 @@ impl Database {
         query: Query,
     ) -> Result<Vec<ReadingLog>, surrealdb::Error> {
         let query_str = query.to_string();
+        println!("select_reading_logs query: {}", query_str);
         let db = self.db.lock().await;
-        db.query(query_str)
+        let res = db
+            .query(query_str)
             .await?
             .take::<Vec<ReadingLogForStore>>(0)
-            .map(|v| v.into_iter().map(|r| r.into()).collect())
+            .map(|v| v.into_iter().map(|r| r.into()).collect());
+        println!("select_reading_logs result: {:?}", res);
+        res
     }
 
     pub async fn select_laps(&self, reading_log: ReadingLog) -> Result<Vec<Lap>, surrealdb::Error> {
@@ -142,5 +149,11 @@ impl Database {
         let db = self.db.lock().await;
         let _ = db.query(query).await?;
         Ok(())
+    }
+
+    pub async fn query_raw(&self, query: String) -> Result<String, surrealdb::Error> {
+        let db = self.db.lock().await;
+        let res = db.query(query).await?;
+        Ok(format!("{:#?}", res))
     }
 }
