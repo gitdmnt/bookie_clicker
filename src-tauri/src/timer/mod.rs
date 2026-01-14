@@ -1,18 +1,9 @@
-use serde::{Deserialize, Serialize};
+use crate::db::Lap;
+use serde::Serialize;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tauri::{async_runtime, Emitter};
 use tokio::time;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Lap {
-    pub id: usize,
-    pub elapsed_ms: u64,
-    pub note: Option<String>,
-    pub ref_page: Option<u32>,
-    pub created_at: String,
-}
 
 #[derive(Debug)]
 pub struct Timer {
@@ -72,7 +63,7 @@ impl Timer {
     pub fn add_lap(&mut self, note: Option<String>, ref_page: Option<u32>) -> Lap {
         let elapsed = self.elapsed_ms();
         let lap = Lap {
-            id: self.laps.len(),
+            id: None,
             elapsed_ms: elapsed,
             note,
             ref_page,

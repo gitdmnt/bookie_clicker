@@ -12,9 +12,8 @@ const useReadingLogs = (isbn?: number | null) => {
 
     try {
       const query: Query = { elementType: "readingLog", isbn };
-      const result: any = await selectElements(query);
-      const fetchedLogs: ReadingLog[] = result.map((r: any) => r.readingLog);
-      setLogs(fetchedLogs);
+      const result: ReadingLog[] = await selectElements(query);
+      setLogs(result);
     } catch (error) {
       console.error("Failed to load reading logs", error);
       setLogs([]);

@@ -7,14 +7,7 @@ import TimerDisplay from "./components/TimerDisplay";
 import TimerControls from "./components/TimerControls";
 import LapnoteForm from "./components/LapnoteForm";
 import LapHistory from "./components/LapHistory";
-
-interface TimerTick {
-  elapsed: number;
-  h: number;
-  m: number;
-  s: number;
-  isRunning: boolean;
-}
+import { addReadingLogWithLaps } from "@/utils/api";
 
 export const Lapnote = ({ book }: { book: Book | null }) => {
   const [isRunning, setIsRunning] = useState(false);
@@ -90,6 +83,36 @@ export const Lapnote = ({ book }: { book: Book | null }) => {
     textareaEl.current?.focus();
   };
 
+  const handleSave = async () => {
+    try {
+      if (!book) return;
+      if (lapNotes.length === 0) return; // nothing to save
+
+      const first = lapNotes[0];
+      const last = lapNotes[lapNotes.length - 1];
+
+      const readingLog: ReadingLog = {
+        isbn: book.isbn,
+        // use first and last lap timestamps
+        time: [
+          first.createdAt?.toString() ?? "",
+          last.createdAt?.toString() ?? "",
+        ],
+        page: [first.refPage ?? 0, last.refPage ?? first.refPage ?? 0],
+        note: "",
+        rating: 0,
+        id: undefined,
+      };
+
+      await addReadingLogWithLaps(readingLog, lapNotes);
+      await refreshLapnoteLogs();
+      // Optionally reset timer after save
+      // await handleReset();
+    } catch (error) {
+      console.error("Failed to save reading log with laps", error);
+    }
+  };
+
   useEffect(() => {
     let unlisten: UnlistenFn | null = null;
     (async () => {
@@ -118,13 +141,22 @@ export const Lapnote = ({ book }: { book: Book | null }) => {
           タイマー測定とラップメモをこのページで行います。
         </p>
         <TimerDisplay time={time} />
-        <TimerControls
-          isRunning={isRunning}
-          onStart={() => void handleStart()}
-          onLap={() => void handleLap()}
-          onStop={() => void handleStop()}
-          onReset={() => void handleReset()}
-        />
+        <div className="flex items-center gap-2">
+          <TimerControls
+            isRunning={isRunning}
+            onStart={() => void handleStart()}
+            onLap={() => void handleLap()}
+            onStop={() => void handleStop()}
+            onReset={() => void handleReset()}
+          />
+          <button
+            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => void handleSave()}
+            title="Save this session as a reading log"
+          >
+            Save
+          </button>
+        </div>
         <LapnoteForm
           note={note}
           refPage={refPage}

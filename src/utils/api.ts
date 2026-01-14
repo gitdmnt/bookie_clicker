@@ -97,3 +97,45 @@ export const exportDatabase = async (): Promise<string> => {
     throw error;
   }
 };
+
+export const selectLapsForLog = async (
+  readingLogId: string
+): Promise<Lap[]> => {
+  try {
+    const result = await invoke<Lap[]>("select_laps_for_log", { readingLogId });
+    return result;
+  } catch (error) {
+    console.error("Failed to select laps for log", error);
+    throw error;
+  }
+};
+
+export const addLap = async (readingLogId: string, lap: Lap): Promise<void> => {
+  try {
+    await invoke("add_lap", { readingLogId, lap });
+  } catch (error) {
+    console.error("Failed to add lap", error);
+    throw error;
+  }
+};
+
+export const deleteLap = async (id: string): Promise<void> => {
+  try {
+    await invoke("delete_lap", { id });
+  } catch (error) {
+    console.error("Failed to delete lap", error);
+    throw error;
+  }
+};
+
+export const addReadingLogWithLaps = async (
+  readingLog: any,
+  laps: Lap[]
+): Promise<void> => {
+  try {
+    await invoke("add_reading_log_with_laps", { readingLog, laps });
+  } catch (error) {
+    console.error("Failed to save reading log with laps", error);
+    throw error;
+  }
+};

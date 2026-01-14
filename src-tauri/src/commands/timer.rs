@@ -1,6 +1,7 @@
 use tauri::State;
 
-use crate::timer::{Lap, TimerManager, TimerTick};
+use crate::db::Lap;
+use crate::timer::{TimerManager, TimerTick};
 
 #[tauri::command]
 pub fn timer_get(state: State<'_, TimerManager>) -> Result<TimerTick, String> {

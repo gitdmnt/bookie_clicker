@@ -9,7 +9,7 @@ pub mod query;
 pub use query::Query;
 
 pub mod table;
-pub use table::{Book, ReadingLog, ReadingLogForStore, Table};
+pub use table::{Book, Lap, LapForStore, ReadingLog, ReadingLogForStore, Table};
 
 pub struct Database {
     path: PathBuf,
@@ -55,10 +55,41 @@ impl Database {
         &self,
         mut reading_log: ReadingLog,
     ) -> Result<(), surrealdb::Error> {
-        reading_log.id = None;
+        reading_log.id = None; // always create new
         let reading_log: ReadingLogForStore = reading_log.into();
         let db = self.db.lock().await;
         let _: Option<ReadingLogForStore> = db.create("reading_logs").content(reading_log).await?;
+        Ok(())
+    }
+
+    pub async fn add_laps(
+        &self,
+        laps: Vec<Lap>,
+        reading_log: ReadingLog,
+    ) -> Result<(), surrealdb::Error> {
+        let db = self.db.lock().await;
+
+        let id = match &reading_log.id {
+            Some(id) => id.clone(),
+            None => {
+                let reading_log_store: ReadingLogForStore = reading_log.into();
+                let created: Option<ReadingLogForStore> =
+                    db.create("reading_logs").content(reading_log_store).await?;
+                let rl = created.expect("failed to create reading_log");
+                rl.id.unwrap().to_string()
+            }
+        };
+
+        // create laps referencing the reading_log id
+        for lap in laps.into_iter() {
+            let mut lap_store: LapForStore = lap.into();
+            lap_store.reading_log = Some(RecordId::from_table_key("reading_logs", &id));
+            let res: Option<LapForStore> = db.create("laps").content(lap_store).await?;
+            if res.is_none() {
+                panic!("failed to create lap; rolled back reading_log");
+            }
+        }
+
         Ok(())
     }
 
@@ -80,6 +111,18 @@ impl Database {
             .map(|v| v.into_iter().map(|r| r.into()).collect())
     }
 
+    pub async fn select_laps(&self, reading_log: ReadingLog) -> Result<Vec<Lap>, surrealdb::Error> {
+        let query = format!(
+            "SELECT * FROM laps WHERE reading_log = {}",
+            reading_log.id.as_ref().unwrap()
+        );
+        let db = self.db.lock().await;
+        db.query(query)
+            .await?
+            .take::<Vec<LapForStore>>(0)
+            .map(|v| v.into_iter().map(|l| l.into()).collect())
+    }
+
     pub async fn delete_books(&self, query: Query) -> Result<(), surrealdb::Error> {
         let query = query.to_delete();
         let db = self.db.lock().await;
@@ -89,6 +132,13 @@ impl Database {
 
     pub async fn delete_reading_logs(&self, query: Query) -> Result<(), surrealdb::Error> {
         let query = query.to_delete();
+        let db = self.db.lock().await;
+        let _ = db.query(query).await?;
+        Ok(())
+    }
+
+    pub async fn delete_lap(&self, id: String) -> Result<(), surrealdb::Error> {
+        let query = format!("DELETE {}", id);
         let db = self.db.lock().await;
         let _ = db.query(query).await?;
         Ok(())

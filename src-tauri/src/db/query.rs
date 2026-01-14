@@ -45,8 +45,8 @@ impl Query {
     }
     pub fn table(&self) -> String {
         match &self.element_type {
-            Table::Book { .. } => "books".to_owned(),
-            Table::ReadingLog { .. } => "reading_logs".to_owned(),
+            Table::Book => "books".to_owned(),
+            Table::ReadingLog => "reading_logs".to_owned(),
         }
     }
 

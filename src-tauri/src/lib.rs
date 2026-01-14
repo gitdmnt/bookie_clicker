@@ -32,10 +32,13 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::db::add_book,
             commands::db::add_reading_log,
+            commands::db::add_laps,
             commands::db::select_books,
             commands::db::select_reading_logs,
+            commands::db::select_laps,
             commands::db::delete_books,
             commands::db::delete_reading_logs,
+            commands::db::delete_lap,
             commands::db::export_db,
             // timer commands
             commands::timer::timer_get,

@@ -28,9 +28,9 @@ declare global {
   }
 
   export interface Lap {
+    id?: string;
     createdAt?: Temporal.PlainDateTime;
     elapsedMs: number;
-    id: number;
     note: string;
     refPage: number;
   }
@@ -45,5 +45,13 @@ declare global {
     startDateTime: Temporal.PlainDateTime;
     endDateTime: Temporal.PlainDateTime | null;
     lapNotes: LapNote[];
+  }
+
+  export interface TimerTick {
+    elapsed: number;
+    h: number;
+    m: number;
+    s: number;
+    isRunning: boolean;
   }
 }
