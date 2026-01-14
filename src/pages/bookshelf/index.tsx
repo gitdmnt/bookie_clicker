@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 
 import useLoadBooks from "@/hooks/useLoadBooks";
-import { BookshelfGrid } from "./components/BookshelfGrid.tsx";
-import { BookshelfHeader } from "./components/BookshelfHeader";
-import { EmptyState } from "./components/EmptyState";
+import { BookshelfGrid } from "./BookshelfGrid.tsx";
+import { BookshelfHeader } from "./BookshelfHeader";
+import { EmptyState } from "./EmptyState";
 
 export const Bookshelf = ({
   book,

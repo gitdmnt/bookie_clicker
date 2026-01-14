@@ -1,10 +1,10 @@
-import BookDisplay from "./components/BookDisplay";
-import TimerDisplay from "./components/TimerDisplay";
-import TimerControls from "./components/TimerControls";
-import LapnoteForm from "./components/LapnoteForm";
-import LapHistory from "./components/LapHistory";
+import BookDisplay from "./BookDisplay";
+import TimerDisplay from "./TimerDisplay";
+import TimerControls from "./TimerControls";
+import LapnoteForm from "./LapnoteForm";
+import LapHistory from "./LapHistory";
 import { useLapnoteTimer } from "@/hooks/useLapnoteTimer";
-import { SaveForm } from "./components/SaveForm";
+import { SaveForm } from "./SaveForm";
 
 export const Lapnote = ({ book }: { book: Book | null }) => {
   const lapnoteTimer = useLapnoteTimer();

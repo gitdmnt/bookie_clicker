@@ -1,10 +1,10 @@
 import { useState } from "react";
-import MainPage from "@/components/MainPage";
 import MenuBar from "@/components/MenuBar";
 import "./App.css";
 import { Bookshelf } from "./pages/bookshelf";
 import { Lapnote } from "./pages/lapnote";
 import { Stats } from "./pages/stats";
+import { Logbook } from "./pages/logbook";
 
 function App() {
   const [page, setPage] = useState(0);
@@ -16,6 +16,7 @@ function App() {
       setBook={setBook}
       toLapnotePage={() => setPage(0)}
     />,
+    <Logbook book={book} />,
     <Stats />,
   ];
   return (
