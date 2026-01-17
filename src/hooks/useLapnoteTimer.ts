@@ -1,3 +1,4 @@
+import { addLaps } from "@/utils/api";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect, useRef, useState } from "react";
@@ -139,14 +140,9 @@ export const useLapnoteTimer = () => {
       rating: 0,
     };
 
-    try {
-      await invoke("add_laps", {
-        readingLog,
-        laps,
-      });
-    } catch (error) {
-      console.error("Failed to save reading log with laps", error);
-    }
+    addLaps(readingLog, laps).catch((error) => {
+      console.error("Failed to save laps", error);
+    });
   };
 
   // Event listener

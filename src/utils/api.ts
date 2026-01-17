@@ -88,54 +88,112 @@ export const fetchWikipediaData = async (title: string) => {
   return pages;
 };
 
-export const exportDatabase = async (): Promise<string> => {
+// commands/db.rs
+
+// add
+
+export const addBook = async (book: Book): Promise<void> => {
   try {
-    const result = await invoke<string>("export_db");
-    return result;
+    await invoke("add_book", { book });
   } catch (error) {
-    console.error("Failed to export database", error);
+    console.error("Failed to add book", error);
     throw error;
   }
 };
 
-export const selectLapsForLog = async (
-  readingLogId: string
-): Promise<Lap[]> => {
+export const addReadingLog = async (readingLog: ReadingLog): Promise<void> => {
   try {
-    const result = await invoke<Lap[]>("select_laps_for_log", { readingLogId });
-    return result;
+    await invoke("add_reading_log", { readingLog });
   } catch (error) {
-    console.error("Failed to select laps for log", error);
+    console.error("Failed to add reading log", error);
     throw error;
   }
 };
 
-export const addLap = async (readingLogId: string, lap: Lap): Promise<void> => {
+export const addLaps = async (
+  readingLog: ReadingLog,
+  laps: Lap[]
+): Promise<void> => {
   try {
-    await invoke("add_lap", { readingLogId, lap });
+    await invoke("add_laps", { readingLog, laps });
   } catch (error) {
-    console.error("Failed to add lap", error);
+    console.error("Failed to add laps", error);
     throw error;
   }
 };
 
-export const deleteLap = async (id: string): Promise<void> => {
+// select
+
+export const selectBooks = async (query: Query): Promise<Book[]> => {
   try {
-    await invoke("delete_lap", { id });
+    const books = await invoke<Book[]>("select_books", { query });
+    return books;
+  } catch (error) {
+    console.error("Failed to select books", error);
+    throw error;
+  }
+};
+
+export const selectReadingLogs = async (
+  query: Query
+): Promise<ReadingLog[]> => {
+  try {
+    const readingLogs = await invoke<ReadingLog[]>("select_reading_logs", {
+      query,
+    });
+    return readingLogs;
+  } catch (error) {
+    console.error("Failed to select reading logs", error);
+    throw error;
+  }
+};
+
+export const selectLaps = async (readingLog: ReadingLog): Promise<Lap[]> => {
+  try {
+    const laps = await invoke<Lap[]>("select_laps", { readingLog });
+    return laps;
+  } catch (error) {
+    console.error("Failed to select laps", error);
+    throw error;
+  }
+};
+
+// delete
+export const deleteBooks = async (query: Query): Promise<void> => {
+  try {
+    await invoke("delete_books", { query });
+  } catch (error) {
+    console.error("Failed to delete books", error);
+    throw error;
+  }
+};
+
+export const deleteReadingLogs = async (query: Query): Promise<void> => {
+  try {
+    await invoke("delete_reading_logs", { query });
+  } catch (error) {
+    console.error("Failed to delete reading logs", error);
+    throw error;
+  }
+};
+
+export const deleteLap = async (id: String): Promise<void> => {
+  try {
+    await invoke("delete_laps", { id });
   } catch (error) {
     console.error("Failed to delete lap", error);
     throw error;
   }
 };
 
-export const addReadingLogWithLaps = async (
-  readingLog: any,
-  laps: Lap[]
-): Promise<void> => {
+//
+
+export const exportDatabase = async (): Promise<string> => {
   try {
-    await invoke("add_reading_log_with_laps", { readingLog, laps });
+    const result = await invoke<string>("export_db");
+    return result;
   } catch (error) {
-    console.error("Failed to save reading log with laps", error);
+    console.error("Failed to export database", error);
     throw error;
   }
 };

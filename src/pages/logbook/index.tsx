@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 import { BookDisplay } from "./BookDisplay";
-import { selectElements, selectLapsForLog } from "@/utils/api";
+import { selectLaps, selectReadingLogs } from "@/utils/api";
 interface ReadingLogToDisplay {
   readingLog: ReadingLog;
   laps: Lap[];
@@ -24,13 +24,14 @@ export const Logbook = ({ book }: { book: Book | null }) => {
 
     const fetchLogs = async () => {
       try {
-        const readingLogs: ReadingLog[] = await selectElements(query);
+        const readingLogs: ReadingLog[] = await selectReadingLogs(query);
         const logsWithLaps: ReadingLogToDisplay[] = await Promise.all(
-          readingLogs.map(async (log) => {
+          readingLogs.map(async (log: ReadingLog) => {
             if (!log.id) {
               return { readingLog: log, laps: [] };
             }
-            const laps: Lap[] = await selectLapsForLog(log.id);
+            const laps: Lap[] = await selectLaps(log);
+            console.log("Fetched laps:", laps);
             return { readingLog: log, laps };
           })
         );

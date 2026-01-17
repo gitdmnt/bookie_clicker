@@ -23,7 +23,7 @@ pub async fn add_laps(
     reading_log: ReadingLog,
     laps: Vec<Lap>,
 ) -> Result<(), surrealdb::Error> {
-    db.add_laps(laps, reading_log).await?;
+    db.add_laps(reading_log, laps).await?;
     Ok(())
 }
 

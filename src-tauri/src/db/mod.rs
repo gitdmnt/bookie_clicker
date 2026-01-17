@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
+use std::str::FromStr;
 use tauri::async_runtime::Mutex;
 
 use surrealdb::engine::local::{Db, RocksDb};
@@ -64,26 +65,27 @@ impl Database {
 
     pub async fn add_laps(
         &self,
-        laps: Vec<Lap>,
+
         reading_log: ReadingLog,
+        laps: Vec<Lap>,
     ) -> Result<(), surrealdb::Error> {
         let db = self.db.lock().await;
 
         let id = match &reading_log.id {
-            Some(id) => id.clone(),
+            Some(id) => RecordId::from_str(id)?,
             None => {
                 let reading_log_store: ReadingLogForStore = reading_log.into();
                 let created: Option<ReadingLogForStore> =
                     db.create("reading_logs").content(reading_log_store).await?;
                 let rl = created.expect("failed to create reading_log");
-                rl.id.unwrap().to_string()
+                rl.id.unwrap()
             }
         };
 
         // create laps referencing the reading_log id
         for lap in laps.into_iter() {
             let mut lap_store: LapForStore = lap.into();
-            lap_store.reading_log = Some(RecordId::from_table_key("reading_logs", &id));
+            lap_store.reading_log = Some(id.clone());
             let res: Option<LapForStore> = db.create("laps").content(lap_store).await?;
             if res.is_none() {
                 panic!("failed to create lap; rolled back reading_log");
@@ -120,9 +122,10 @@ impl Database {
 
     pub async fn select_laps(&self, reading_log: ReadingLog) -> Result<Vec<Lap>, surrealdb::Error> {
         let query = format!(
-            "SELECT * FROM laps WHERE reading_log = {}",
+            "SELECT * from laps WHERE readingLog = type::Thing(\"{}\")",
             reading_log.id.as_ref().unwrap()
         );
+        println!("select_laps query: {}", query);
         let db = self.db.lock().await;
         db.query(query)
             .await?
