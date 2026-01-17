@@ -40,6 +40,7 @@ pub fn run() {
             commands::db::delete_reading_logs,
             commands::db::delete_lap,
             commands::db::export_db,
+            commands::db::query_raw, // for debugging
             // timer commands
             commands::timer::timer_get,
             commands::timer::timer_start,

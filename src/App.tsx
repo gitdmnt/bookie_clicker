@@ -5,6 +5,7 @@ import { Bookshelf } from "./pages/bookshelf";
 import { Lapnote } from "./pages/lapnote";
 import { Stats } from "./pages/stats";
 import { Logbook } from "./pages/logbook";
+import { Debug } from "./pages/Debug";
 
 function App() {
   const [page, setPage] = useState(0);
@@ -14,6 +15,7 @@ function App() {
     <Bookshelf book={book} setBook={setBook} setPage={setPage} />,
     <Logbook book={book} />,
     <Stats />,
+    <Debug />,
   ];
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
