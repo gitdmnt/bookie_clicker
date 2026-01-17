@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { selectElements } from "@/utils/api";
+import { selectBooks } from "@/utils/api";
 
 const useLoadBooks = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const loadBooks = async () => {
     const query = { elementType: "book" };
-    const result: Book[] = await selectElements(query);
+    const result: Book[] = await selectBooks(query);
     setBooks(result);
   };
 

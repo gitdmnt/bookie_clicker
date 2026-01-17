@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { selectElements, deleteElements } from "../utils/api";
+import { selectReadingLogs, deleteReadingLogs } from "../utils/api";
 
 const useReadingLogs = (isbn?: number | null) => {
   const [logs, setLogs] = useState<ReadingLog[]>([]);
@@ -12,7 +12,7 @@ const useReadingLogs = (isbn?: number | null) => {
 
     try {
       const query: Query = { elementType: "readingLog", isbn };
-      const result: ReadingLog[] = await selectElements(query);
+      const result: ReadingLog[] = await selectReadingLogs(query);
       setLogs(result);
     } catch (error) {
       console.error("Failed to load reading logs", error);
@@ -26,7 +26,7 @@ const useReadingLogs = (isbn?: number | null) => {
         return;
       }
       try {
-        await deleteElements({ elementType: "readingLog", id });
+        await deleteReadingLogs({ elementType: "readingLog", id });
         await loadLogs();
       } catch (error) {
         console.error("Failed to delete reading log", error);
