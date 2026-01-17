@@ -19,7 +19,7 @@ function App() {
   ];
   const icons = ["📝", "📚", "📒", "📊", "🐞"];
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-nb-pink-50 via-white to-nb-yellow/20 flex flex-col">
       {pages[page]}
       <div className="h-20"></div>
       <MenuBar setPage={setPage} icons={icons} />

@@ -16,7 +16,7 @@ export const Lapnote = ({ book }: { book: Book | null }) => {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-nb-pink-50 via-white to-nb-yellow/20 p-6">
+    <main className=" p-6">
       {book ? (
         <motion.div
           initial={{ opacity: 0 }}
