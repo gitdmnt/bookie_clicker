@@ -15,22 +15,24 @@ declare global {
   export interface ReadingLog {
     id?: string;
     isbn: number;
-    time: [string, string]; // Start and end time as ISO formatted strings
+    createdAt: Temporal.PlainDateTime;
+    sessionDurationSec: number;
     page: [number, number];
-    note: string;
     rating: number;
+  }
+
+  export interface Lap {
+    id?: string;
+    createdAt?: Temporal.PlainDateTime;
+    elapsedMs: number;
+    note: string;
+    refPage: number;
   }
 
   export interface Query {
     elementType: string;
     isbn?: number;
     [key: string]: any;
-  }
-
-  export interface LapNote {
-    timestamp: StopwatchTime;
-    note: string;
-    refPage: number;
   }
 
   export interface StopwatchTime {
@@ -43,5 +45,13 @@ declare global {
     startDateTime: Temporal.PlainDateTime;
     endDateTime: Temporal.PlainDateTime | null;
     lapNotes: LapNote[];
+  }
+
+  export interface TimerTick {
+    elapsed: number;
+    h: number;
+    m: number;
+    s: number;
+    isRunning: boolean;
   }
 }
