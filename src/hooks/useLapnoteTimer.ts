@@ -45,6 +45,13 @@ export const useLapnoteTimer = () => {
       .then((res) => {
         setLaps(res);
         setNote("");
+        // 前回のLapのページ番号を次のデフォルト値として設定
+        if (res.length > 0) {
+          const lastLap = res[res.length - 1];
+          if (lastLap.refPage) {
+            setRefPage(lastLap.refPage);
+          }
+        }
         textareaRef.current?.focus();
       })
       .catch((error) => {
@@ -109,6 +116,7 @@ export const useLapnoteTimer = () => {
       console.error("timer_reset failed", error);
     } finally {
       await refreshTime();
+      await refreshLapnoteLogs();
     }
   };
 
@@ -125,7 +133,8 @@ export const useLapnoteTimer = () => {
   const handleSave = async (
     book: Book | null,
     firstPage: number,
-    lastPage: number
+    lastPage: number,
+    rating: number
   ) => {
     if (!book) return;
 
@@ -137,7 +146,7 @@ export const useLapnoteTimer = () => {
       createdAt,
       sessionDurationSec,
       page: [firstPage, lastPage],
-      rating: 0,
+      rating,
     };
 
     addLaps(readingLog, laps).catch((error) => {

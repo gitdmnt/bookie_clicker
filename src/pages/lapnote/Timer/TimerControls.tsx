@@ -88,9 +88,12 @@ export const TimerControls = ({
         onClick={onOpenForm}
         disabled={!isRunning}
         aria-label="Add note"
-        className="w-20 h-20 rounded-full flex items-center justify-center p-0 shadow-brutal-lg"
+        className="flex-1 h-20 rounded-full flex items-center justify-center p-0 shadow-brutal-lg"
       >
-        <IconPen />
+        <div className="flex flex-col items-center gap-2">
+          <IconPen />
+          <div className="text-xs font-semibold">メモを取る</div>
+        </div>
       </Button>
     )}
   </div>
