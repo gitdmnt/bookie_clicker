@@ -29,3 +29,7 @@ tauri-plugin-http = "2"
 chrono = { version = "0.4", features = ["serde"] }
 quick-xml = "0.39.0"
 reqwest = { version = "0.11", features = ["blocking", "rustls-tls"] }
+
+[features]
+# 本番ビルド時に `--features release-storage` をつけることでRocksDBを有効化
+release-storage = ["surrealdb/kv-rocksdb"]

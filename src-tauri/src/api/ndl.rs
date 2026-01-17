@@ -210,10 +210,8 @@ fn parse_record(reader: &mut Reader<&[u8]>) -> Result<Book, String> {
                     }
                 } else if name.as_slice() == b"dcterms:creator" {
                     // prefer explicit foaf:name entries, fallback to inner text
-                    let names = parse_inner_values(reader, b"foaf:name")?;
-                } else if name.as_slice() == b"dc:creator" {
-                    let author = text_of_element(reader, name.as_slice())?;
-                    authors.push(author);
+                    let name = parse_inner_values(reader, b"foaf:name")?;
+                    authors.extend(name);
                 } else if matches_tag(name.as_slice(), &[b"dcterms:publisher", b"dc:publisher"]) {
                     publisher = parse_inner_value(reader, b"foaf:name")?;
                     if publisher.is_empty() {
@@ -228,10 +226,9 @@ fn parse_record(reader: &mut Reader<&[u8]>) -> Result<Book, String> {
                     }
                 } else if name.as_slice() == b"dcterms:extent" {
                     let raw = text_of_element(reader, name.as_slice())?;
-                    let digits = extract_digits(&raw);
-                    if let Ok(n) = digits.parse::<u32>() {
-                        page_count = n;
-                    }
+                    let first_part = raw.split(';').next().unwrap_or("");
+                    let digits_str = extract_digits(first_part);
+                    page_count = digits_str.parse::<u32>().unwrap_or(0);
                 } else if matches_tag(name.as_slice(), &[b"dc:identifier", b"dcterms:identifier"]) {
                     let raw = text_of_element(reader, name.as_slice())?;
                     let digits = extract_digits(&raw);
