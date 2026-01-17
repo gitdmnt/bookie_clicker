@@ -17,11 +17,12 @@ function App() {
     <Stats />,
     <Debug />,
   ];
+  const icons = ["📝", "📚", "📒", "📊", "🐞"];
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {pages[page]}
       <div className="h-20"></div>
-      <MenuBar setPage={setPage} />
+      <MenuBar setPage={setPage} icons={icons} />
     </div>
   );
 }
