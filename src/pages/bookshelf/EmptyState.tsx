@@ -1,9 +1,17 @@
-export const EmptyState = ({ onAction }: { onAction: () => void }) => (
+export const EmptyState = ({
+  onAction,
+  message,
+}: {
+  onAction: () => void;
+  message?: string | null;
+}) => (
   <div className="flex h-80 flex-col items-center justify-center gap-4 p-8 text-center">
     <div className="text-6xl">📭</div>
-    <p className="text-2xl font-black text-black">本が見つかりません</p>
+    <p className="text-2xl font-black text-black">
+      {message || "本が見つかりません"}
+    </p>
     <p className="text-sm font-semibold text-gray-600">
-      タイトルや著者名で検索するか、ライブラリを再読み込みしてください。
+      タイトルや著者名、ISBNで検索するか、ライブラリを再読み込みしてください。
     </p>
     <button
       type="button"

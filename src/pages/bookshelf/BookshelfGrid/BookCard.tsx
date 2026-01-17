@@ -5,11 +5,13 @@ export const BookCard = ({
   isActive,
   onSelect,
   setPage,
+  isAddMode = false,
 }: {
   book: Book;
   isActive: boolean;
   onSelect: () => void;
-  setPage: React.Dispatch<React.SetStateAction<number>>;
+  setPage?: React.Dispatch<React.SetStateAction<number>>;
+  isAddMode?: boolean;
 }) => (
   <button
     className={`group my-2 ${isActive ? "w-full" : ""}`}
@@ -79,7 +81,18 @@ export const BookCard = ({
               ページ
             </div>
           </div>
-          {setPage && (
+          {isAddMode ? (
+            <button
+              type="button"
+              className="w-full rounded-lg border-3 border-black bg-nb-yellow px-3 py-2 text-sm font-black text-black shadow-brutal hover:shadow-brutal-sm active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect();
+              }}
+            >
+              📚 この本を追加
+            </button>
+          ) : setPage ? (
             <div className="flex gap-2 w-full">
               <button
                 type="button"
@@ -102,7 +115,7 @@ export const BookCard = ({
                 📊 記録
               </button>
             </div>
-          )}
+          ) : null}
         </motion.div>
       )}
     </motion.div>

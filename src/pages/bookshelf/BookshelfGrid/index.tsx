@@ -5,11 +5,13 @@ export const BookshelfGrid = ({
   selectedBook,
   onSelect,
   setPage,
+  isAddMode = false,
 }: {
   books: Book[];
   selectedBook: Book | null;
   onSelect: (book: Book) => void;
   setPage: React.Dispatch<React.SetStateAction<number>>;
+  isAddMode?: boolean;
 }) => (
   <div className="flex flex-wrap overflow-x-hidden">
     {/* 行の右端の本が描画範囲から溢れてしまいそうなとき、本来は改行したいのだが、
@@ -20,7 +22,8 @@ export const BookshelfGrid = ({
         book={book}
         isActive={book.isbn === selectedBook?.isbn}
         onSelect={() => onSelect(book)}
-        setPage={setPage}
+        setPage={isAddMode ? undefined : setPage}
+        isAddMode={isAddMode}
       />
     ))}
   </div>

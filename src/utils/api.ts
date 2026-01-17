@@ -1,5 +1,14 @@
 import { invoke } from "@tauri-apps/api/core";
 
+export const parseISBN = async (input: string): Promise<number | null> => {
+  try {
+    const isbn = await invoke<number>("parse_isbn", { input });
+    return isbn;
+  } catch (error) {
+    return null;
+  }
+};
+
 export const searchBooksByISBN = async (isbn: string): Promise<Book[]> => {
   const digits = isbn.replace(/\D/g, "");
   if (!digits) {
