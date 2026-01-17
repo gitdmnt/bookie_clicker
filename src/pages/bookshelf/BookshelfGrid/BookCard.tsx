@@ -1,5 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { i } from "framer-motion/client";
+import { motion } from "framer-motion";
 
 export const BookCard = ({
   book,
@@ -21,6 +20,7 @@ export const BookCard = ({
       layout="position"
       initial={false}
       animate={{
+        width: isActive ? "calc(100% - 2.5rem)" : "6rem",
         marginRight: isActive ? "0rem" : "-3rem",
         padding: isActive ? "1rem" : "0.25rem",
         zIndex: isActive ? 10 : 1,
@@ -29,12 +29,14 @@ export const BookCard = ({
       transition={
         isActive
           ? {
-              marginRight: { duration: 0, delay: 0 },
+              width: { duration: 0.3, delay: 0.2 },
+              marginRight: { duration: 0.2, delay: 0 },
               padding: { duration: 0.3, delay: 0.2 },
               zIndex: { duration: 0 },
             }
           : {
-              marginRight: { duration: 0.3, delay: 0 },
+              width: { duration: 0, delay: 0 },
+              marginRight: { duration: 0, delay: 0 },
               padding: { duration: 0, delay: 0 },
               zIndex: { duration: 0 },
             }
