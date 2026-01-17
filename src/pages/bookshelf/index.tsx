@@ -48,29 +48,24 @@ export const Bookshelf = ({
   }, [filteredBooks, book]);
 
   return (
-    <main className="min-h-screen bg-slate-50 p-4 lg:p-8">
+    <main className="min-h-screen bg-gradient-to-br from-nb-pink-50 via-white to-nb-yellow/20 p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <BookshelfHeader
           totalBooks={books.length}
           filteredBooks={filteredBooks.length}
           searchTerm={searchTerm}
           onSearchTermChange={setSearchTerm}
-          onRefresh={loadBooks}
         />
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr]">
-          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            {filteredBooks.length === 0 ? (
-              <EmptyState onAction={loadBooks} />
-            ) : (
-              <BookshelfGrid
-                books={filteredBooks}
-                selectedBook={book}
-                onSelect={(book: Book) => setBook(book)}
-                setPage={setPage}
-              />
-            )}
-          </section>
-        </div>
+        {filteredBooks.length === 0 ? (
+          <EmptyState onAction={loadBooks} />
+        ) : (
+          <BookshelfGrid
+            books={filteredBooks}
+            selectedBook={book}
+            onSelect={(book: Book) => setBook(book)}
+            setPage={setPage}
+          />
+        )}
       </div>
     </main>
   );

@@ -11,7 +11,7 @@ export const BookshelfGrid = ({
   onSelect: (book: Book) => void;
   setPage: React.Dispatch<React.SetStateAction<number>>;
 }) => (
-  <div className="flex flex-wrap m-4">
+  <div className="flex flex-wrap">
     {books.map((book) => (
       <BookCard
         key={book.isbn}

@@ -5,7 +5,7 @@ interface MenuBarProps {
 
 const MenuBar: React.FC<MenuBarProps> = ({ setPage, icons }) => {
   return (
-    <div className="fixed bottom-0 left-0 w-full z-10 h-20">
+    <div className="fixed bottom-0 left-0 w-full z-50 h-20">
       <div className="flex justify-between card m-2">
         {icons.map((icon, index) => (
           <button
