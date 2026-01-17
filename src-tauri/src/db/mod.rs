@@ -4,14 +4,13 @@ use std::str::FromStr;
 use tauri::async_runtime::Mutex;
 
 use surrealdb::engine::any::Any;
-use surrealdb::engine::local::Db;
 use surrealdb::{RecordId, Surreal};
 
 pub mod query;
 pub use query::Query;
 
 pub mod table;
-pub use table::{Book, Lap, LapForStore, ReadingLog, ReadingLogForStore, Table};
+pub use table::{Book, Lap, LapForStore, ReadingLog, ReadingLogForStore};
 
 pub struct Database {
     path: PathBuf,
