@@ -8,7 +8,7 @@ import { Logbook } from "./pages/logbook";
 import { Debug } from "./pages/Debug";
 
 function App() {
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [book, setBook] = useState<Book | null>(null);
   const pages = [
     <Lapnote book={book} />,
