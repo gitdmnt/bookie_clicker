@@ -1,14 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 import { BookDisplay } from "./BookDisplay";
+import { StatisticsPanel } from "./StatisticsPanel";
+import { ActivityHeatmap } from "./ActivityHeatmap";
+import { ReadingPaceChart } from "./ReadingPaceChart";
+import { SessionFrequencyChart } from "./SessionFrequencyChart";
+import { TopSessionsRanking } from "./TopSessionsRanking";
+import { MemoList } from "./MemoList";
+import { sortLaps } from "./utils";
 import { selectLaps, selectReadingLogs } from "@/utils/api";
+
 interface ReadingLogToDisplay {
   readingLog: ReadingLog;
   laps: Lap[];
 }
 
+type SortBy = "date" | "page";
+
 export const Logbook = ({ book }: { book: Book | null }) => {
   const [logs, setLogs] = useState<ReadingLogToDisplay[]>([]);
+  const [sortBy, setSortBy] = useState<SortBy>("date");
 
   useEffect(() => {
     if (!book) {
@@ -31,9 +42,8 @@ export const Logbook = ({ book }: { book: Book | null }) => {
               return { readingLog: log, laps: [] };
             }
             const laps: Lap[] = await selectLaps(log);
-            console.log("Fetched laps:", laps);
             return { readingLog: log, laps };
-          })
+          }),
         );
         setLogs(logsWithLaps);
       } catch (error) {
@@ -45,60 +55,73 @@ export const Logbook = ({ book }: { book: Book | null }) => {
     fetchLogs();
   }, [book]);
 
-  return (
-    <main className="min-h-screen bg-neutral-50 p-4">
-      <BookDisplay book={book} />
-      <section className="mx-auto max-w-3xl rounded-2xl border border-neutral-200 bg-white p-6">
-        <h1 className="text-2xl font-semibold text-gray-800">Logbook</h1>
-        <p className="mt-2 text-sm text-gray-500">
-          読書記録の一覧をこのページで確認します。
-        </p>
+  // 統計情報の計算
+  const statistics = useMemo(() => {
+    const totalSessions = logs.length;
+    const totalReadingTime = logs.reduce(
+      (sum, { readingLog }) => sum + readingLog.sessionDurationSec,
+      0,
+    );
+    const pagesRead =
+      logs.length > 0
+        ? Math.max(...logs.map(({ readingLog }) => readingLog.page[1]))
+        : 0;
+    const totalPages = book?.pageCount || 0;
 
-        <div className="mt-4">
-          {logs.length === 0 ? (
-            <p className="text-gray-500">記録がありません。</p>
-          ) : (
-            <ul className="space-y-4">
-              {logs.map(({ readingLog, laps }) => (
-                <li
-                  key={readingLog.id}
-                  className="rounded-lg border border-neutral-200 p-4"
-                >
-                  <div>id: {readingLog.id}</div>
-                  <div>Created At: {readingLog.createdAt.toString()}</div>
-                  <div>
-                    Session Duration (sec): {readingLog.sessionDurationSec}
-                  </div>
-                  <div>
-                    Page: {readingLog.page[0]} - {readingLog.page[1]}
-                  </div>
-                  <div>Rating: {readingLog.rating}</div>
-                  <div className="mt-2">
-                    <h3 className="text-lg font-medium text-gray-700">Laps:</h3>
-                    {laps.length === 0 ? (
-                      <p className="text-gray-500">No laps recorded.</p>
-                    ) : (
-                      <ul className="mt-1 space-y-2">
-                        {laps.map((lap) => (
-                          <li
-                            key={lap.id}
-                            className="border-b border-neutral-200 pb-2"
-                          >
-                            <div>Lap ID: {lap.id}</div>
-                            <div>Elapsed (ms): {lap.elapsedMs}</div>
-                            <div>Note: {lap.note}</div>
-                            <div>Reference Page: {lap.refPage}</div>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+    return {
+      totalSessions,
+      totalReadingTime,
+      pagesRead,
+      totalPages,
+    };
+  }, [logs, book]);
+
+  // 全てのラップを集約してソート
+  const sortedLaps = useMemo(() => {
+    const allLaps = logs.flatMap(({ laps }) => laps);
+    return sortLaps(allLaps, sortBy);
+  }, [logs, sortBy]);
+
+  if (!book) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-nb-pink-50 via-white to-nb-yellow-50 p-8">
+        <div className="mx-auto max-w-4xl">
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">📚</div>
+            <h2 className="text-2xl font-black text-gray-600">
+              本を選択してください
+            </h2>
+          </div>
         </div>
-      </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-nb-pink-50 via-white to-nb-yellow-50 p-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <BookDisplay book={book} />
+
+        <StatisticsPanel
+          logs={logs}
+          laps={sortedLaps}
+          totalSessions={statistics.totalSessions}
+          totalReadingTime={statistics.totalReadingTime}
+          pagesRead={statistics.pagesRead}
+          totalPages={statistics.totalPages}
+        />
+
+        <ActivityHeatmap logs={logs} />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ReadingPaceChart logs={logs} />
+          <SessionFrequencyChart logs={logs} />
+        </div>
+
+        <TopSessionsRanking logs={logs} />
+
+        <MemoList laps={sortedLaps} sortBy={sortBy} onSortChange={setSortBy} />
+      </div>
     </main>
   );
 };

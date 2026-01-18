@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { Temporal } from "temporal-polyfill";
 
 export const parseISBN = async (input: string): Promise<number | null> => {
   try {
@@ -31,7 +32,7 @@ export const searchBooksByISBN = async (isbn: string): Promise<Book[]> => {
 
 export const fetchWikipediaData = async (title: string) => {
   const url = `https://ja.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch=${encodeURIComponent(
-    title
+    title,
   )}`;
   const response = await fetch(url);
   const data = await response.json();
@@ -63,7 +64,7 @@ export const addReadingLog = async (readingLog: ReadingLog): Promise<void> => {
 
 export const addLaps = async (
   readingLog: ReadingLog,
-  laps: Lap[]
+  laps: Lap[],
 ): Promise<void> => {
   try {
     await invoke("add_laps", { readingLog, laps });
@@ -86,11 +87,15 @@ export const selectBooks = async (query: Query): Promise<Book[]> => {
 };
 
 export const selectReadingLogs = async (
-  query: Query
+  query: Query,
 ): Promise<ReadingLog[]> => {
   try {
     const readingLogs = await invoke<ReadingLog[]>("select_reading_logs", {
       query,
+    });
+    readingLogs.map((log) => {
+      log.createdAt = Temporal.PlainDateTime.from(log.createdAt);
+      return log;
     });
     return readingLogs;
   } catch (error) {
@@ -102,6 +107,12 @@ export const selectReadingLogs = async (
 export const selectLaps = async (readingLog: ReadingLog): Promise<Lap[]> => {
   try {
     const laps = await invoke<Lap[]>("select_laps", { readingLog });
+    laps.map((lap) => {
+      lap.createdAt = lap.createdAt
+        ? Temporal.PlainDateTime.from(lap.createdAt)
+        : undefined;
+      return lap;
+    });
     return laps;
   } catch (error) {
     console.error("Failed to select laps", error);
