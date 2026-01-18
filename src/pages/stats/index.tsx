@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { selectBooks, selectReadingLogs, selectLaps } from "@/utils/api";
-import { MonthlyTrendChart } from "./MonthlyTrendChart";
-import { PeriodStatsView } from "./PeriodStatsView";
 import { TopBooksRanking } from "./TopBooksRanking";
 import { TimeSlotDistribution } from "@/components/statistics/TimeSlotDistribution";
 import { TotalBooks } from "./statsTotal/TotalBooks";
@@ -12,7 +10,7 @@ import { TotalPages } from "./statsTotal/TotalPages";
 import { TotalMemos } from "./statsTotal/TotalMemos";
 import { StreakDays } from "./statsMotive/StreakDays";
 import { AverageSpeed } from "./statsPerf/AverageSpeed";
-import { ActivityHeatmap } from "./ActivityHeatmap";
+import { ActivityHeatmap } from "../../components/stats/ActivityHeatmap";
 
 export const Stats = () => {
   const [books, setBooks] = useState<Book[]>([]);
