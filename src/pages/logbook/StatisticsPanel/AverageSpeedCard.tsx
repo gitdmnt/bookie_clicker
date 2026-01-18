@@ -1,4 +1,4 @@
-import Card from "@/components/ui/Card";
+import { StatsCard } from "@/components/ui/StatsCard";
 
 interface AverageSpeedCardProps {
   pagesRead: number;
@@ -23,13 +23,11 @@ export const AverageSpeedCard = ({
   const avgSpeed = calculateAverageReadingSpeed(pagesRead, totalReadingTime);
 
   return (
-    <Card variant="default">
-      <div className="text-center">
-        <div className="text-3xl font-black text-nb-pink-500 mb-1">
-          {avgSpeed > 0 ? `${avgSpeed}分` : "-"}
-        </div>
-        <div className="text-xs font-bold text-gray-600">平均速度/ページ</div>
-      </div>
-    </Card>
+    <StatsCard
+      color="text-nb-pink-500"
+      emoji=""
+      value={avgSpeed > 0 ? `${avgSpeed}分` : "-"}
+      title="平均速度/ページ"
+    />
   );
 };

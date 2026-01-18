@@ -284,6 +284,7 @@ fn parse_record(reader: &mut Reader<&[u8]>) -> Result<Book, String> {
         year,
         page_count,
         image_url,
+        created_at: chrono::Utc::now().to_rfc3339(),
     })
 }
 

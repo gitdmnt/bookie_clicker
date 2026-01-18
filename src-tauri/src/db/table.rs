@@ -19,6 +19,7 @@ pub struct Book {
     pub year: u32,
     pub page_count: u32,
     pub image_url: String,
+    pub created_at: String,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]

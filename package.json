@@ -7,13 +7,22 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
     "tauri:dev": "tauri dev --features release-storage",
-    "tauri:mac": "tauri dev"
+    "tauri:mac": "tauri dev",
+    "tauri:build": "tauri build --features release-storage"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.9.1",
     "@tauri-apps/plugin-http": "^2.4.3",
     "@tauri-apps/plugin-opener": "^2.2.6",
+    "@visx/axis": "^3.12.0",
+    "@visx/curve": "^3.12.0",
+    "@visx/grid": "^3.12.0",
+    "@visx/group": "^3.12.0",
+    "@visx/scale": "^3.12.0",
+    "@visx/shape": "^3.12.0",
     "fast-xml-parser": "^5.0.8",
     "framer-motion": "^12.26.2",
     "react": "^18.3.1",
@@ -25,11 +34,14 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/ui": "^4.0.17",
     "autoprefixer": "^10.4.21",
+    "happy-dom": "^20.3.1",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.6.3",
     "vite": "^6.2.1",
-    "vite-plugin-svgr": "^4.3.0"
+    "vite-plugin-svgr": "^4.3.0",
+    "vitest": "^4.0.17"
   }
 }

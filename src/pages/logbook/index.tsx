@@ -2,13 +2,14 @@ import { useState, useEffect, useMemo } from "react";
 
 import { BookDisplay } from "./BookDisplay";
 import { StatisticsPanel } from "./StatisticsPanel";
-import { ActivityHeatmap } from "./ActivityHeatmap";
-import { ReadingPaceChart } from "./ReadingPaceChart";
-import { SessionFrequencyChart } from "./SessionFrequencyChart";
-import { TopSessionsRanking } from "./TopSessionsRanking";
 import { MemoList } from "./MemoList";
 import { sortLaps } from "./utils";
+import { generateReadingPaceData, generateSessionFrequencyData } from "./utils";
 import { selectLaps, selectReadingLogs } from "@/utils/api";
+import { ReadingPaceChart } from "@/components/statistics/ReadingPaceChart";
+import { SessionFrequencyChart } from "@/components/statistics/SessionFrequencyChart";
+import { TopSessionsRanking } from "@/components/statistics/TopSessionsRanking";
+import { Temporal } from "temporal-polyfill";
 
 interface ReadingLogToDisplay {
   readingLog: ReadingLog;
@@ -76,6 +77,30 @@ export const Logbook = ({ book }: { book: Book | null }) => {
     };
   }, [logs, book]);
 
+  // 週間読書ペースデータ
+  const paceData = useMemo(() => generateReadingPaceData(logs), [logs]);
+
+  // 月別セッションデータ
+  const frequencyData = useMemo(
+    () => generateSessionFrequencyData(logs),
+    [logs],
+  );
+
+  // トップセッションデータ
+  const topSessions = useMemo(() => {
+    const sessions = logs
+      .map(({ readingLog }) => ({
+        date: Temporal.PlainDate.from(
+          readingLog.createdAt.toString(),
+        ).toString(),
+        duration: readingLog.sessionDurationSec,
+        pages: readingLog.page[1] - readingLog.page[0],
+      }))
+      .sort((a, b) => b.duration - a.duration)
+      .slice(0, 5);
+    return sessions;
+  }, [logs]);
+
   // 全てのラップを集約してソート
   const sortedLaps = useMemo(() => {
     const allLaps = logs.flatMap(({ laps }) => laps);
@@ -111,14 +136,12 @@ export const Logbook = ({ book }: { book: Book | null }) => {
           totalPages={statistics.totalPages}
         />
 
-        <ActivityHeatmap logs={logs} />
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ReadingPaceChart logs={logs} />
-          <SessionFrequencyChart logs={logs} />
+          <ReadingPaceChart paceData={paceData} />
+          <SessionFrequencyChart frequencyData={frequencyData} />
         </div>
 
-        <TopSessionsRanking logs={logs} />
+        <TopSessionsRanking topSessions={topSessions} />
 
         <MemoList laps={sortedLaps} sortBy={sortBy} onSortChange={setSortBy} />
       </div>

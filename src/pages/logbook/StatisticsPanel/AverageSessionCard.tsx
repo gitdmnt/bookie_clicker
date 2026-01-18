@@ -1,4 +1,4 @@
-import Card from "@/components/ui/Card";
+import { StatsCard } from "@/components/ui/StatsCard";
 import { formatReadingTime } from "../utils";
 
 interface AverageSessionCardProps {
@@ -23,13 +23,11 @@ export const AverageSessionCard = ({ logs }: AverageSessionCardProps) => {
   const avgSessionTime = calculateAverageSessionTime(logs);
 
   return (
-    <Card variant="default">
-      <div className="text-center">
-        <div className="text-3xl font-black text-nb-blue mb-1">
-          {formatReadingTime(avgSessionTime)}
-        </div>
-        <div className="text-xs font-bold text-gray-600">平均セッション</div>
-      </div>
-    </Card>
+    <StatsCard
+      color="text-nb-blue"
+      emoji=""
+      value={formatReadingTime(avgSessionTime)}
+      title="平均セッション"
+    />
   );
 };

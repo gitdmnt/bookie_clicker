@@ -1,7 +1,4 @@
 import { ProgressCard } from "./ProgressCard";
-import { TotalSessionsCard } from "./TotalSessionsCard";
-import { TotalReadingTimeCard } from "./TotalReadingTimeCard";
-import { StreakCard } from "./StreakCard";
 import { AverageSpeedCard } from "./AverageSpeedCard";
 import { AverageSessionCard } from "./AverageSessionCard";
 import { LongestSessionCard } from "./LongestSessionCard";
@@ -14,6 +11,12 @@ import { MemoRateCard } from "./MemoRateCard";
 import { AnnotatedRangeCard } from "./AnnotatedRangeCard";
 import { FocusScoreCard } from "./FocusScoreCard";
 import { EstimatedCompletionCard } from "./EstimatedCompletionCard";
+import {
+  StreakCard,
+  calculateStreak,
+} from "@/components/statistics/StreakCard";
+import { TotalSessionsCard } from "@/components/statistics/TotalSessionsCard";
+import { TotalReadingTimeCard } from "@/components/statistics/TotalReadingTimeCard";
 
 interface StatisticsPanelProps {
   logs: { readingLog: ReadingLog; laps: Lap[] }[];
@@ -32,6 +35,8 @@ export const StatisticsPanel = ({
   pagesRead,
   totalPages,
 }: StatisticsPanelProps) => {
+  const streak = calculateStreak(logs);
+
   return (
     <div className="space-y-6">
       {/* メイン統計 */}
@@ -44,7 +49,7 @@ export const StatisticsPanel = ({
       {/* 詳細統計グリッド */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {/* モチベーション系 */}
-        <StreakCard logs={logs} />
+        <StreakCard streak={streak} />
         <AverageSpeedCard
           pagesRead={pagesRead}
           totalReadingTime={totalReadingTime}

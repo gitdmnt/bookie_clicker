@@ -1,4 +1,4 @@
-import Card from "@/components/ui/Card";
+import { StatsCard } from "@/components/ui/StatsCard";
 
 interface TotalMemosCardProps {
   laps: Lap[];
@@ -15,13 +15,11 @@ export const TotalMemosCard = ({ laps }: TotalMemosCardProps) => {
   const totalMemos = calculateTotalMemos(laps);
 
   return (
-    <Card variant="default">
-      <div className="text-center">
-        <div className="text-3xl font-black text-nb-pink-500 mb-1">
-          📝 {totalMemos}
-        </div>
-        <div className="text-xs font-bold text-gray-600">総メモ数</div>
-      </div>
-    </Card>
+    <StatsCard
+      color="text-nb-pink-500"
+      emoji="📝"
+      value={totalMemos}
+      title="総メモ数"
+    />
   );
 };

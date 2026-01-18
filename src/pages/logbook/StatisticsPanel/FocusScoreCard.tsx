@@ -1,4 +1,4 @@
-import Card from "@/components/ui/Card";
+import { StatsCard } from "@/components/ui/StatsCard";
 
 interface FocusScoreCardProps {
   laps: Lap[];
@@ -22,13 +22,11 @@ export const FocusScoreCard = ({ laps }: FocusScoreCardProps) => {
   const focusScore = calculateFocusScore(laps);
 
   return (
-    <Card variant="default">
-      <div className="text-center">
-        <div className="text-3xl font-black text-nb-purple mb-1">
-          {focusScore}
-        </div>
-        <div className="text-xs font-bold text-gray-600">集中度スコア</div>
-      </div>
-    </Card>
+    <StatsCard
+      color="text-nb-purple"
+      emoji=""
+      value={focusScore}
+      title="集中度スコア"
+    />
   );
 };
