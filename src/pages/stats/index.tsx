@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { Temporal } from "temporal-polyfill";
 import { selectBooks, selectReadingLogs, selectLaps } from "@/utils/api";
 import { MonthlyTrendChart } from "./MonthlyTrendChart";
 import { PeriodStatsView } from "./PeriodStatsView";
-import { TopBooksRanking } from "@/components/statistics/TopBooksRanking";
+import { TopBooksRanking } from "./TopBooksRanking";
 import { TimeSlotDistribution } from "@/components/statistics/TimeSlotDistribution";
 import { calculateTimeSlotDistribution } from "./utils";
 import { TotalBooks } from "./statsTotal/TotalBooks";
@@ -14,16 +13,6 @@ import { TotalPages } from "./statsTotal/TotalPages";
 import { TotalMemos } from "./statsTotal/TotalMemos";
 import { StreakDays } from "./statsMotive/StreakDays";
 import { AverageSpeed } from "./statsPerf/AverageSpeed";
-
-interface BookStats {
-  book: Book;
-  totalSessions: number;
-  totalReadingTime: number;
-  pagesRead: number;
-  totalMemos: number;
-  lastRead: Temporal.PlainDateTime | null;
-  progressPercentage: number;
-}
 
 export const Stats = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -80,61 +69,6 @@ export const Stats = () => {
   );
 
   // 本別統計
-  const bookStats = useMemo<BookStats[]>(() => {
-    return books.map((book) => {
-      const bookLogs = allLogs.filter(
-        ({ readingLog }) => readingLog.isbn === book.isbn,
-      );
-
-      const totalSessions = bookLogs.length;
-      const totalReadingTime = bookLogs.reduce(
-        (sum, { readingLog }) => sum + readingLog.sessionDurationSec,
-        0,
-      );
-      const pagesRead =
-        bookLogs.length > 0
-          ? Math.max(...bookLogs.map(({ readingLog }) => readingLog.page[1]))
-          : 0;
-      const totalMemos = bookLogs.reduce(
-        (sum, { laps }) =>
-          sum +
-          laps.filter((lap) => lap.note && lap.note.trim().length > 0).length,
-        0,
-      );
-      const lastRead =
-        bookLogs.length > 0
-          ? bookLogs.sort((a, b) =>
-              Temporal.PlainDateTime.compare(
-                b.readingLog.createdAt,
-                a.readingLog.createdAt,
-              ),
-            )[0].readingLog.createdAt
-          : null;
-      const progressPercentage =
-        book.pageCount > 0 ? Math.round((pagesRead / book.pageCount) * 100) : 0;
-
-      return {
-        book,
-        totalSessions,
-        totalReadingTime,
-        pagesRead,
-        totalMemos,
-        lastRead,
-        progressPercentage,
-      };
-    });
-  }, [books, allLogs]);
-
-  const formatReadingTime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-  };
-
-  const formatDate = (dt: Temporal.PlainDateTime | null): string => {
-    if (!dt) return "-";
-    return `${dt.year}/${dt.month}/${dt.day}`;
-  };
 
   if (isLoading) {
     return (
@@ -191,7 +125,7 @@ export const Stats = () => {
 
         {/* グラフ・ランキングセクション */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <TopBooksRanking books={bookStats} />
+          <TopBooksRanking books={books} allLogs={allLogs} />
           <MonthlyTrendChart logs={allLogs} />
         </div>
 
@@ -199,118 +133,6 @@ export const Stats = () => {
         <PeriodStatsView logs={allLogs} />
 
         <TimeSlotDistribution distribution={timeSlotData} />
-
-        {/* 本別統計テーブル */}
-        <div className="rounded-lg border-3 border-black bg-white shadow-brutal-lg overflow-hidden">
-          <div className="p-4 border-b-3 border-black bg-nb-pink-50">
-            <h2 className="text-xl font-black text-black">📖 本別統計</h2>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b-3 border-black">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-black text-gray-700 uppercase tracking-wide">
-                    書籍
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-black text-gray-700 uppercase tracking-wide">
-                    進捗
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-black text-gray-700 uppercase tracking-wide">
-                    セッション
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-black text-gray-700 uppercase tracking-wide">
-                    読書時間
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-black text-gray-700 uppercase tracking-wide">
-                    メモ
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-black text-gray-700 uppercase tracking-wide">
-                    最終読書日
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y-2 divide-gray-200">
-                {bookStats.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="px-4 py-8 text-center text-gray-400"
-                    >
-                      <div className="text-4xl mb-2">📭</div>
-                      <div className="font-semibold">
-                        本が登録されていません
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  bookStats.map(
-                    ({
-                      book,
-                      totalSessions,
-                      totalReadingTime,
-                      pagesRead,
-                      totalMemos,
-                      lastRead,
-                      progressPercentage,
-                    }) => (
-                      <tr
-                        key={book.isbn}
-                        className="hover:bg-nb-pink-50 transition-colors"
-                      >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={book.imageUrl}
-                              alt={book.title}
-                              className="h-16 w-11 rounded border-2 border-black object-cover shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                            />
-                            <div className="min-w-0">
-                              <div className="font-bold text-sm text-black line-clamp-2">
-                                {book.title}
-                              </div>
-                              <div className="text-xs text-gray-600 line-clamp-1">
-                                {book.authors}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-center">
-                            <div className="text-lg font-black text-nb-pink-500">
-                              {progressPercentage}%
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {pagesRead}/{book.pageCount}p
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className="inline-block px-3 py-1 bg-nb-blue text-white text-sm font-bold rounded border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                            {totalSessions}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className="text-sm font-bold text-gray-700">
-                            {formatReadingTime(totalReadingTime)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className="inline-block px-3 py-1 bg-nb-yellow text-black text-sm font-bold rounded border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                            📝 {totalMemos}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-center text-sm font-semibold text-gray-600">
-                          {formatDate(lastRead)}
-                        </td>
-                      </tr>
-                    ),
-                  )
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
     </main>
   );

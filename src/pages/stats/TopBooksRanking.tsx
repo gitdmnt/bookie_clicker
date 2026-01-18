@@ -1,12 +1,10 @@
+import { Temporal } from "temporal-polyfill";
+
 interface TopBook {
   book: Book;
   totalSessions: number;
   totalReadingTime: number;
   pagesRead: number;
-}
-
-interface TopBooksRankingProps {
-  books: TopBook[];
 }
 
 const formatTime = (seconds: number): string => {
@@ -15,8 +13,63 @@ const formatTime = (seconds: number): string => {
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 };
 
-export const TopBooksRanking = ({ books }: TopBooksRankingProps) => {
-  const topBooks = [...books]
+const bookStats = (
+  books: Book[],
+  allLogs: { readingLog: ReadingLog; laps: Lap[] }[],
+) => {
+  return books.map((book) => {
+    const bookLogs = allLogs.filter(
+      ({ readingLog }) => readingLog.isbn === book.isbn,
+    );
+
+    const totalSessions = bookLogs.length;
+    const totalReadingTime = bookLogs.reduce(
+      (sum, { readingLog }) => sum + readingLog.sessionDurationSec,
+      0,
+    );
+    const pagesRead =
+      bookLogs.length > 0
+        ? Math.max(...bookLogs.map(({ readingLog }) => readingLog.page[1]))
+        : 0;
+    const totalMemos = bookLogs.reduce(
+      (sum, { laps }) =>
+        sum +
+        laps.filter((lap) => lap.note && lap.note.trim().length > 0).length,
+      0,
+    );
+    const lastRead =
+      bookLogs.length > 0
+        ? bookLogs.sort((a, b) =>
+            Temporal.PlainDateTime.compare(
+              b.readingLog.createdAt,
+              a.readingLog.createdAt,
+            ),
+          )[0].readingLog.createdAt
+        : null;
+    const progressPercentage =
+      book.pageCount > 0 ? Math.round((pagesRead / book.pageCount) * 100) : 0;
+
+    return {
+      book,
+      totalSessions,
+      totalReadingTime,
+      pagesRead,
+      totalMemos,
+      lastRead,
+      progressPercentage,
+    };
+  });
+};
+
+export const TopBooksRanking = ({
+  books,
+  allLogs,
+}: {
+  books: Book[];
+  allLogs: { readingLog: ReadingLog; laps: Lap[] }[];
+}) => {
+  const stats = bookStats(books, allLogs);
+  const topBooks = [...stats]
     .sort((a, b) => b.totalReadingTime - a.totalReadingTime)
     .slice(0, 3);
 
