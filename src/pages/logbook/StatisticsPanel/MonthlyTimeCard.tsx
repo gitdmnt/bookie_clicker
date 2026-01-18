@@ -1,4 +1,4 @@
-import Card from "@/components/ui/Card";
+import { StatsCard } from "@/components/ui/StatsCard";
 import { formatReadingTime } from "../utils";
 import { Temporal } from "temporal-polyfill";
 
@@ -27,13 +27,11 @@ export const MonthlyTimeCard = ({ logs }: MonthlyTimeCardProps) => {
   const monthlyTime = calculateMonthlyReadingTime(logs);
 
   return (
-    <Card variant="default">
-      <div className="text-center">
-        <div className="text-3xl font-black text-nb-pink-400 mb-1">
-          {formatReadingTime(monthlyTime)}
-        </div>
-        <div className="text-xs font-bold text-gray-600">今月の読書時間</div>
-      </div>
-    </Card>
+    <StatsCard
+      color="text-nb-pink-400"
+      emoji=""
+      value={formatReadingTime(monthlyTime)}
+      title="今月の読書時間"
+    />
   );
 };

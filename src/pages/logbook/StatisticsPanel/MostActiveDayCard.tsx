@@ -1,4 +1,4 @@
-import Card from "@/components/ui/Card";
+import { StatsCard } from "@/components/ui/StatsCard";
 import { Temporal } from "temporal-polyfill";
 
 interface MostActiveDayCardProps {
@@ -39,13 +39,11 @@ export const MostActiveDayCard = ({ logs }: MostActiveDayCardProps) => {
   const mostActiveDay = findMostActiveDay(logs);
 
   return (
-    <Card variant="default">
-      <div className="text-center">
-        <div className="text-2xl font-black text-nb-blue mb-1">
-          {mostActiveDay}曜日
-        </div>
-        <div className="text-xs font-bold text-gray-600">最も読んだ曜日</div>
-      </div>
-    </Card>
+    <StatsCard
+      color="text-nb-blue"
+      emoji=""
+      value={`${mostActiveDay}曜日`}
+      title="最も読んだ曜日"
+    />
   );
 };

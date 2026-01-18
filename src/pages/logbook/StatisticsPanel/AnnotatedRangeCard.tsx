@@ -1,4 +1,4 @@
-import Card from "@/components/ui/Card";
+import { StatsCard } from "@/components/ui/StatsCard";
 
 interface AnnotatedRangeCardProps {
   laps: Lap[];
@@ -40,13 +40,11 @@ export const AnnotatedRangeCard = ({ laps }: AnnotatedRangeCardProps) => {
   const annotatedRange = findMostAnnotatedPageRange(laps);
 
   return (
-    <Card variant="default">
-      <div className="text-center">
-        <div className="text-2xl font-black text-nb-blue mb-1">
-          {annotatedRange}
-        </div>
-        <div className="text-xs font-bold text-gray-600">最多メモ範囲</div>
-      </div>
-    </Card>
+    <StatsCard
+      color="text-nb-blue"
+      emoji=""
+      value={annotatedRange}
+      title="最多メモ範囲"
+    />
   );
 };

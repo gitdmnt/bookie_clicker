@@ -1,41 +1,6 @@
 import { Temporal } from "temporal-polyfill";
 
 /**
- * 連続読書日数（ストリーク）を計算
- */
-export const calculateStreak = (
-  logs: { readingLog: ReadingLog; laps: Lap[] }[],
-): number => {
-  if (logs.length === 0) return 0;
-
-  const today = Temporal.Now.plainDateISO();
-  const dates = logs
-    .map(({ readingLog }) => readingLog.createdAt.toString())
-    .map((dateStr) => Temporal.PlainDate.from(dateStr))
-    .sort((a, b) => Temporal.PlainDate.compare(b, a));
-
-  const uniqueDates = Array.from(new Set(dates.map((d) => d.toString())))
-    .map((s) => Temporal.PlainDate.from(s))
-    .sort((a, b) => Temporal.PlainDate.compare(b, a));
-
-  let streak = 0;
-  let checkDate = today;
-
-  for (const date of uniqueDates) {
-    const diff = checkDate.since(date).days;
-
-    if (diff === 0 || diff === 1) {
-      streak++;
-      checkDate = date;
-    } else {
-      break;
-    }
-  }
-
-  return streak;
-};
-
-/**
  * 完読した本の数を計算
  */
 export const calculateCompletedBooks = (

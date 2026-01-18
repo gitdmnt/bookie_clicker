@@ -1,4 +1,4 @@
-import Card from "@/components/ui/Card";
+import { StatsCard } from "@/components/ui/StatsCard";
 import { formatReadingTime } from "../utils";
 import { Temporal } from "temporal-polyfill";
 
@@ -27,13 +27,11 @@ export const WeeklyTimeCard = ({ logs }: WeeklyTimeCardProps) => {
   const weeklyTime = calculateWeeklyReadingTime(logs);
 
   return (
-    <Card variant="default">
-      <div className="text-center">
-        <div className="text-3xl font-black text-nb-yellow mb-1">
-          {formatReadingTime(weeklyTime)}
-        </div>
-        <div className="text-xs font-bold text-gray-600">今週の読書時間</div>
-      </div>
-    </Card>
+    <StatsCard
+      color="text-nb-yellow"
+      emoji=""
+      value={formatReadingTime(weeklyTime)}
+      title="今週の読書時間"
+    />
   );
 };

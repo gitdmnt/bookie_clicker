@@ -1,33 +1,33 @@
-import { useMemo } from "react";
-import { calculateTimeSlotDistribution } from "./utils";
-
-interface TimeSlotDistributionProps {
-  logs: { readingLog: ReadingLog; laps: Lap[] }[];
+interface TimeSlot {
+  slot: string;
+  count: number;
+  percentage: number;
 }
 
-export const TimeSlotDistribution = ({ logs }: TimeSlotDistributionProps) => {
-  const distribution = useMemo(
-    () => calculateTimeSlotDistribution(logs),
-    [logs],
-  );
+interface TimeSlotDistributionProps {
+  distribution: TimeSlot[];
+}
 
+const slotIcons: { [key: string]: string } = {
+  朝: "🌅",
+  昼: "☀️",
+  夕方: "🌆",
+  夜: "🌙",
+};
+
+const slotColors: { [key: string]: string } = {
+  朝: "bg-nb-yellow",
+  昼: "bg-nb-orange",
+  夕方: "bg-nb-pink-400",
+  夜: "bg-nb-purple",
+};
+
+export const TimeSlotDistribution = ({
+  distribution,
+}: TimeSlotDistributionProps) => {
   if (distribution.length === 0) {
     return null;
   }
-
-  const slotIcons: { [key: string]: string } = {
-    朝: "🌅",
-    昼: "☀️",
-    夕方: "🌆",
-    夜: "🌙",
-  };
-
-  const slotColors: { [key: string]: string } = {
-    朝: "bg-nb-yellow",
-    昼: "bg-nb-orange",
-    夕方: "bg-nb-pink-400",
-    夜: "bg-nb-purple",
-  };
 
   return (
     <div className="rounded-lg border-3 border-black bg-white p-6 shadow-brutal-lg">
@@ -68,3 +68,5 @@ export const TimeSlotDistribution = ({ logs }: TimeSlotDistributionProps) => {
     </div>
   );
 };
+
+export type { TimeSlot };

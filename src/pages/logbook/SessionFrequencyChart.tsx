@@ -15,7 +15,7 @@ export const SessionFrequencyChart = ({ logs }: SessionFrequencyChartProps) => {
     return null;
   }
 
-  const maxSessions = Math.max(...frequencyData.map((d) => d.sessions), 1);
+  const maxSessions = Math.max(...frequencyData.map((d) => d.count), 1);
 
   return (
     <div className="rounded-lg border-3 border-black bg-white p-6 shadow-brutal-lg">
@@ -29,10 +29,10 @@ export const SessionFrequencyChart = ({ logs }: SessionFrequencyChartProps) => {
             <div className="w-full flex flex-col justify-end h-full">
               <div
                 className="w-full bg-nb-blue rounded-t border-3 border-black shadow-brutal-sm transition-all duration-500 flex items-end justify-center pb-1"
-                style={{ height: `${(data.sessions / maxSessions) * 100}%` }}
+                style={{ height: `${(data.count / maxSessions) * 100}%` }}
               >
                 <span className="text-xs font-bold text-white">
-                  {data.sessions}
+                  {data.count}
                 </span>
               </div>
             </div>

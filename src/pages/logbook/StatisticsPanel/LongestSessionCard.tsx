@@ -1,4 +1,4 @@
-import Card from "@/components/ui/Card";
+import { StatsCard } from "@/components/ui/StatsCard";
 import { formatReadingTime } from "../utils";
 
 interface LongestSessionCardProps {
@@ -21,13 +21,11 @@ export const LongestSessionCard = ({ logs }: LongestSessionCardProps) => {
   const longestSession = findLongestSession(logs);
 
   return (
-    <Card variant="default">
-      <div className="text-center">
-        <div className="text-3xl font-black text-nb-purple mb-1">
-          {formatReadingTime(longestSession)}
-        </div>
-        <div className="text-xs font-bold text-gray-600">最長セッション</div>
-      </div>
-    </Card>
+    <StatsCard
+      color="text-nb-purple"
+      emoji=""
+      value={formatReadingTime(longestSession)}
+      title="最長セッション"
+    />
   );
 };

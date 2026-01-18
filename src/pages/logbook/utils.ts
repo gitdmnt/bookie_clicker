@@ -42,7 +42,7 @@ export const getHeatmapColor = (count: number): string => {
  */
 export const generateActivityData = (
   logs: { readingLog: ReadingLog; laps: Lap[] }[],
-): { date: Temporal.PlainDate; count: number }[] => {
+): { date: string; count: number }[] => {
   const today = Temporal.Now.plainDateISO();
   const oneYearAgo = today.subtract({ days: 364 });
 
@@ -55,12 +55,12 @@ export const generateActivityData = (
   });
 
   // 過去365日分のデータを生成
-  const days: { date: Temporal.PlainDate; count: number }[] = [];
+  const days: { date: string; count: number }[] = [];
   for (let i = 0; i < 365; i++) {
     const date = oneYearAgo.add({ days: i });
     const dateStr = date.toString();
     days.push({
-      date,
+      date: dateStr,
       count: activityMap.get(dateStr) || 0,
     });
   }
@@ -72,16 +72,17 @@ export const generateActivityData = (
  * アクティビティデータを週ごとにグループ化
  */
 export const groupByWeeks = (
-  activityData: { date: Temporal.PlainDate; count: number }[],
-): { date: Temporal.PlainDate; count: number }[][] => {
-  const result: { date: Temporal.PlainDate; count: number }[][] = [];
-  let currentWeek: { date: Temporal.PlainDate; count: number }[] = [];
+  activityData: { date: string; count: number }[],
+): { date: string; count: number }[][] => {
+  const result: { date: string; count: number }[][] = [];
+  let currentWeek: { date: string; count: number }[] = [];
 
   if (activityData.length === 0) return result;
 
   // 最初の週の開始曜日を調整
   const firstDay = activityData[0];
-  const dayOfWeek = firstDay.date.dayOfWeek; // 1 (Monday) to 7 (Sunday)
+  const firstDate = Temporal.PlainDate.from(firstDay.date);
+  const dayOfWeek = firstDate.dayOfWeek; // 1 (Monday) to 7 (Sunday)
 
   // 最初の週を埋める
   for (let i = 1; i < dayOfWeek; i++) {
@@ -163,7 +164,7 @@ export const generateReadingPaceData = (
  */
 export const generateSessionFrequencyData = (
   logs: { readingLog: ReadingLog; laps: Lap[] }[],
-): { month: string; sessions: number }[] => {
+): { month: string; count: number }[] => {
   if (logs.length === 0) return [];
 
   const monthMap = new Map<string, number>();
@@ -175,6 +176,6 @@ export const generateSessionFrequencyData = (
   });
 
   return Array.from(monthMap.entries())
-    .map(([month, sessions]) => ({ month, sessions }))
+    .map(([month, count]) => ({ month, count }))
     .slice(-6); // 直近6ヶ月
 };

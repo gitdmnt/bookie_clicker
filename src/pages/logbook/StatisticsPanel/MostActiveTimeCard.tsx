@@ -1,4 +1,4 @@
-import Card from "@/components/ui/Card";
+import { StatsCard } from "@/components/ui/StatsCard";
 
 interface MostActiveTimeCardProps {
   logs: { readingLog: ReadingLog; laps: Lap[] }[];
@@ -43,13 +43,11 @@ export const MostActiveTimeCard = ({ logs }: MostActiveTimeCardProps) => {
   const mostActiveTime = findMostActiveTimeSlot(logs);
 
   return (
-    <Card variant="default">
-      <div className="text-center">
-        <div className="text-2xl font-black text-nb-purple mb-1">
-          {mostActiveTime}
-        </div>
-        <div className="text-xs font-bold text-gray-600">最も読んだ時間帯</div>
-      </div>
-    </Card>
+    <StatsCard
+      color="text-nb-purple"
+      emoji=""
+      value={mostActiveTime}
+      title="最も読んだ時間帯"
+    />
   );
 };

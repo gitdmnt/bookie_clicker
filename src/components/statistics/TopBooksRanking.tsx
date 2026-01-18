@@ -1,11 +1,19 @@
-interface TopBooksRankingProps {
-  books: {
-    book: Book;
-    totalSessions: number;
-    totalReadingTime: number;
-    pagesRead: number;
-  }[];
+interface TopBook {
+  book: Book;
+  totalSessions: number;
+  totalReadingTime: number;
+  pagesRead: number;
 }
+
+interface TopBooksRankingProps {
+  books: TopBook[];
+}
+
+const formatTime = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+};
 
 export const TopBooksRanking = ({ books }: TopBooksRankingProps) => {
   const topBooks = [...books]
@@ -17,12 +25,6 @@ export const TopBooksRanking = ({ books }: TopBooksRankingProps) => {
   }
 
   const medals = ["🥇", "🥈", "🥉"];
-
-  const formatTime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-  };
 
   return (
     <div className="rounded-lg border-3 border-black bg-white p-6 shadow-brutal-lg">
@@ -66,3 +68,5 @@ export const TopBooksRanking = ({ books }: TopBooksRankingProps) => {
     </div>
   );
 };
+
+export type { TopBook };

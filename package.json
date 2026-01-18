@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
     "tauri:dev": "tauri dev --features release-storage",
     "tauri:mac": "tauri dev",
     "tauri:build": "tauri build --features release-storage"
@@ -26,11 +28,14 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/ui": "^4.0.17",
     "autoprefixer": "^10.4.21",
+    "happy-dom": "^20.3.1",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.6.3",
     "vite": "^6.2.1",
-    "vite-plugin-svgr": "^4.3.0"
+    "vite-plugin-svgr": "^4.3.0",
+    "vitest": "^4.0.17"
   }
 }

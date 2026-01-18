@@ -1,4 +1,4 @@
-import Card from "@/components/ui/Card";
+import { StatsCard } from "@/components/ui/StatsCard";
 
 interface MemoRateCardProps {
   laps: Lap[];
@@ -19,13 +19,11 @@ export const MemoRateCard = ({ laps }: MemoRateCardProps) => {
   const memoRate = calculateMemoRate(laps);
 
   return (
-    <Card variant="default">
-      <div className="text-center">
-        <div className="text-3xl font-black text-nb-yellow mb-1">
-          {memoRate}%
-        </div>
-        <div className="text-xs font-bold text-gray-600">メモ記録率</div>
-      </div>
-    </Card>
+    <StatsCard
+      color="text-nb-yellow"
+      emoji=""
+      value={`${memoRate}%`}
+      title="メモ記録率"
+    />
   );
 };
