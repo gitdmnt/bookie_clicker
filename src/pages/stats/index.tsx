@@ -1,10 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { selectBooks, selectReadingLogs, selectLaps } from "@/utils/api";
 import { MonthlyTrendChart } from "./MonthlyTrendChart";
 import { PeriodStatsView } from "./PeriodStatsView";
 import { TopBooksRanking } from "./TopBooksRanking";
 import { TimeSlotDistribution } from "@/components/statistics/TimeSlotDistribution";
-import { calculateTimeSlotDistribution } from "./utils";
 import { TotalBooks } from "./statsTotal/TotalBooks";
 import { TotalSessions } from "./statsTotal/TotalSessions";
 import { TotalReadingTime } from "./statsTotal/TotalReadingTime";
@@ -13,6 +12,7 @@ import { TotalPages } from "./statsTotal/TotalPages";
 import { TotalMemos } from "./statsTotal/TotalMemos";
 import { StreakDays } from "./statsMotive/StreakDays";
 import { AverageSpeed } from "./statsPerf/AverageSpeed";
+import { ActivityHeatmap } from "./ActivityHeatmap";
 
 export const Stats = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -61,12 +61,6 @@ export const Stats = () => {
 
     fetchData();
   }, []);
-
-  // 時間帯分布データ
-  const timeSlotData = useMemo(
-    () => calculateTimeSlotDistribution(allLogs),
-    [allLogs],
-  );
 
   // 本別統計
 
@@ -126,13 +120,9 @@ export const Stats = () => {
         {/* グラフ・ランキングセクション */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <TopBooksRanking books={books} allLogs={allLogs} />
-          <MonthlyTrendChart logs={allLogs} />
+          <ActivityHeatmap allLogs={allLogs} />
+          <TimeSlotDistribution allLogs={allLogs} />
         </div>
-
-        {/* 期間別統計（推移と累積） */}
-        <PeriodStatsView logs={allLogs} />
-
-        <TimeSlotDistribution distribution={timeSlotData} />
       </div>
     </main>
   );

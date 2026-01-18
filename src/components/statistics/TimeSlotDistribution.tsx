@@ -1,11 +1,9 @@
+import { calculateTimeSlotDistribution } from "@/pages/stats/utils";
+
 interface TimeSlot {
   slot: string;
   count: number;
   percentage: number;
-}
-
-interface TimeSlotDistributionProps {
-  distribution: TimeSlot[];
 }
 
 const slotIcons: { [key: string]: string } = {
@@ -23,8 +21,12 @@ const slotColors: { [key: string]: string } = {
 };
 
 export const TimeSlotDistribution = ({
-  distribution,
-}: TimeSlotDistributionProps) => {
+  allLogs,
+}: {
+  allLogs: { readingLog: ReadingLog; laps: Lap[] }[];
+}) => {
+  const distribution = calculateTimeSlotDistribution(allLogs);
+
   if (distribution.length === 0) {
     return null;
   }

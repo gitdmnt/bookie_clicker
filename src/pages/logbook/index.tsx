@@ -4,14 +4,8 @@ import { BookDisplay } from "./BookDisplay";
 import { StatisticsPanel } from "./StatisticsPanel";
 import { MemoList } from "./MemoList";
 import { sortLaps } from "./utils";
-import {
-  generateActivityData,
-  groupByWeeks,
-  generateReadingPaceData,
-  generateSessionFrequencyData,
-} from "./utils";
+import { generateReadingPaceData, generateSessionFrequencyData } from "./utils";
 import { selectLaps, selectReadingLogs } from "@/utils/api";
-import { ActivityHeatmap } from "@/components/statistics/ActivityHeatmap";
 import { ReadingPaceChart } from "@/components/statistics/ReadingPaceChart";
 import { SessionFrequencyChart } from "@/components/statistics/SessionFrequencyChart";
 import { TopSessionsRanking } from "@/components/statistics/TopSessionsRanking";
@@ -83,13 +77,6 @@ export const Logbook = ({ book }: { book: Book | null }) => {
     };
   }, [logs, book]);
 
-  // アクティビティヒートマップ用データ
-  const heatmapData = useMemo(() => {
-    const activityData = generateActivityData(logs);
-    const weeks = groupByWeeks(activityData);
-    return { activityData, weeks };
-  }, [logs]);
-
   // 週間読書ペースデータ
   const paceData = useMemo(() => generateReadingPaceData(logs), [logs]);
 
@@ -147,11 +134,6 @@ export const Logbook = ({ book }: { book: Book | null }) => {
           totalReadingTime={statistics.totalReadingTime}
           pagesRead={statistics.pagesRead}
           totalPages={statistics.totalPages}
-        />
-
-        <ActivityHeatmap
-          activityData={heatmapData.activityData}
-          weeks={heatmapData.weeks}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
