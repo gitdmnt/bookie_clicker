@@ -23,6 +23,7 @@ export const searchBooksByISBN = async (isbn: string): Promise<Book[]> => {
       pageCount: book.pageCount,
       seriesTitle: book.seriesTitle ?? undefined,
       year: book.year || undefined,
+      createdAt: Temporal.PlainDateTime.from(book.createdAt),
     }));
   } catch (error) {
     console.error("Error searching books via backend", error);

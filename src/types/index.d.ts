@@ -10,6 +10,7 @@ declare global {
     pageCount: number;
     publisher: string;
     year?: number;
+    createdAt: Temporal.PlainDateTime;
   }
 
   export interface ReadingLog {

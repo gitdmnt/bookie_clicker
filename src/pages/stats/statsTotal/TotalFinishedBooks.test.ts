@@ -11,6 +11,7 @@ const createBook = (isbn: number, pageCount: number): Book => ({
   year: 2024,
   pageCount,
   imageUrl: "",
+  createdAt: Temporal.Now.plainDateTimeISO(),
 });
 
 const createReadingLog = (
