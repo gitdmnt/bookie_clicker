@@ -10,7 +10,7 @@ import { TotalPages } from "./statsTotal/TotalPages";
 import { TotalMemos } from "./statsTotal/TotalMemos";
 import { StreakDays } from "./statsMotive/StreakDays";
 import { AverageSpeed } from "./statsPerf/AverageSpeed";
-import { ActivityHeatmap } from "../../components/stats/ActivityHeatmap";
+import { ActivityHeatmap } from "@/components/stats/ActivityHeatmap";
 
 export const Stats = () => {
   const [books, setBooks] = useState<Book[]>([]);
