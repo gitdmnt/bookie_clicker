@@ -11,6 +11,7 @@ import { TotalMemos } from "./statsTotal/TotalMemos";
 import { StreakDays } from "./statsMotive/StreakDays";
 import { AverageSpeed } from "./statsPerf/AverageSpeed";
 import { ActivityHeatmap } from "@/components/stats/ActivityHeatmap";
+import { CumulativeChart } from "./CumulativeChart";
 
 export const Stats = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -114,6 +115,9 @@ export const Stats = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <AverageSpeed color="text-nb-orange" emoji="⏱️" allLogs={allLogs} />
         </div>
+
+        {/* 累積推移グラフ */}
+        <CumulativeChart books={books} allLogs={allLogs} />
 
         {/* グラフ・ランキングセクション */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
