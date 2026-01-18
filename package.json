@@ -8,7 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri:dev": "tauri dev --features release-storage",
-    "tauri:mac": "tauri dev"
+    "tauri:mac": "tauri dev",
+    "tauri:build": "tauri build --features release-storage"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.9.1",

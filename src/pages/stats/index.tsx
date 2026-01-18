@@ -2,6 +2,17 @@ import { useState, useEffect, useMemo } from "react";
 import { Temporal } from "temporal-polyfill";
 import Card from "@/components/ui/Card";
 import { selectBooks, selectReadingLogs, selectLaps } from "@/utils/api";
+import { TopBooksRanking } from "./TopBooksRanking";
+import { MonthlyTrendChart } from "./MonthlyTrendChart";
+import { TimeSlotDistribution } from "./TimeSlotDistribution";
+import {
+  calculateStreak,
+  calculateCompletedBooks,
+  findLongestSession,
+  calculateRecentActivity,
+  calculateAverageReadingSpeed,
+  calculateConsistencyScore,
+} from "./utils";
 
 interface BookStats {
   book: Book;
@@ -80,12 +91,31 @@ export const Stats = () => {
       0,
     );
 
+    // 追加統計
+    const streak = calculateStreak(allLogs);
+    const completedBooks = calculateCompletedBooks(books, allLogs);
+    const longestSession = findLongestSession(allLogs);
+    const recent7Days = calculateRecentActivity(allLogs, 7);
+    const recent30Days = calculateRecentActivity(allLogs, 30);
+    const averageSpeed = calculateAverageReadingSpeed(
+      totalPages,
+      totalReadingTime,
+    );
+    const consistencyScore = calculateConsistencyScore(allLogs);
+
     return {
       totalBooks,
       totalSessions,
       totalReadingTime,
       totalPages,
       totalMemos,
+      streak,
+      completedBooks,
+      longestSession,
+      recent7Days,
+      recent30Days,
+      averageSpeed,
+      consistencyScore,
     };
   }, [books, allLogs]);
 
@@ -221,6 +251,91 @@ export const Stats = () => {
             </div>
           </Card>
         </div>
+
+        {/* モチベーション系統計カード */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card variant="default">
+            <div className="text-center">
+              <div className="text-4xl font-black text-nb-pink-500 mb-2">
+                🔥 {overallStats.streak}
+              </div>
+              <div className="text-xs font-bold text-gray-600">
+                連続読書日数
+              </div>
+            </div>
+          </Card>
+
+          <Card variant="default">
+            <div className="text-center">
+              <div className="text-4xl font-black text-nb-purple mb-2">
+                🏆 {overallStats.completedBooks}
+              </div>
+              <div className="text-xs font-bold text-gray-600">完読した本</div>
+            </div>
+          </Card>
+
+          <Card variant="default">
+            <div className="text-center">
+              <div className="text-4xl font-black text-nb-blue mb-2">
+                ⚡ {formatReadingTime(overallStats.longestSession)}
+              </div>
+              <div className="text-xs font-bold text-gray-600">
+                最長セッション
+              </div>
+            </div>
+          </Card>
+
+          <Card variant="default">
+            <div className="text-center">
+              <div className="text-4xl font-black text-nb-yellow mb-2">
+                📅 {overallStats.recent7Days}
+              </div>
+              <div className="text-xs font-bold text-gray-600">最近7日間</div>
+            </div>
+          </Card>
+        </div>
+
+        {/* パフォーマンス系統計カード */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <Card variant="default">
+            <div className="text-center">
+              <div className="text-4xl font-black text-nb-orange mb-2">
+                ⏱️ {overallStats.averageSpeed}
+              </div>
+              <div className="text-xs font-bold text-gray-600">
+                平均速度(分/ページ)
+              </div>
+            </div>
+          </Card>
+
+          <Card variant="default">
+            <div className="text-center">
+              <div className="text-4xl font-black text-nb-pink-500 mb-2">
+                🎯 {overallStats.consistencyScore}
+              </div>
+              <div className="text-xs font-bold text-gray-600">
+                継続スコア(%)
+              </div>
+            </div>
+          </Card>
+
+          <Card variant="default">
+            <div className="text-center">
+              <div className="text-4xl font-black text-nb-purple mb-2">
+                📆 {overallStats.recent30Days}
+              </div>
+              <div className="text-xs font-bold text-gray-600">最近30日間</div>
+            </div>
+          </Card>
+        </div>
+
+        {/* グラフ・ランキングセクション */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TopBooksRanking books={bookStats} />
+          <MonthlyTrendChart logs={allLogs} />
+        </div>
+
+        <TimeSlotDistribution logs={allLogs} />
 
         {/* 本別統計テーブル */}
         <div className="rounded-lg border-3 border-black bg-white shadow-brutal-lg overflow-hidden">
