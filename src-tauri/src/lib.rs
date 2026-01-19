@@ -50,7 +50,9 @@ pub fn run() {
             commands::timer::timer_get_laps,
             // book API commands
             commands::book_api::search_book,
-            commands::book_api::parse_isbn
+            commands::book_api::parse_isbn,
+            // barcode commands
+            commands::barcode::scan_barcode
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

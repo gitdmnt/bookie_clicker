@@ -31,6 +31,40 @@ export const searchBooksByISBN = async (isbn: string): Promise<Book[]> => {
   }
 };
 
+export const scanBarcodeISBN = async (imageData: string): Promise<Book[]> => {
+  try {
+    // 1. バーコード認識でISBN文字列を取得
+    const isbnString = await invoke<string>("scan_barcode", { imageData });
+
+    // 2. ISBN文字列を検証
+    const isbnNumber = await parseISBN(isbnString);
+    if (!isbnNumber) {
+      throw new Error(
+        `認識されたコード「${isbnString}」は有効なISBNではありません。ISBN-10またはISBN-13のバーコードをスキャンしてください。`,
+      );
+    }
+
+    // 3. NDL APIで書籍検索
+    const books = await searchBooksByISBN(isbnString);
+    if (books.length === 0) {
+      throw new Error(
+        `ISBN「${isbnString}」に該当する書籍が見つかりませんでした。別のバーコードをお試しください。`,
+      );
+    }
+
+    return books;
+  } catch (error) {
+    // エラーメッセージをそのまま再スロー(文字列またはErrorオブジェクト)
+    if (typeof error === "string") {
+      throw error;
+    } else if (error instanceof Error) {
+      throw error.message;
+    } else {
+      throw "バーコードのスキャンに失敗しました。";
+    }
+  }
+};
+
 export const fetchWikipediaData = async (title: string) => {
   const url = `https://ja.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch=${encodeURIComponent(
     title,
