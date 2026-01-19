@@ -1,5 +1,5 @@
 import { useState } from "react";
-import BarcodeScanner from "@/components/BarcodeScanner";
+import BarcodeScanner from "./BarcodeScanner";
 
 export const BookshelfHeader = ({
   totalBooks,
@@ -22,14 +22,14 @@ export const BookshelfHeader = ({
 
   return (
     <>
-      <div className="rounded-lg border-3 border-black bg-white p-6 shadow-brutal-lg space-y-2">
-        <div className="flex gap-2">
+      <div className="flex flex-col gap-2 overflow-hidden">
+        <div className="flex flex-row gap-2">
           <input
             type="search"
             value={searchTerm}
             onChange={(event) => onSearchTermChange(event.target.value)}
-            className="flex-1 rounded-lg border-3 border-black bg-white px-4 py-3 text-base font-bold text-black placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-nb-pink-200 shadow-brutal-sm"
-            placeholder="🔍 タイトル・著者・出版社・年・ISBNで検索"
+            className="flex-1 min-w-0 text-xs rounded-lg border-3 border-black bg-white px-4 py-3 font-bold text-black placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-nb-pink-200 shadow-brutal-sm"
+            placeholder="🔍 ISBN・タイトル・著者・出版社・年で検索"
             aria-label="Search books"
           />
           <button

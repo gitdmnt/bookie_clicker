@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Modal } from "../ui/Modal";
-import Button from "../ui/Button";
+import { Modal } from "../../../../components/ui/Modal";
+import Button from "../../../../components/ui/Button";
 
 type ScanState =
   | "idle"

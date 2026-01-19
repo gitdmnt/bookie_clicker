@@ -4,12 +4,7 @@ import useLoadBooks from "@/hooks/useLoadBooks";
 import { BookshelfGrid } from "./BookshelfGrid";
 import { BookshelfHeader } from "./BookshelfHeader";
 import { EmptyState } from "./EmptyState";
-import {
-  parseISBN,
-  searchBooksByISBN,
-  scanBarcodeISBN,
-  addBook,
-} from "@/utils/api";
+import { parseISBN, searchBooksByISBN, addBook } from "@/utils/api";
 
 export const Bookshelf = ({
   book,
