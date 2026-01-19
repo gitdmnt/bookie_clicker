@@ -1,5 +1,3 @@
-// TODO: 本の検索をバックエンドに委譲
-
 import { useEffect, useMemo, useState } from "react";
 
 import useLoadBooks from "@/hooks/useLoadBooks";
@@ -31,7 +29,7 @@ export const Bookshelf = ({
     return books.filter((book) => {
       const titleMatch = book.title.toLowerCase().includes(match);
       const authorMatch = (book.authors ?? []).some((author) =>
-        author.toLowerCase().includes(match)
+        author.toLowerCase().includes(match),
       );
       const publisherMatch = book.publisher?.toLowerCase().includes(match);
       const yearMatch = String(book.year ?? "").includes(match);
@@ -97,13 +95,18 @@ export const Bookshelf = ({
     }
   };
 
+  const handleBarcodeScanned = async (isbn: string) => {
+    // バーコードスキャン成功時にISBN検索を実行
+    setSearchTerm(isbn);
+  };
+
   useEffect(() => {
     if (filteredBooks.length === 0) {
       setBook(null);
       return;
     }
     const isSelectedStillVisible = filteredBooks.some(
-      (book) => book.isbn === book?.isbn
+      (book) => book.isbn === book?.isbn,
     );
     if (!book || !isSelectedStillVisible) {
       setBook(filteredBooks[0]);
@@ -118,6 +121,7 @@ export const Bookshelf = ({
           filteredBooks={filteredBooks.length}
           searchTerm={searchTerm}
           onSearchTermChange={setSearchTerm}
+          onBarcodeScanned={handleBarcodeScanned}
         />
         {filteredBooks.length === 0 ? (
           isSearchingISBN ? (
