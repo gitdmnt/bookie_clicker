@@ -1,0 +1,13 @@
+{
+  "name": "bookie-clicker-tauri",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "tauri:dev": "tauri dev --features release-storage",
+    "tauri:build": "tauri build --features release-storage",
+    "tauri:mac": "tauri dev"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.3.1"
+  }
+}

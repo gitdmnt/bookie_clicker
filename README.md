@@ -60,13 +60,13 @@ bun tauri:dev
 ### ビルド
 
 ```bash
-bun tauri:build
+npm run tauri:build
 ```
 
 ### テスト
 
 ```bash
-bun run test
+npm run web:test
 ```
 
 ## ストレージについて
@@ -76,14 +76,14 @@ bun run test
 
 ## 主要ディレクトリ
 
-- `src/`: React UI
-- `src/pages/`: 画面ロジック
-- `src/hooks/`: 画面状態管理
-- `src/utils/api.ts`: Tauri コマンド呼び出し
-- `src-tauri/`: Rust バックエンド
-- `src-tauri/src/commands/`: Tauri コマンド実装
-- `src-tauri/src/db/`: DB操作とモデル
-- `src-tauri/src/timer/`: タイマー実装
+- `apps/web/src/`: React UI
+- `apps/web/src/pages/`: 画面ロジック
+- `apps/web/src/hooks/`: 画面状態管理
+- `apps/web/src/utils/api.ts`: Tauri コマンド呼び出し
+- `apps/tauri/src-tauri/`: Rust バックエンド
+- `apps/tauri/src-tauri/src/commands/`: Tauri コマンド実装
+- `apps/tauri/src-tauri/src/db/`: DB操作とモデル
+- `apps/tauri/src-tauri/src/timer/`: タイマー実装
 
 ## ライセンス
 
