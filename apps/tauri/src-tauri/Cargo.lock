@@ -774,11 +774,11 @@ dependencies = [
 name = "bookie_clicker"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "base64 0.22.1",
- "chrono",
+ "bookie_core",
  "dirs",
  "image",
- "quick-xml 0.39.0",
  "reqwest 0.11.27",
  "rxing",
  "serde",
@@ -788,7 +788,17 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-http",
  "tauri-plugin-opener",
+ "time",
  "tokio",
+]
+
+[[package]]
+name = "bookie_core"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "quick-xml 0.39.0",
+ "serde",
 ]
 
 [[package]]

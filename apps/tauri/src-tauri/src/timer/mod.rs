@@ -1,7 +1,7 @@
 use crate::db::Lap;
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::{async_runtime, Emitter};
 use tokio::time;
 
@@ -67,7 +67,10 @@ impl Timer {
             elapsed_ms: elapsed,
             note,
             ref_page,
-            created_at: chrono::Utc::now().to_rfc3339(),
+            created_at: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map(|d| d.as_secs().to_string())
+                .unwrap_or_default(),
         };
         self.laps.push(lap.clone());
         lap

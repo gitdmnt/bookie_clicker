@@ -4,6 +4,7 @@ use rxing;
 use std::fs;
 
 use crate::api::isbn::parse_isbn;
+use time::OffsetDateTime;
 
 const PADDING_RATIO: f32 = 0.6;
 const MULTI_LINE_COUNT: u32 = 7;
@@ -142,7 +143,7 @@ pub async fn scan_barcode(
     let temp_dir = std::env::temp_dir();
     let temp_path = temp_dir.join(format!(
         "barcode_scan_{}.jpg",
-        chrono::Utc::now().timestamp()
+        OffsetDateTime::now_utc().unix_timestamp()
     ));
 
     fs::write(&temp_path, &bytes)
