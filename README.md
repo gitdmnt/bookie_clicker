@@ -60,13 +60,13 @@ bun tauri:dev
 ### ビルド
 
 ```bash
-npm run tauri:build
+bun tauri:build
 ```
 
 ### テスト
 
 ```bash
-npm run web:test
+bun web:test
 ```
 
 ## ストレージについて

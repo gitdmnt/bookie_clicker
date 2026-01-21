@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "identifier": "net.bookieclicker",
   "build": {
-    "beforeDevCommand": "npm --prefix ../../web run dev",
+    "beforeDevCommand": "bun run --cwd ../web dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm --prefix ../../web run build",
-    "frontendDist": "../../web/dist"
+    "beforeBuildCommand": "bun run --cwd ../web build",
+    "frontendDist": "../web/dist"
   },
   "app": {
     "windows": [

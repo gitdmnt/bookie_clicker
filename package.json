@@ -6,11 +6,11 @@
     "apps/*"
   ],
   "scripts": {
-    "web:dev": "npm --prefix apps/web run dev",
-    "web:build": "npm --prefix apps/web run build",
-    "web:test": "npm --prefix apps/web run test",
-    "tauri:dev": "npm --prefix apps/tauri run tauri:dev",
-    "tauri:build": "npm --prefix apps/tauri run tauri:build",
-    "tauri:mac": "npm --prefix apps/tauri run tauri:mac"
+    "web:dev": "bun run --cwd apps/web dev",
+    "web:build": "bun run --cwd apps/web build",
+    "web:test": "bun run --cwd apps/web test",
+    "tauri:dev": "bun run --cwd apps/tauri tauri:dev",
+    "tauri:build": "bun run --cwd apps/tauri tauri:build",
+    "tauri:mac": "bun run --cwd apps/tauri tauri:mac"
   }
 }
