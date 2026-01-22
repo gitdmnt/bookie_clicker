@@ -100,7 +100,7 @@ fn validate_isbn13(isbn13: &str) -> Result<(), String> {
 /// Parse ISBN string and return canonical ISBN-13 as u64
 /// Accepts both ISBN-10 and ISBN-13 formats
 pub fn parse_isbn(input: &str) -> Result<u64, String> {
-    let isbn = input.replace('-', "").replace(' ', "");
+    let isbn = input.replace(['-', ' '], "");
     if isbn.len() == 10 {
         validate_isbn10(&isbn)?;
         convert_isbn10_to_isbn13(isbn)

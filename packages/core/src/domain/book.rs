@@ -1,3 +1,4 @@
+use crate::domain::isbn::Isbn;
 use serde::{Deserialize, Serialize};
 
 /// Book entity - core domain model
@@ -17,6 +18,7 @@ pub struct Book {
 
 impl Book {
     /// Create a new Book with required fields
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         isbn: u64,
         title: String,
@@ -42,9 +44,8 @@ impl Book {
 
     /// Validate book data
     pub fn validate(&self) -> Result<(), String> {
-        if self.isbn == 0 {
-            return Err("ISBN cannot be zero".to_string());
-        }
+        let _ = Isbn::new(self.isbn).map_err(|e| format!("Invalid ISBN: {}", e))?;
+
         if self.title.trim().is_empty() {
             return Err("Title cannot be empty".to_string());
         }
@@ -79,7 +80,7 @@ mod tests {
 
     #[test]
     fn test_book_validation_empty_title() {
-        let mut book = Book::new(
+        let book = Book::new(
             9784873119038,
             "".to_string(),
             vec!["Author".to_string()],
