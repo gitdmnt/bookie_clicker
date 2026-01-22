@@ -1,7 +1,10 @@
 use crate::db::RecordId;
 use serde::{Deserialize, Serialize};
 
-pub use bookie_core::models::{Book, Lap, ReadingLog, Table};
+pub use bookie_core::models::Table;
+
+// Re-export core types directly without conversion
+pub use bookie_core::models::{Book, Lap, ReadingLog};
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -25,9 +28,9 @@ pub struct LapForStore {
     pub created_at: String,
 }
 
-impl From<ReadingLogForStore> for ReadingLog {
-    fn from(reading_log: ReadingLogForStore) -> ReadingLog {
-        ReadingLog {
+impl From<ReadingLogForStore> for bookie_core::models::ReadingLog {
+    fn from(reading_log: ReadingLogForStore) -> bookie_core::models::ReadingLog {
+        bookie_core::models::ReadingLog {
             id: reading_log.id.map(|key| key.to_string()),
             isbn: reading_log.isbn,
             created_at: reading_log.created_at,
@@ -38,8 +41,8 @@ impl From<ReadingLogForStore> for ReadingLog {
     }
 }
 
-impl From<ReadingLog> for ReadingLogForStore {
-    fn from(reading_log: ReadingLog) -> ReadingLogForStore {
+impl From<bookie_core::models::ReadingLog> for ReadingLogForStore {
+    fn from(reading_log: bookie_core::models::ReadingLog) -> ReadingLogForStore {
         //id validation
         let id = reading_log.id.as_ref().and_then(|id| {
             let parts: Vec<&str> = id.split(':').collect();
@@ -58,9 +61,9 @@ impl From<ReadingLog> for ReadingLogForStore {
     }
 }
 
-impl From<LapForStore> for Lap {
-    fn from(lap: LapForStore) -> Lap {
-        Lap {
+impl From<LapForStore> for bookie_core::models::Lap {
+    fn from(lap: LapForStore) -> bookie_core::models::Lap {
+        bookie_core::models::Lap {
             id: lap.id.map(|key| key.to_string()),
             elapsed_ms: lap.elapsed_ms,
             note: lap.note,
@@ -70,8 +73,8 @@ impl From<LapForStore> for Lap {
     }
 }
 
-impl From<Lap> for LapForStore {
-    fn from(lap: Lap) -> LapForStore {
+impl From<bookie_core::models::Lap> for LapForStore {
+    fn from(lap: bookie_core::models::Lap) -> LapForStore {
         let id = lap.id.as_ref().and_then(|id| {
             let parts: Vec<&str> = id.split(':').collect();
             (parts.len() == 2 && parts[0] == "laps")
