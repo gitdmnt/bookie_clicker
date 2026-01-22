@@ -1,4 +1,5 @@
 pub mod api;
+pub mod domain_services;
 pub mod models;
 pub mod ports;
 

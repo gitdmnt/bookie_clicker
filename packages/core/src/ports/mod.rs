@@ -1,6 +1,9 @@
 use crate::models::{Book, Lap, ReadingLog};
 use async_trait::async_trait;
 
+#[cfg(test)]
+mod tests;
+
 #[async_trait]
 pub trait HttpClient: Send + Sync {
     async fn get_text(&self, url: &str) -> Result<String, String>;

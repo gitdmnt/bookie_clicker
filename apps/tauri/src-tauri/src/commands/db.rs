@@ -1,7 +1,7 @@
 use tauri::State;
 
-use bookie_core::ports::DatabasePort;
-use crate::db::{Book, Database, Lap, Query, ReadingLog};
+use bookie_core::ports::{DatabasePort, Filter, FilterValue, QueryBuilder};
+use crate::db::{Book, Database, Lap, ReadingLog};
 
 #[tauri::command]
 pub async fn add_book(db: State<'_, Database>, book: Book) -> Result<(), String> {
@@ -34,9 +34,14 @@ pub async fn add_laps(
 #[tauri::command]
 pub async fn select_books(
     db: State<'_, Database>,
-    query: Query,
+    isbn: Option<u64>,
 ) -> Result<Vec<Book>, String> {
-    db.select_books(query)
+    let mut query = QueryBuilder::new();
+    if let Some(isbn) = isbn {
+        query = query.filter(Filter::Eq("isbn".to_string(), FilterValue::U64(isbn)));
+    }
+    
+    DatabasePort::find_books(db.inner(), query)
         .await
         .map_err(|e| e.to_string())
 }
@@ -44,9 +49,18 @@ pub async fn select_books(
 #[tauri::command]
 pub async fn select_reading_logs(
     db: State<'_, Database>,
-    query: Query,
+    isbn: Option<u64>,
+    id: Option<String>,
 ) -> Result<Vec<ReadingLog>, String> {
-    db.select_reading_logs(query)
+    let mut query = QueryBuilder::new();
+    if let Some(isbn) = isbn {
+        query = query.filter(Filter::Eq("isbn".to_string(), FilterValue::U64(isbn)));
+    }
+    if let Some(id) = id {
+        query = query.filter(Filter::Eq("id".to_string(), FilterValue::String(id)));
+    }
+    
+    DatabasePort::find_reading_logs(db.inner(), query)
         .await
         .map_err(|e| e.to_string())
 }
@@ -62,8 +76,13 @@ pub async fn select_laps(
 }
 
 #[tauri::command]
-pub async fn delete_books(db: State<'_, Database>, query: Query) -> Result<(), String> {
-    db.delete_books(query)
+pub async fn delete_books(db: State<'_, Database>, isbn: Option<u64>) -> Result<(), String> {
+    let mut query = QueryBuilder::new();
+    if let Some(isbn) = isbn {
+        query = query.filter(Filter::Eq("isbn".to_string(), FilterValue::U64(isbn)));
+    }
+    
+    DatabasePort::delete_books(db.inner(), query)
         .await
         .map_err(|e| e.to_string())
 }
@@ -71,9 +90,14 @@ pub async fn delete_books(db: State<'_, Database>, query: Query) -> Result<(), S
 #[tauri::command]
 pub async fn delete_reading_logs(
     db: State<'_, Database>,
-    query: Query,
+    id: Option<String>,
 ) -> Result<(), String> {
-    db.delete_reading_logs(query)
+    let mut query = QueryBuilder::new();
+    if let Some(id) = id {
+        query = query.filter(Filter::Eq("id".to_string(), FilterValue::String(id)));
+    }
+    
+    DatabasePort::delete_reading_logs(db.inner(), query)
         .await
         .map_err(|e| e.to_string())
 }

@@ -1,8 +1,6 @@
 use crate::db::RecordId;
 use serde::{Deserialize, Serialize};
 
-pub use bookie_core::models::Table;
-
 // Re-export core types directly without conversion
 pub use bookie_core::models::{Book, Lap, ReadingLog};
 

@@ -1,14 +1,15 @@
 use tauri::async_runtime::block_on;
 use tauri::{Builder, Manager};
 
+mod adapters;
+mod api;
 mod commands;
+mod db;
+mod services;
 mod timer;
 
-mod db;
 use db::Database;
 use timer::TimerManager;
-
-mod api;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 

@@ -8,9 +8,6 @@ use bookie_core::ports::{DatabasePort, DbError, Filter, FilterValue, QueryBuilde
 use surrealdb::engine::any::Any;
 use surrealdb::{RecordId, Surreal};
 
-pub mod query;
-pub use query::Query;
-
 pub mod table;
 pub use table::{Book, Lap, LapForStore, ReadingLog, ReadingLogForStore};
 
@@ -58,114 +55,6 @@ impl SurrealDatabase {
         println!("Database exported to {:?}", export_path);
 
         Ok(export_path)
-    }
-
-    pub async fn add_book(&self, book: Book) -> Result<(), surrealdb::Error> {
-        let db = self.db.lock().await;
-        let _: Option<Book> = db.create("books").content(book).await?;
-        Ok(())
-    }
-
-    pub async fn add_reading_log(
-        &self,
-        mut reading_log: ReadingLog,
-    ) -> Result<(), surrealdb::Error> {
-        reading_log.id = None; // always create new
-        let reading_log: ReadingLogForStore = reading_log.into();
-        let db = self.db.lock().await;
-        let _: Option<ReadingLogForStore> = db.create("reading_logs").content(reading_log).await?;
-        Ok(())
-    }
-
-    pub async fn add_laps(
-        &self,
-
-        reading_log: ReadingLog,
-        laps: Vec<Lap>,
-    ) -> Result<(), surrealdb::Error> {
-        let db = self.db.lock().await;
-
-        let id = match &reading_log.id {
-            Some(id) => RecordId::from_str(id)?,
-            None => {
-                let reading_log_store: ReadingLogForStore = reading_log.into();
-                let created: Option<ReadingLogForStore> =
-                    db.create("reading_logs").content(reading_log_store).await?;
-                let rl = created.expect("failed to create reading_log");
-                rl.id.unwrap()
-            }
-        };
-
-        // create laps referencing the reading_log id
-        for lap in laps.into_iter() {
-            let mut lap_store: LapForStore = lap.into();
-            lap_store.reading_log = Some(id.clone());
-            let res: Option<LapForStore> = db.create("laps").content(lap_store).await?;
-            if res.is_none() {
-                panic!("failed to create lap; rolled back reading_log");
-            }
-        }
-
-        Ok(())
-    }
-
-    pub async fn select_books(&self, query: Query) -> Result<Vec<Book>, surrealdb::Error> {
-        let query_str = query.to_string();
-        // println!("select_books query: {}", query_str);
-        let db = self.db.lock().await;
-        let res = db.query(query_str).await?.take::<Vec<Book>>(0);
-        // println!("select_books result: {:?}", res);
-        res
-    }
-
-    pub async fn select_reading_logs(
-        &self,
-        query: Query,
-    ) -> Result<Vec<ReadingLog>, surrealdb::Error> {
-        let query_str = query.to_string();
-        println!("select_reading_logs query: {}", query_str);
-        let db = self.db.lock().await;
-        let res = db
-            .query(query_str)
-            .await?
-            .take::<Vec<ReadingLogForStore>>(0)
-            .map(|v| v.into_iter().map(|r| r.into()).collect());
-        println!("select_reading_logs result: {:?}", res);
-        res
-    }
-
-    pub async fn select_laps(&self, reading_log: ReadingLog) -> Result<Vec<Lap>, surrealdb::Error> {
-        let query = format!(
-            "SELECT * from laps WHERE readingLog = type::Thing(\"{}\")",
-            reading_log.id.as_ref().unwrap()
-        );
-        println!("select_laps query: {}", query);
-        let db = self.db.lock().await;
-        db.query(query)
-            .await?
-            .take::<Vec<LapForStore>>(0)
-            .map(|v| v.into_iter().map(|l| l.into()).collect())
-    }
-
-    pub async fn delete_books(&self, query: Query) -> Result<(), surrealdb::Error> {
-        let query = query.to_delete();
-        let db = self.db.lock().await;
-        let _ = db.query(query).await?;
-        Ok(())
-    }
-
-    pub async fn delete_reading_logs(&self, query: Query) -> Result<(), surrealdb::Error> {
-        let query = query.to_delete();
-        let db = self.db.lock().await;
-        let _ = db.query(query).await?;
-        Ok(())
-    }
-
-    pub async fn delete_lap(&self, id: String) -> Result<(), surrealdb::Error> {
-        let query = format!("DELETE {}", id);
-        let db = self.db.lock().await;
-        let _ = db.query(query).await?;
-        Ok(())
     }
 
     pub async fn query_raw(&self, query: String) -> Result<String, surrealdb::Error> {
@@ -218,13 +107,22 @@ impl DatabasePort for SurrealDatabase {
         Ok(())
     }
 
-    async fn find_books(&self, query: QueryBuilder) -> Result<Vec<bookie_core::models::Book>, DbError> {
+    async fn find_books(
+        &self,
+        query: QueryBuilder,
+    ) -> Result<Vec<bookie_core::models::Book>, DbError> {
         let where_clause = query_builder_to_where_clause(&query);
         let query_str = format!(
             "SELECT * FROM books{}{}{}",
             where_clause.unwrap_or_default(),
-            query.limit.map(|l| format!(" LIMIT {}", l)).unwrap_or_default(),
-            query.offset.map(|o| format!(" START {}", o)).unwrap_or_default()
+            query
+                .limit
+                .map(|l| format!(" LIMIT {}", l))
+                .unwrap_or_default(),
+            query
+                .offset
+                .map(|o| format!(" START {}", o))
+                .unwrap_or_default()
         );
 
         let db = self.db.lock().await;
@@ -249,10 +147,13 @@ impl DatabasePort for SurrealDatabase {
         Ok(())
     }
 
-    async fn add_reading_log(&self, mut log: bookie_core::models::ReadingLog) -> Result<String, DbError> {
+    async fn add_reading_log(
+        &self,
+        mut log: bookie_core::models::ReadingLog,
+    ) -> Result<String, DbError> {
         log.id = None; // always create new
         let log_store: ReadingLogForStore = log.into();
-        
+
         let db = self.db.lock().await;
         let created: Option<ReadingLogForStore> = db
             .create("reading_logs")
@@ -260,19 +161,31 @@ impl DatabasePort for SurrealDatabase {
             .await
             .map_err(|e| DbError::Query(e.to_string()))?;
 
-        let record = created.ok_or_else(|| DbError::Query("Failed to create reading log".to_string()))?;
-        let id = record.id.ok_or_else(|| DbError::Query("No ID returned".to_string()))?;
-        
+        let record =
+            created.ok_or_else(|| DbError::Query("Failed to create reading log".to_string()))?;
+        let id = record
+            .id
+            .ok_or_else(|| DbError::Query("No ID returned".to_string()))?;
+
         Ok(id.to_string())
     }
 
-    async fn find_reading_logs(&self, query: QueryBuilder) -> Result<Vec<bookie_core::models::ReadingLog>, DbError> {
+    async fn find_reading_logs(
+        &self,
+        query: QueryBuilder,
+    ) -> Result<Vec<bookie_core::models::ReadingLog>, DbError> {
         let where_clause = query_builder_to_where_clause(&query);
         let query_str = format!(
             "SELECT * FROM reading_logs{}{}{}",
             where_clause.unwrap_or_default(),
-            query.limit.map(|l| format!(" LIMIT {}", l)).unwrap_or_default(),
-            query.offset.map(|o| format!(" START {}", o)).unwrap_or_default()
+            query
+                .limit
+                .map(|l| format!(" LIMIT {}", l))
+                .unwrap_or_default(),
+            query
+                .offset
+                .map(|o| format!(" START {}", o))
+                .unwrap_or_default()
         );
 
         let db = self.db.lock().await;
@@ -297,7 +210,11 @@ impl DatabasePort for SurrealDatabase {
         Ok(())
     }
 
-    async fn add_laps(&self, reading_log: bookie_core::models::ReadingLog, laps: Vec<bookie_core::models::Lap>) -> Result<(), DbError> {
+    async fn add_laps(
+        &self,
+        reading_log: bookie_core::models::ReadingLog,
+        laps: Vec<bookie_core::models::Lap>,
+    ) -> Result<(), DbError> {
         let db = self.db.lock().await;
 
         let id = match &reading_log.id {
@@ -309,8 +226,12 @@ impl DatabasePort for SurrealDatabase {
                     .content(reading_log_store)
                     .await
                     .map_err(|e| DbError::Query(e.to_string()))?;
-                let rl = created.ok_or_else(|| DbError::Transaction("Failed to create reading_log".to_string()))?;
-                rl.id.ok_or_else(|| DbError::Transaction("No ID returned for reading_log".to_string()))?
+                let rl = created.ok_or_else(|| {
+                    DbError::Transaction("Failed to create reading_log".to_string())
+                })?;
+                rl.id.ok_or_else(|| {
+                    DbError::Transaction("No ID returned for reading_log".to_string())
+                })?
             }
         };
 
@@ -323,17 +244,24 @@ impl DatabasePort for SurrealDatabase {
                 .content(lap_store)
                 .await
                 .map_err(|e| DbError::Transaction(e.to_string()))?;
-            
+
             if res.is_none() {
-                return Err(DbError::Transaction("Failed to create lap; should rollback reading_log".to_string()));
+                return Err(DbError::Transaction(
+                    "Failed to create lap; should rollback reading_log".to_string(),
+                ));
             }
         }
 
         Ok(())
     }
 
-    async fn find_laps(&self, reading_log: bookie_core::models::ReadingLog) -> Result<Vec<bookie_core::models::Lap>, DbError> {
-        let id = reading_log.id.ok_or_else(|| DbError::Query("Reading log has no ID".to_string()))?;
+    async fn find_laps(
+        &self,
+        reading_log: bookie_core::models::ReadingLog,
+    ) -> Result<Vec<bookie_core::models::Lap>, DbError> {
+        let id = reading_log
+            .id
+            .ok_or_else(|| DbError::Query("Reading log has no ID".to_string()))?;
         let query = format!(
             "SELECT * from laps WHERE readingLog = type::Thing(\"{}\")",
             id
@@ -359,9 +287,17 @@ impl DatabasePort for SurrealDatabase {
         Ok(())
     }
 
-    async fn export_all(&self) -> Result<(Vec<bookie_core::models::Book>, Vec<bookie_core::models::ReadingLog>), DbError> {
+    async fn export_all(
+        &self,
+    ) -> Result<
+        (
+            Vec<bookie_core::models::Book>,
+            Vec<bookie_core::models::ReadingLog>,
+        ),
+        DbError,
+    > {
         let db = self.db.lock().await;
-        
+
         let books: Vec<Book> = db
             .query("SELECT * FROM books")
             .await
@@ -376,9 +312,6 @@ impl DatabasePort for SurrealDatabase {
             .take(0)
             .map_err(|e| DbError::Query(e.to_string()))?;
 
-        Ok((
-            books,
-            logs.into_iter().map(|l| l.into()).collect(),
-        ))
+        Ok((books, logs.into_iter().map(|l| l.into()).collect()))
     }
 }
