@@ -6,9 +6,9 @@
     "apps/*"
   ],
   "scripts": {
-    "web:dev": "bun run --cwd apps/web dev",
-    "web:build": "bun run --cwd apps/web build",
-    "web:test": "bun run --cwd apps/web test",
+    "web:dev": "bun run --cwd frontend dev",
+    "web:build": "bun run --cwd frontend build",
+    "web:test": "bun run --cwd frontend test",
     "tauri:dev": "bun run --cwd apps/tauri tauri:dev",
     "tauri:build": "bun run --cwd apps/tauri tauri:build",
     "tauri:mac": "bun run --cwd apps/tauri tauri:mac"

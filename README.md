@@ -76,10 +76,10 @@ bun web:test
 
 ## 主要ディレクトリ
 
-- `apps/web/src/`: React UI
-- `apps/web/src/pages/`: 画面ロジック
-- `apps/web/src/hooks/`: 画面状態管理
-- `apps/web/src/utils/api.ts`: Tauri コマンド呼び出し
+- `frontend/src/`: React UI
+- `frontend/src/pages/`: 画面ロジック
+- `frontend/src/hooks/`: 画面状態管理
+- `frontend/src/utils/api.ts`: Tauri コマンド呼び出し
 - `apps/tauri/src-tauri/`: Rust バックエンド
 - `apps/tauri/src-tauri/src/commands/`: Tauri コマンド実装
 - `apps/tauri/src-tauri/src/db/`: DB操作とモデル
