@@ -1,4 +1,4 @@
-use crate::models::{Book, Lap, ReadingLog};
+use crate::domain::{Book, Lap, ReadingLog};
 use async_trait::async_trait;
 
 #[cfg(test)]

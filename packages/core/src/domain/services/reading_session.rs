@@ -1,4 +1,4 @@
-use crate::models::Lap;
+use crate::domain::Lap;
 use std::time::{Duration, Instant};
 
 /// Pure domain logic for tracking reading sessions

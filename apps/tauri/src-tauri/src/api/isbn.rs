@@ -1,1 +1,1 @@
-pub use bookie_core::api::isbn::parse_isbn;
+pub use bookie_core::domain::isbn::parse_isbn;

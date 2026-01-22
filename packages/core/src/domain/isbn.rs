@@ -1,3 +1,40 @@
+use serde::{Deserialize, Serialize};
+
+/// ISBN value object - ensures ISBN validity
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Isbn(u64);
+
+impl Isbn {
+    /// Create a new ISBN from a u64 (must be valid ISBN-13)
+    pub fn new(value: u64) -> Result<Self, String> {
+        let isbn_str = value.to_string();
+        validate_isbn13(&isbn_str)?;
+        Ok(Isbn(value))
+    }
+
+    /// Parse ISBN from string (accepts ISBN-10 or ISBN-13)
+    pub fn parse(input: &str) -> Result<Self, String> {
+        let value = parse_isbn(input)?;
+        Ok(Isbn(value))
+    }
+
+    /// Get the underlying u64 value
+    pub fn value(&self) -> u64 {
+        self.0
+    }
+
+    /// Get the ISBN as a string
+    pub fn as_string(&self) -> String {
+        self.0.to_string()
+    }
+}
+
+impl std::fmt::Display for Isbn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 fn validate_isbn10(isbn10: &str) -> Result<(), String> {
     if isbn10.len() != 10 {
         return Err("invalid length".to_string());
@@ -60,6 +97,8 @@ fn validate_isbn13(isbn13: &str) -> Result<(), String> {
     }
 }
 
+/// Parse ISBN string and return canonical ISBN-13 as u64
+/// Accepts both ISBN-10 and ISBN-13 formats
 pub fn parse_isbn(input: &str) -> Result<u64, String> {
     let isbn = input.replace('-', "").replace(' ', "");
     if isbn.len() == 10 {
@@ -79,14 +118,25 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_isbn_value_object() {
+        let isbn = Isbn::parse("9784873119038").unwrap();
+        assert_eq!(isbn.value(), 9784873119038);
+        assert_eq!(isbn.as_string(), "9784873119038");
+    }
+
+    #[test]
+    fn test_isbn_from_isbn10() {
+        let isbn = Isbn::parse("4-10-213022-5").unwrap();
+        assert_eq!(isbn.value(), 9784102130223);
+    }
+
+    #[test]
     fn validate_isbn10_valid() {
-        // 新潮文庫 新編銀河鉄道の夜
         assert!(validate_isbn10("4101092052").is_ok());
     }
 
     #[test]
     fn validate_isbn10_with_x_valid() {
-        // 新潮文庫 香華
         assert!(validate_isbn10("410113202X").is_ok());
     }
 
@@ -94,14 +144,11 @@ mod tests {
     fn validate_isbn10_invalid_length_or_chars() {
         assert!(validate_isbn10("1234").is_err());
         assert!(validate_isbn10("ABCDEFGHIJ").is_err());
-        // 'X' only allowed as last character
         assert!(validate_isbn10("X23456789X").is_err());
     }
 
     #[test]
     fn convert_isbn10_to_isbn13_valid() {
-        // 新潮文庫 劇場
-        // Known mapping: ISBN-10 4102130225 -> ISBN-13 9784102130223
         assert_eq!(
             convert_isbn10_to_isbn13("4102130225".to_string()).unwrap(),
             9_784_102_130_223u64
@@ -110,34 +157,27 @@ mod tests {
 
     #[test]
     fn convert_isbn10_to_isbn13_invalid_format() {
-        // non-digit in the first 9 chars should fail parsing
         assert!(convert_isbn10_to_isbn13("12345678X9".to_string()).is_err());
     }
 
     #[test]
     fn validate_isbn13_valid_and_invalid() {
         assert!(validate_isbn13("9784102130223").is_ok());
-        // wrong checksum
         assert!(validate_isbn13("9784102130228").is_err());
-        // invalid chars and length
         assert!(validate_isbn13("978410213022").is_err());
         assert!(validate_isbn13("97841021A0223").is_err());
     }
 
     #[test]
     fn parse_isbn_from_isbn10_and_isbn13() {
-        // from ISBN-10 with hyphens
         assert_eq!(parse_isbn("4-10-213022-5").unwrap(), 9_784_102_130_223u64);
-        // from ISBN-10 with spaces
         assert_eq!(parse_isbn(" 4 10 213022 5 ").unwrap(), 9_784_102_130_223u64);
-        // from ISBN-13 directly
         assert_eq!(parse_isbn("9784102130223").unwrap(), 9_784_102_130_223u64);
     }
 
     #[test]
     fn parse_isbn_validates_isbn10_with_x() {
         let parsed = parse_isbn("410113202X").unwrap();
-        // ensure the produced ISBN-13 is valid
         assert!(validate_isbn13(&parsed.to_string()).is_ok());
     }
 

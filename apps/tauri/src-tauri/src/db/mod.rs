@@ -97,7 +97,7 @@ fn format_filter_value(value: &FilterValue) -> String {
 // Implement DatabasePort trait for SurrealDatabase
 #[async_trait]
 impl DatabasePort for SurrealDatabase {
-    async fn add_book(&self, book: bookie_core::models::Book) -> Result<(), DbError> {
+    async fn add_book(&self, book: bookie_core::domain::Book) -> Result<(), DbError> {
         let db = self.db.lock().await;
         let _: Option<Book> = db
             .create("books")
@@ -110,7 +110,7 @@ impl DatabasePort for SurrealDatabase {
     async fn find_books(
         &self,
         query: QueryBuilder,
-    ) -> Result<Vec<bookie_core::models::Book>, DbError> {
+    ) -> Result<Vec<bookie_core::domain::Book>, DbError> {
         let where_clause = query_builder_to_where_clause(&query);
         let query_str = format!(
             "SELECT * FROM books{}{}{}",
@@ -149,7 +149,7 @@ impl DatabasePort for SurrealDatabase {
 
     async fn add_reading_log(
         &self,
-        mut log: bookie_core::models::ReadingLog,
+        mut log: bookie_core::domain::ReadingLog,
     ) -> Result<String, DbError> {
         log.id = None; // always create new
         let log_store: ReadingLogForStore = log.into();
@@ -173,7 +173,7 @@ impl DatabasePort for SurrealDatabase {
     async fn find_reading_logs(
         &self,
         query: QueryBuilder,
-    ) -> Result<Vec<bookie_core::models::ReadingLog>, DbError> {
+    ) -> Result<Vec<bookie_core::domain::ReadingLog>, DbError> {
         let where_clause = query_builder_to_where_clause(&query);
         let query_str = format!(
             "SELECT * FROM reading_logs{}{}{}",
@@ -212,8 +212,8 @@ impl DatabasePort for SurrealDatabase {
 
     async fn add_laps(
         &self,
-        reading_log: bookie_core::models::ReadingLog,
-        laps: Vec<bookie_core::models::Lap>,
+        reading_log: bookie_core::domain::ReadingLog,
+        laps: Vec<bookie_core::domain::Lap>,
     ) -> Result<(), DbError> {
         let db = self.db.lock().await;
 
@@ -257,8 +257,8 @@ impl DatabasePort for SurrealDatabase {
 
     async fn find_laps(
         &self,
-        reading_log: bookie_core::models::ReadingLog,
-    ) -> Result<Vec<bookie_core::models::Lap>, DbError> {
+        reading_log: bookie_core::domain::ReadingLog,
+    ) -> Result<Vec<bookie_core::domain::Lap>, DbError> {
         let id = reading_log
             .id
             .ok_or_else(|| DbError::Query("Reading log has no ID".to_string()))?;
@@ -291,8 +291,8 @@ impl DatabasePort for SurrealDatabase {
         &self,
     ) -> Result<
         (
-            Vec<bookie_core::models::Book>,
-            Vec<bookie_core::models::ReadingLog>,
+            Vec<bookie_core::domain::Book>,
+            Vec<bookie_core::domain::ReadingLog>,
         ),
         DbError,
     > {

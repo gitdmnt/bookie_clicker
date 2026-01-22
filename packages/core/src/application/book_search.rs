@@ -1,12 +1,13 @@
-use crate::api::isbn::parse_isbn;
-use crate::models::Book;
+use crate::domain::isbn::parse_isbn;
+use crate::domain::Book;
 use crate::ports::{Clock, HttpClient};
 
 use quick_xml::events::Event;
 use quick_xml::name::QName;
 use quick_xml::reader::Reader;
 
-pub async fn search_with_client<C: HttpClient, K: Clock>(
+/// Application service: Search for books by ISBN using NDL API
+pub async fn search_book_by_isbn<C: HttpClient, K: Clock>(
     isbn: &str,
     client: &C,
     clock: &K,

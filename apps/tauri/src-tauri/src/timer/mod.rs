@@ -1,5 +1,4 @@
-use bookie_core::domain_services::reading_session::ReadingSession;
-use bookie_core::models::Lap;
+use bookie_core::domain::{Lap, ReadingSession};
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
