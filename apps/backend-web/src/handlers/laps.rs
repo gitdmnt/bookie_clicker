@@ -1,4 +1,5 @@
 use bookie_core::domain::{Lap, ReadingLog};
+use bookie_core::DatabasePort;
 use worker::*;
 
 use crate::db::D1Database;
@@ -30,7 +31,7 @@ pub async fn add_laps(mut req: Request, ctx: RouteContext<()>) -> Result<Respons
 /// GET /api/laps?reading_log_id=abc - ラップを検索
 pub async fn select_laps(req: Request, ctx: RouteContext<()>) -> Result<Response> {
     let user = require_auth(&req, &ctx).await?;
-    let url = ctx.req.url()?;
+    let url = req.url()?;
     let params = url.query_pairs();
     
     let mut reading_log_id = None;

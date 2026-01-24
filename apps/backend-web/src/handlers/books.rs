@@ -1,5 +1,6 @@
 use bookie_core::domain::{Book, Isbn};
 use bookie_core::ports::{Filter, FilterValue, QueryBuilder};
+use bookie_core::DatabasePort;
 use worker::*;
 
 use crate::db::D1Database;
@@ -49,7 +50,7 @@ pub async fn add_book(mut req: Request, ctx: RouteContext<()>) -> Result<Respons
 pub async fn select_books(req: Request, ctx: RouteContext<()>) -> Result<Response> {
     let user = require_auth(&req, &ctx).await?;
     
-    let url = ctx.req.url()?;
+    let url = req.url()?;
     let params = url.query_pairs();
     
     let mut query = QueryBuilder::new()
@@ -77,7 +78,7 @@ pub async fn select_books(req: Request, ctx: RouteContext<()>) -> Result<Respons
 pub async fn delete_books(req: Request, ctx: RouteContext<()>) -> Result<Response> {
     let user = require_auth(&req, &ctx).await?;
     
-    let url = ctx.req.url()?;
+    let url = req.url()?;
     let params = url.query_pairs();
     
     let mut query = QueryBuilder::new()

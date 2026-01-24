@@ -123,7 +123,7 @@ async fn exchange_code_for_token(
     let req = Request::new_with_init("https://oauth2.googleapis.com/token", &init)?;
     let mut resp = Fetch::Request(req).send().await?;
     
-    if !resp.status_code().is_success() {
+    if !(200..300).contains(&resp.status_code()) {
         let error_text = resp.text().await?;
         return Err(Error::RustError(format!(
             "Failed to exchange token: {}",

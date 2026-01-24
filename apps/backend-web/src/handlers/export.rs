@@ -1,5 +1,6 @@
 use worker::*;
 use bookie_core::ports::{Filter, FilterValue, QueryBuilder};
+use bookie_core::DatabasePort;
 
 use crate::db::D1Database;
 use crate::middleware::require_auth;

@@ -10,7 +10,7 @@ pub struct SessionManager;
 
 impl SessionManager {
     /// セッションを作成してD1に保存
-    pub async fn create_session(d1: &D1Database, user_id: &str) -> Result<String> {
+    pub async fn create_session(d1: &worker::D1Database, user_id: &str) -> Result<String> {
         let session_id = Uuid::new_v4().to_string();
         let now = Utc::now();
         let expires_at = now + Duration::days(7); // 7日間有効
@@ -33,7 +33,7 @@ impl SessionManager {
     }
     
     /// セッションを取得
-    pub async fn get_session(d1: &D1Database, session_id: &str) -> Result<Option<Session>> {
+    pub async fn get_session(d1: &worker::D1Database, session_id: &str) -> Result<Option<Session>> {
         let stmt = d1
             .prepare("SELECT * FROM sessions WHERE id = ?")
             .bind(&[session_id.into()])
@@ -59,7 +59,7 @@ impl SessionManager {
     }
     
     /// セッションを削除
-    pub async fn delete_session(d1: &D1Database, session_id: &str) -> Result<()> {
+    pub async fn delete_session(d1: &worker::D1Database, session_id: &str) -> Result<()> {
         let stmt = d1
             .prepare("DELETE FROM sessions WHERE id = ?")
             .bind(&[session_id.into()])
@@ -73,7 +73,7 @@ impl SessionManager {
     }
     
     /// 期限切れセッションを削除（クリーンアップ）
-    pub async fn cleanup_expired_sessions(d1: &D1Database) -> Result<()> {
+    pub async fn cleanup_expired_sessions(d1: &worker::D1Database) -> Result<()> {
         let now = Utc::now().to_rfc3339();
         
         let stmt = d1
@@ -94,7 +94,7 @@ pub struct UserManager;
 
 impl UserManager {
     /// Google IDでユーザーを取得
-    pub async fn get_user_by_google_id(d1: &D1Database, google_id: &str) -> Result<Option<User>> {
+    pub async fn get_user_by_google_id(d1: &worker::D1Database, google_id: &str) -> Result<Option<User>> {
         let stmt = d1
             .prepare("SELECT * FROM users WHERE google_id = ?")
             .bind(&[google_id.into()])
@@ -112,7 +112,7 @@ impl UserManager {
     }
     
     /// ユーザーIDでユーザーを取得
-    pub async fn get_user_by_id(d1: &D1Database, user_id: &str) -> Result<Option<User>> {
+    pub async fn get_user_by_id(d1: &worker::D1Database, user_id: &str) -> Result<Option<User>> {
         let stmt = d1
             .prepare("SELECT * FROM users WHERE id = ?")
             .bind(&[user_id.into()])
@@ -131,7 +131,7 @@ impl UserManager {
     
     /// ユーザーを作成または更新
     pub async fn upsert_user(
-        d1: &D1Database,
+        d1: &worker::D1Database,
         google_id: &str,
         email: &str,
         name: Option<&str>,

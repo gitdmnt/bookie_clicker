@@ -5,10 +5,6 @@ compatibility_date = "2024-01-01"
 [build]
 command = "cargo install worker-build && worker-build --release"
 
-[build.upload]
-format = "modules"
-dir = "build/worker"
-main = "./shim.mjs"
 
 [[d1_databases]]
 binding = "DB"
