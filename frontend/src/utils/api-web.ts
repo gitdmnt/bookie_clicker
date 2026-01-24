@@ -1,0 +1,178 @@
+/**
+ * Web (Cloudflare Workers) バックエンドAPI実装
+ */
+import { Temporal } from "temporal-polyfill";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
+
+// ============================================================
+// Helper Functions
+// ============================================================
+
+const handleResponse = async <T>(response: Response): Promise<T> => {
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || `HTTP ${response.status}`);
+  }
+  return response.json();
+};
+
+// ============================================================
+// Book API
+// ============================================================
+
+export const parseISBN = async (input: string): Promise<number | null> => {
+  try {
+    const response = await fetch(`${API_BASE}/api/isbn/parse`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input }),
+    });
+    const result = await handleResponse<{ isbn: number }>(response);
+    return result.isbn;
+  } catch (error) {
+    console.error("Failed to parse ISBN", error);
+    return null;
+  }
+};
+
+export const searchBooksByISBN = async (isbn: string): Promise<Book[]> => {
+  const digits = isbn.replace(/\D/g, "");
+  if (!digits) {
+    return [];
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/api/books/search`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isbn: digits }),
+    });
+    const books = await handleResponse<Book[]>(response);
+    return books.map((book) => ({
+      ...book,
+      pageCount: book.pageCount,
+      seriesTitle: book.seriesTitle ?? undefined,
+      year: book.year || undefined,
+      createdAt: Temporal.PlainDateTime.from(book.createdAt),
+    }));
+  } catch (error) {
+    console.error("Error searching books via backend", error);
+    return [];
+  }
+};
+
+export const scanBarcodeISBN = async (imageData: string): Promise<Book[]> => {
+  // Web版ではバーコードスキャン機能は未実装
+  // フロントエンドで直接実装するか、サーバーサイドで実装する必要がある
+  console.warn("Barcode scanning is not implemented for web backend");
+  throw new Error("バーコードスキャン機能はWeb版では未対応です");
+};
+
+// ============================================================
+// Database Operations
+// ============================================================
+
+export const addBook = async (book: Book): Promise<void> => {
+  const response = await fetch(`${API_BASE}/api/books`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(book),
+  });
+  await handleResponse<void>(response);
+};
+
+export const addReadingLog = async (readingLog: ReadingLog): Promise<void> => {
+  const response = await fetch(`${API_BASE}/api/reading-logs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(readingLog),
+  });
+  await handleResponse<void>(response);
+};
+
+export const addLaps = async (
+  readingLog: ReadingLog,
+  laps: Lap[],
+): Promise<void> => {
+  const response = await fetch(`${API_BASE}/api/laps`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ readingLog, laps }),
+  });
+  await handleResponse<void>(response);
+};
+
+export const selectBooks = async (query: Query): Promise<Book[]> => {
+  const params = new URLSearchParams();
+  if (query.isbn) params.set("isbn", query.isbn.toString());
+
+  const response = await fetch(`${API_BASE}/api/books?${params.toString()}`);
+  const books = await handleResponse<Book[]>(response);
+  return books;
+};
+
+export const selectReadingLogs = async (
+  query: Query,
+): Promise<ReadingLog[]> => {
+  const params = new URLSearchParams();
+  if (query.isbn) params.set("isbn", query.isbn.toString());
+  if (query.id) params.set("id", query.id);
+
+  const response = await fetch(
+    `${API_BASE}/api/reading-logs?${params.toString()}`,
+  );
+  const readingLogs = await handleResponse<ReadingLog[]>(response);
+  return readingLogs.map((log) => ({
+    ...log,
+    createdAt: Temporal.PlainDateTime.from(log.createdAt),
+  }));
+};
+
+export const selectLaps = async (readingLog: ReadingLog): Promise<Lap[]> => {
+  const params = new URLSearchParams();
+  if (readingLog.id) params.set("reading_log_id", readingLog.id);
+
+  const response = await fetch(`${API_BASE}/api/laps?${params.toString()}`);
+  const laps = await handleResponse<Lap[]>(response);
+  return laps.map((lap) => ({
+    ...lap,
+    createdAt: lap.createdAt
+      ? Temporal.PlainDateTime.from(lap.createdAt)
+      : undefined,
+  }));
+};
+
+export const deleteBooks = async (query: Query): Promise<void> => {
+  const params = new URLSearchParams();
+  if (query.isbn) params.set("isbn", query.isbn.toString());
+
+  const response = await fetch(`${API_BASE}/api/books?${params.toString()}`, {
+    method: "DELETE",
+  });
+  await handleResponse<void>(response);
+};
+
+export const deleteReadingLogs = async (query: Query): Promise<void> => {
+  const params = new URLSearchParams();
+  if (query.id) params.set("id", query.id);
+
+  const response = await fetch(
+    `${API_BASE}/api/reading-logs?${params.toString()}`,
+    { method: "DELETE" },
+  );
+  await handleResponse<void>(response);
+};
+
+export const deleteLap = async (id: String): Promise<void> => {
+  const response = await fetch(`${API_BASE}/api/laps/${id}`, {
+    method: "DELETE",
+  });
+  await handleResponse<void>(response);
+};
+
+export const exportDatabase = async (): Promise<string> => {
+  const response = await fetch(`${API_BASE}/api/export`);
+  const result = await handleResponse<{ data: string }>(response);
+  return result.data;
+};

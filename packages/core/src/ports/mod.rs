@@ -4,11 +4,26 @@ use async_trait::async_trait;
 #[cfg(test)]
 mod tests;
 
+// HttpClient trait - Wasm compatible (no Send requirement)
+#[cfg(target_arch = "wasm32")]
+#[async_trait(?Send)]
+pub trait HttpClient {
+    async fn get_text(&self, url: &str) -> Result<String, String>;
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 #[async_trait]
 pub trait HttpClient: Send + Sync {
     async fn get_text(&self, url: &str) -> Result<String, String>;
 }
 
+// Clock trait - Wasm compatible (no Send requirement)
+#[cfg(target_arch = "wasm32")]
+pub trait Clock {
+    fn now_rfc3339(&self) -> String;
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 pub trait Clock: Send + Sync {
     fn now_rfc3339(&self) -> String;
 }
@@ -92,6 +107,30 @@ impl Default for QueryBuilder {
     }
 }
 
+// DatabasePort trait - Wasm compatible (no Send requirement)
+#[cfg(target_arch = "wasm32")]
+#[async_trait(?Send)]
+pub trait DatabasePort {
+    // Book operations
+    async fn add_book(&self, book: Book) -> Result<(), DbError>;
+    async fn find_books(&self, query: QueryBuilder) -> Result<Vec<Book>, DbError>;
+    async fn delete_books(&self, query: QueryBuilder) -> Result<(), DbError>;
+
+    // ReadingLog operations
+    async fn add_reading_log(&self, log: ReadingLog) -> Result<String, DbError>; // Returns generated ID
+    async fn find_reading_logs(&self, query: QueryBuilder) -> Result<Vec<ReadingLog>, DbError>;
+    async fn delete_reading_logs(&self, query: QueryBuilder) -> Result<(), DbError>;
+
+    // Lap operations
+    async fn add_laps(&self, reading_log: ReadingLog, laps: Vec<Lap>) -> Result<(), DbError>;
+    async fn find_laps(&self, reading_log: ReadingLog) -> Result<Vec<Lap>, DbError>;
+    async fn delete_lap(&self, id: String) -> Result<(), DbError>;
+
+    // Utility operations
+    async fn export_all(&self) -> Result<(Vec<Book>, Vec<ReadingLog>), DbError>;
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 #[async_trait]
 pub trait DatabasePort: Send + Sync {
     // Book operations
