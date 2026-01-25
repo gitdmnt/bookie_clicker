@@ -1,3 +1,6 @@
+/// AuthCallback.tsxは、OAuth認証のコールバックを処理するコンポーネントを提供します。
+/// OAuth認証コードを受け取り、サーバーに送信してユーザーを認証します。
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -15,6 +18,7 @@ export const AuthCallback = () => {
     const code = params.get("code");
     const error = params.get("error");
 
+    // TODO: ここら辺のエラーハンドリングをLogin.tsxに整備する
     if (error) {
       console.error("OAuth error:", error);
       navigate("/login?error=oauth_failed");

@@ -1,3 +1,8 @@
+/// AuthContext.tsxは、アプリケーション全体で認証状態を管理するためのコンテキストを提供します。
+/// 以下の要素がexportされます:
+/// - AuthProviderコンポーネント: 認証状態を管理し、子コンポーネントに提供する。
+/// - useAuthフック: AuthProvider内で認証状態と操作関数を利用するためのカスタムフック。
+
 import {
   createContext,
   useContext,
@@ -117,6 +122,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+/// useAuthフックはAuthContextを利用するためのカスタムフック。
+/// 以下の値を提供する:
+/// - user: 認証されたユーザー情報
+/// - isLoading: 認証状態の読み込み中フラグ
+/// - login: Google OAuthログインを開始する関数
+/// - loginDebug: デバッグ用のログイン関数
+/// - logout: ログアウト関数
+/// - isAuthenticated: 認証済みフラグ
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used within AuthProvider");

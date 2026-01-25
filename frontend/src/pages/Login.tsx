@@ -1,3 +1,4 @@
+// TODO: AuthCallbackで例外が発生した場合の処理を追加する
 import { useAuth } from "../contexts/AuthContext";
 
 export const Login = () => {

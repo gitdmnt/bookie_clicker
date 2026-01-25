@@ -1,3 +1,5 @@
+/// ProtectedRouteコンポーネントは、認証されたユーザーのみがアクセスできるルートを保護するために使用される。
+/// 認証されていない場合、ユーザーはログインページにリダイレクトされる。
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
