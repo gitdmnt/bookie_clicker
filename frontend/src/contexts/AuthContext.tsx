@@ -12,21 +12,26 @@ const REDIRECT_URI = `${window.location.origin}/auth/callback`;
 
 interface User {
   id: string;
+  google_id: string;
   email: string;
   name?: string;
   pictureUrl?: string;
+  createdAt: string;
+  lastLoginAt: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: () => Promise<void>;
+  loginDebug: () => void;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/// AuthProviderコンポーネントはアプリ全体で認証状態を管理する。
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const checkAuth = async () => {
     try {
+      // サーバーにセッションIDを送信し、認証状態を確認。ユーザー情報を取得する。
       const response = await fetch(`${API_BASE}/api/auth/me`, {
         credentials: "include", // Cookie送信
       });
@@ -74,6 +80,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     window.location.href = authUrl;
   };
 
+  const loginDebug = () => {
+    setUser({
+      id: "debug-user-123",
+      email: "debug@example.com",
+      name: "デバッグユーザー",
+      pictureUrl: "https://github.com/identicons/debug.png",
+      google_id: "debug-google-id",
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+    });
+    setIsLoading(false);
+  };
+
   const logout = async () => {
     await fetch(`${API_BASE}/api/auth/logout`, {
       method: "POST",
@@ -88,6 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         isLoading,
         login,
+        loginDebug,
         logout,
         isAuthenticated: !!user,
       }}

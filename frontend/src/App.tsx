@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
 import MenuBar from "@/components/MenuBar";
 import "./App.css";
 import { Bookshelf } from "./pages/bookshelf";
@@ -6,8 +7,11 @@ import { Lapnote } from "./pages/lapnote";
 import { Stats } from "./pages/stats";
 import { Logbook } from "./pages/logbook";
 import { Debug } from "./pages/Debug";
+import { Login } from "./pages/Login";
+import { AuthCallback } from "./pages/AuthCallback";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
-function App() {
+const MainApp = () => {
   const [page, setPage] = useState(1);
   const [book, setBook] = useState<Book | null>(null);
   const pages = [
@@ -24,6 +28,24 @@ function App() {
       <div className="h-20"></div>
       <MenuBar setPage={setPage} icons={icons} />
     </div>
+  );
+};
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <MainApp />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 

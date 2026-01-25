@@ -173,6 +173,7 @@ fn base64_decode(input: &str) -> std::result::Result<String, String> {
 }
 
 /// リクエストからセッショントークンを抽出
+/// セッショントークンはフロントエンドから送られてくるCookieの "session" に格納されていると想定
 pub fn extract_session_token(req: &Request) -> Option<String> {
     let cookie_header = req.headers().get("Cookie").ok()??;
     
@@ -187,21 +188,28 @@ pub fn extract_session_token(req: &Request) -> Option<String> {
 }
 
 /// リクエストからユーザーを抽出
+/// 1. リクエスト中のセッショントークンをデータベース中のセッション情報と照合して有効性を確認
+/// 2. セッションが有効であれば対応するユーザー情報を取得して返す
 pub async fn extract_user_from_request(req: &Request, ctx: &RouteContext<()>) -> Result<User> {
+    // Cookieからセッショントークンを取得
     let session_token = extract_session_token(req)
         .ok_or_else(|| Error::RustError("No session token found".to_string()))?;
     
+    // データベースへの接続情報を取得
     let d1 = ctx.env.d1("DB")?;
     
+    // セッションを取得
     let session = SessionManager::get_session(&d1, &session_token)
         .await?
         .ok_or_else(|| Error::RustError("Session not found".to_string()))?;
     
+    // セッションの有効期限を確認
     if session.is_expired() {
         SessionManager::delete_session(&d1, &session_token).await?;
         return Err(Error::RustError("Session expired".to_string()));
     }
     
+    // ユーザーを取得
     let user = UserManager::get_user_by_id(&d1, &session.user_id)
         .await?
         .ok_or_else(|| Error::RustError("User not found".to_string()))?;
