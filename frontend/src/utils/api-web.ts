@@ -9,6 +9,18 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
 // Helper Functions
 // ============================================================
 
+const fetchWithCredentials = (
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+): Promise<Response> => {
+  const headers = new Headers(init.headers);
+  return fetch(input, {
+    ...init,
+    headers,
+    credentials: "include",
+  });
+};
+
 const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
     const errorText = await response.text();
@@ -23,7 +35,7 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
 
 export const parseISBN = async (input: string): Promise<number | null> => {
   try {
-    const response = await fetch(`${API_BASE}/api/isbn/parse`, {
+    const response = await fetchWithCredentials(`${API_BASE}/api/isbn/parse`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ input }),
@@ -43,11 +55,14 @@ export const searchBooksByISBN = async (isbn: string): Promise<Book[]> => {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/api/books/search`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isbn: digits }),
-    });
+    const response = await fetchWithCredentials(
+      `${API_BASE}/api/books/search`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isbn: digits }),
+      },
+    );
     const books = await handleResponse<Book[]>(response);
     return books.map((book) => ({
       ...book,
@@ -74,7 +89,7 @@ export const scanBarcodeISBN = async (imageData: string): Promise<Book[]> => {
 // ============================================================
 
 export const addBook = async (book: Book): Promise<void> => {
-  const response = await fetch(`${API_BASE}/api/books`, {
+  const response = await fetchWithCredentials(`${API_BASE}/api/books`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(book),
@@ -83,7 +98,7 @@ export const addBook = async (book: Book): Promise<void> => {
 };
 
 export const addReadingLog = async (readingLog: ReadingLog): Promise<void> => {
-  const response = await fetch(`${API_BASE}/api/reading-logs`, {
+  const response = await fetchWithCredentials(`${API_BASE}/api/reading-logs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(readingLog),
@@ -95,7 +110,7 @@ export const addLaps = async (
   readingLog: ReadingLog,
   laps: Lap[],
 ): Promise<void> => {
-  const response = await fetch(`${API_BASE}/api/laps`, {
+  const response = await fetchWithCredentials(`${API_BASE}/api/laps`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ readingLog, laps }),
@@ -107,7 +122,9 @@ export const selectBooks = async (query: Query): Promise<Book[]> => {
   const params = new URLSearchParams();
   if (query.isbn) params.set("isbn", query.isbn.toString());
 
-  const response = await fetch(`${API_BASE}/api/books?${params.toString()}`);
+  const response = await fetchWithCredentials(
+    `${API_BASE}/api/books?${params.toString()}`,
+  );
   const books = await handleResponse<Book[]>(response);
   return books;
 };
@@ -119,7 +136,7 @@ export const selectReadingLogs = async (
   if (query.isbn) params.set("isbn", query.isbn.toString());
   if (query.id) params.set("id", query.id);
 
-  const response = await fetch(
+  const response = await fetchWithCredentials(
     `${API_BASE}/api/reading-logs?${params.toString()}`,
   );
   const readingLogs = await handleResponse<ReadingLog[]>(response);
@@ -133,7 +150,9 @@ export const selectLaps = async (readingLog: ReadingLog): Promise<Lap[]> => {
   const params = new URLSearchParams();
   if (readingLog.id) params.set("reading_log_id", readingLog.id);
 
-  const response = await fetch(`${API_BASE}/api/laps?${params.toString()}`);
+  const response = await fetchWithCredentials(
+    `${API_BASE}/api/laps?${params.toString()}`,
+  );
   const laps = await handleResponse<Lap[]>(response);
   return laps.map((lap) => ({
     ...lap,
@@ -147,9 +166,12 @@ export const deleteBooks = async (query: Query): Promise<void> => {
   const params = new URLSearchParams();
   if (query.isbn) params.set("isbn", query.isbn.toString());
 
-  const response = await fetch(`${API_BASE}/api/books?${params.toString()}`, {
-    method: "DELETE",
-  });
+  const response = await fetchWithCredentials(
+    `${API_BASE}/api/books?${params.toString()}`,
+    {
+      method: "DELETE",
+    },
+  );
   await handleResponse<void>(response);
 };
 
@@ -157,7 +179,7 @@ export const deleteReadingLogs = async (query: Query): Promise<void> => {
   const params = new URLSearchParams();
   if (query.id) params.set("id", query.id);
 
-  const response = await fetch(
+  const response = await fetchWithCredentials(
     `${API_BASE}/api/reading-logs?${params.toString()}`,
     { method: "DELETE" },
   );
@@ -165,14 +187,14 @@ export const deleteReadingLogs = async (query: Query): Promise<void> => {
 };
 
 export const deleteLap = async (id: String): Promise<void> => {
-  const response = await fetch(`${API_BASE}/api/laps/${id}`, {
+  const response = await fetchWithCredentials(`${API_BASE}/api/laps/${id}`, {
     method: "DELETE",
   });
   await handleResponse<void>(response);
 };
 
 export const exportDatabase = async (): Promise<string> => {
-  const response = await fetch(`${API_BASE}/api/export`);
+  const response = await fetchWithCredentials(`${API_BASE}/api/export`);
   const result = await handleResponse<{ data: string }>(response);
   return result.data;
 };
