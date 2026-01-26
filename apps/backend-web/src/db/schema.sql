@@ -24,8 +24,10 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 
--- Remove old books table (destructive migration)
-DROP TABLE IF EXISTS books;
+-- Remove old tables (destructive migration)
+-- DROP TABLE IF EXISTS books;
+-- DROP TABLE IF EXISTS reading_logs;
+-- DROP TABLE IF EXISTS laps;
 
 -- Books master (shared bibliographic data from NDL)
 CREATE TABLE IF NOT EXISTS books_master (
