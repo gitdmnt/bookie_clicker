@@ -195,18 +195,18 @@ pub async fn extract_user_from_request(req: &Request, ctx: &RouteContext<()>) ->
 
     // データベースへの接続情報を取得
     // セッションを取得
-    let session = SessionManager::get_session_from_ctx(&ctx, &session_token)
+    let session = SessionManager::get_session_from_ctx(ctx, &session_token)
         .await?
         .ok_or_else(|| Error::RustError("Session not found".to_string()))?;
 
     // セッションの有効期限を確認
     if session.is_expired() {
-        SessionManager::delete_session_from_ctx(&ctx, &session_token).await?;
+        SessionManager::delete_session_from_ctx(ctx, &session_token).await?;
         return Err(Error::RustError("Session expired".to_string()));
     }
 
     // ユーザーを取得
-    let user = UserManager::get_user_by_id_from_ctx(&ctx, &session.user_id)
+    let user = UserManager::get_user_by_id_from_ctx(ctx, &session.user_id)
         .await?
         .ok_or_else(|| Error::RustError("User not found".to_string()))?;
 
