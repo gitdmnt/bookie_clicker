@@ -4,7 +4,15 @@ import useLoadBooks from "@/hooks/useLoadBooks";
 import { BookshelfGrid } from "./BookshelfGrid";
 import { BookshelfHeader } from "./BookshelfHeader";
 import { EmptyState } from "./EmptyState";
-import { parseISBN, searchBooksByISBN, addBook } from "@/utils/api";
+import { searchBooksByISBN, addBook } from "@/utils/api";
+import { parseIsbn } from "@/utils/isbn";
+
+type BookListResult =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "results"; books: Book[] }
+  | { status: "no-results"; message: string }
+  | { status: "error"; message: string };
 
 export const Bookshelf = ({
   book,
@@ -17,9 +25,9 @@ export const Bookshelf = ({
 }) => {
   const { books, loadBooks } = useLoadBooks();
   const [searchTerm, setSearchTerm] = useState("");
-  const [isbnSearchResults, setIsbnSearchResults] = useState<Book[]>([]);
-  const [isSearchingISBN, setIsSearchingISBN] = useState(false);
-  const [isbnError, setIsbnError] = useState<string | null>(null);
+  const [isbnResult, setIsbnResult] = useState<BookListResult>({
+    status: "idle",
+  });
 
   const filteredBooks = useMemo(() => {
     if (!searchTerm.trim()) {
@@ -41,33 +49,36 @@ export const Bookshelf = ({
   useEffect(() => {
     const searchISBN = async () => {
       if (!searchTerm.trim() || filteredBooks.length > 0) {
-        setIsbnSearchResults([]);
-        setIsbnError(null);
+        setIsbnResult({ status: "idle" });
         return;
       }
 
-      const isbnNumber = await parseISBN(searchTerm);
+      const isbnNumber = await parseIsbn(searchTerm);
 
-      if (isbnNumber) {
-        setIsSearchingISBN(true);
-        setIsbnError(null);
+      if (typeof isbnNumber === "number") {
+        setIsbnResult({ status: "loading" });
 
         try {
           const results = await searchBooksByISBN(searchTerm);
-          setIsbnSearchResults(results);
-
           if (results.length === 0) {
-            setIsbnError("NDLで該当する書籍が見つかりませんでした");
+            setIsbnResult({
+              status: "no-results",
+              message: "NDLで該当する書籍が見つかりませんでした",
+            });
+          } else {
+            setIsbnResult({
+              status: "results",
+              books: results,
+            });
           }
         } catch (error) {
-          setIsbnError("検索中にエラーが発生しました");
-          setIsbnSearchResults([]);
-        } finally {
-          setIsSearchingISBN(false);
+          setIsbnResult({
+            status: "error",
+            message: "検索中にエラーが発生しました",
+          });
         }
       } else {
-        setIsbnSearchResults([]);
-        setIsbnError(null);
+        setIsbnResult({ status: "idle" });
       }
     };
 
@@ -80,7 +91,7 @@ export const Bookshelf = ({
     if (existingBook) {
       setBook(existingBook);
       setSearchTerm("");
-      setIsbnSearchResults([]);
+      setIsbnResult({ status: "idle" });
       return;
     }
 
@@ -89,7 +100,7 @@ export const Bookshelf = ({
       await loadBooks();
       setBook(newBook);
       setSearchTerm("");
-      setIsbnSearchResults([]);
+      setIsbnResult({ status: "idle" });
     } catch (error) {
       console.error("Failed to add book:", error);
     }
@@ -124,17 +135,17 @@ export const Bookshelf = ({
           onBarcodeScanned={handleBarcodeScanned}
         />
         {filteredBooks.length === 0 ? (
-          isSearchingISBN ? (
+          isbnResult.status === "loading" ? (
             <div className="flex justify-center items-center h-80">
               <div className="text-lg font-black text-black">
                 📚 NDLで検索中...
               </div>
             </div>
-          ) : isbnSearchResults.length > 0 ? (
+          ) : isbnResult.status === "results" && isbnResult.books.length > 0 ? (
             <div className="space-y-4">
               <h2 className="text-xl font-black text-black">NDL検索結果</h2>
               <BookshelfGrid
-                books={isbnSearchResults}
+                books={isbnResult.books}
                 selectedBook={null}
                 onSelect={handleAddBook}
                 setPage={setPage}
@@ -142,7 +153,15 @@ export const Bookshelf = ({
               />
             </div>
           ) : (
-            <EmptyState onAction={loadBooks} message={isbnError} />
+            <EmptyState
+              onAction={loadBooks}
+              message={
+                isbnResult.status === "error" ||
+                isbnResult.status === "no-results"
+                  ? isbnResult.message
+                  : ""
+              }
+            />
           )
         ) : (
           <BookshelfGrid
