@@ -13,7 +13,7 @@ pub struct Book {
     pub year: u32,
     pub page_count: u32,
     pub image_url: String,
-    pub created_at: String,
+    pub created_at: Option<String>,
 }
 
 impl Book {
@@ -27,7 +27,7 @@ impl Book {
         year: u32,
         page_count: u32,
         image_url: String,
-        created_at: String,
+        created_at: Option<String>,
     ) -> Self {
         Self {
             isbn,
@@ -70,7 +70,7 @@ mod tests {
             2018,
             600,
             "https://example.com/image.jpg".to_string(),
-            "2024-01-01T00:00:00Z".to_string(),
+            Some("2024-01-01T00:00:00Z".to_string()),
         );
 
         assert_eq!(book.isbn, 9784873119038);
@@ -88,7 +88,7 @@ mod tests {
             2024,
             100,
             "".to_string(),
-            "2024-01-01T00:00:00Z".to_string(),
+            Some("2024-01-01T00:00:00Z".to_string()),
         );
 
         assert!(book.validate().is_err());
@@ -104,7 +104,7 @@ mod tests {
             2024,
             100,
             "".to_string(),
-            "2024-01-01T00:00:00Z".to_string(),
+            Some("2024-01-01T00:00:00Z".to_string()),
         );
 
         assert!(book.validate().is_err());

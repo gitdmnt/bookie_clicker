@@ -1,9 +1,8 @@
 use bookie_core::domain::ReadingLog;
 use bookie_core::ports::{Filter, FilterValue, QueryBuilder};
-use bookie_core::DatabasePort;
 use worker::*;
 
-use crate::db::D1Database;
+use crate::db::database_from_ctx;
 use crate::middleware::require_auth;
 use crate::utils::errors::handle_db_error;
 
@@ -12,29 +11,12 @@ pub async fn add_reading_log(mut req: Request, ctx: RouteContext<()>) -> Result<
     let user = require_auth(&req, &ctx).await?;
     let log: ReadingLog = req.json().await?;
     
-    let d1 = ctx.env.d1("DB")?;
-    
-    // user_idを追加して挿入
-    let log_id = log.id.clone().unwrap_or_else(|| ulid::Ulid::new().to_string());
-    
-    let stmt = d1
-        .prepare("INSERT INTO reading_logs (id, isbn, created_at, session_duration_sec, page_start, page_end, rating, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
-        .bind(&[
-            log_id.clone().into(),
-            log.isbn.to_string().into(),
-            log.created_at.into(),
-            log.session_duration_sec.to_string().into(),
-            log.page[0].to_string().into(),
-            log.page[1].to_string().into(),
-            log.rating.map(|r| r.to_string()).unwrap_or_default().into(),
-            user.id.into(),
-        ])
-        .map_err(|e| Error::RustError(format!("Failed to bind parameters: {:?}", e)))?;
+    let db = database_from_ctx(&ctx)?;
 
-    stmt.run().await
-        .map_err(|e| Error::RustError(format!("Failed to insert reading log: {:?}", e)))?;
-    
-    let id = log_id;
+    let id = db
+        .add_reading_log_with_user(log, &user.id)
+        .await
+        .map_err(handle_db_error)?;
     
     #[derive(serde::Serialize)]
     struct AddResponse {
@@ -68,8 +50,7 @@ pub async fn select_reading_logs(req: Request, ctx: RouteContext<()>) -> Result<
         }
     }
     
-    let d1 = ctx.env.d1("DB")?;
-    let db = D1Database::new(d1);
+    let db = database_from_ctx(&ctx)?;
     
     let logs = db.find_reading_logs(query)
         .await
@@ -94,8 +75,7 @@ pub async fn delete_reading_logs(req: Request, ctx: RouteContext<()>) -> Result<
         }
     }
     
-    let d1 = ctx.env.d1("DB")?;
-    let db = D1Database::new(d1);
+    let db = database_from_ctx(&ctx)?;
     
     db.delete_reading_logs(query)
         .await

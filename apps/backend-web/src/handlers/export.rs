@@ -1,16 +1,14 @@
 use worker::*;
 use bookie_core::ports::{Filter, FilterValue, QueryBuilder};
-use bookie_core::DatabasePort;
 
-use crate::db::D1Database;
+use crate::db::database_from_ctx;
 use crate::middleware::require_auth;
 use crate::utils::errors::handle_db_error;
 
 /// GET /api/export - データベース全体をエクスポート
 pub async fn export_database(req: Request, ctx: RouteContext<()>) -> Result<Response> {
     let user = require_auth(&req, &ctx).await?;
-    let d1 = ctx.env.d1("DB")?;
-    let db = D1Database::new(d1);
+    let db = database_from_ctx(&ctx)?;
     
     // ユーザースコープでエクスポート
     let books_query = QueryBuilder::new()

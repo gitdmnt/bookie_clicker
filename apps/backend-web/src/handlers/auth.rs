@@ -21,9 +21,8 @@ pub async fn google_callback(mut req: Request, ctx: RouteContext<()>) -> Result<
     let user_info = decode_id_token(&token_response.id_token)?;
     
     // 3. ユーザー作成/更新
-    let d1 = ctx.env.d1("DB")?;
-    let user = UserManager::upsert_user(
-        &d1,
+    let user = UserManager::upsert_user_from_ctx(
+        &ctx,
         &user_info.sub,
         &user_info.email,
         user_info.name.as_deref(),
@@ -32,7 +31,7 @@ pub async fn google_callback(mut req: Request, ctx: RouteContext<()>) -> Result<
     .await?;
     
     // 4. セッション作成
-    let session_token = SessionManager::create_session(&d1, &user.id).await?;
+    let session_token = SessionManager::create_session_from_ctx(&ctx, &user.id).await?;
     
     // 5. httpOnly Cookie でセッショントークン返却
     #[derive(Serialize)]
@@ -63,8 +62,7 @@ pub async fn get_current_user(req: Request, ctx: RouteContext<()>) -> Result<Res
 /// ログアウト
 pub async fn logout(req: Request, ctx: RouteContext<()>) -> Result<Response> {
     if let Some(session_token) = extract_session_token(&req) {
-        let d1 = ctx.env.d1("DB")?;
-        let _ = SessionManager::delete_session(&d1, &session_token).await;
+        let _ = SessionManager::delete_session_from_ctx(&ctx, &session_token).await;
     }
     
     let mut response = Response::ok("")?;
@@ -109,7 +107,7 @@ async fn exchange_code_for_token(
         code_verifier: code_verifier.to_string(),
     };
     
-    let mut headers = Headers::new();
+    let headers = Headers::new();
     headers.set("Content-Type", "application/x-www-form-urlencoded")?;
     
     let body = serde_urlencoded::to_string(&token_req)
@@ -196,21 +194,19 @@ pub async fn extract_user_from_request(req: &Request, ctx: &RouteContext<()>) ->
         .ok_or_else(|| Error::RustError("No session token found".to_string()))?;
     
     // データベースへの接続情報を取得
-    let d1 = ctx.env.d1("DB")?;
-    
     // セッションを取得
-    let session = SessionManager::get_session(&d1, &session_token)
+    let session = SessionManager::get_session_from_ctx(&ctx, &session_token)
         .await?
         .ok_or_else(|| Error::RustError("Session not found".to_string()))?;
     
     // セッションの有効期限を確認
     if session.is_expired() {
-        SessionManager::delete_session(&d1, &session_token).await?;
+        SessionManager::delete_session_from_ctx(&ctx, &session_token).await?;
         return Err(Error::RustError("Session expired".to_string()));
     }
     
     // ユーザーを取得
-    let user = UserManager::get_user_by_id(&d1, &session.user_id)
+    let user = UserManager::get_user_by_id_from_ctx(&ctx, &session.user_id)
         .await?
         .ok_or_else(|| Error::RustError("User not found".to_string()))?;
     

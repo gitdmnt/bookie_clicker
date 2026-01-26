@@ -1,8 +1,7 @@
 use bookie_core::domain::{Lap, ReadingLog};
-use bookie_core::DatabasePort;
 use worker::*;
 
-use crate::db::D1Database;
+use crate::db::database_from_ctx;
 use crate::middleware::require_auth;
 use crate::utils::errors::handle_db_error;
 
@@ -18,10 +17,9 @@ pub async fn add_laps(mut req: Request, ctx: RouteContext<()>) -> Result<Respons
     
     let add_req: AddLapsRequest = req.json().await?;
     
-    let d1 = ctx.env.d1("DB")?;
-    let db = D1Database::new(d1);
+    let db = database_from_ctx(&ctx)?;
     
-    db.add_laps(add_req.reading_log, add_req.laps)
+    db.add_laps_with_user(add_req.reading_log, add_req.laps, &user.id)
         .await
         .map_err(handle_db_error)?;
     
@@ -30,7 +28,7 @@ pub async fn add_laps(mut req: Request, ctx: RouteContext<()>) -> Result<Respons
 
 /// GET /api/laps?reading_log_id=abc - ラップを検索
 pub async fn select_laps(req: Request, ctx: RouteContext<()>) -> Result<Response> {
-    let user = require_auth(&req, &ctx).await?;
+    require_auth(&req, &ctx).await?;
     let url = req.url()?;
     let params = url.query_pairs();
     
@@ -54,8 +52,7 @@ pub async fn select_laps(req: Request, ctx: RouteContext<()>) -> Result<Response
         rating: None,
     };
     
-    let d1 = ctx.env.d1("DB")?;
-    let db = D1Database::new(d1);
+    let db = database_from_ctx(&ctx)?;
     
     let laps = db.find_laps(reading_log)
         .await
@@ -66,12 +63,11 @@ pub async fn select_laps(req: Request, ctx: RouteContext<()>) -> Result<Response
 
 /// DELETE /api/laps/:id - ラップを削除
 pub async fn delete_lap(req: Request, ctx: RouteContext<()>) -> Result<Response> {
-    let user = require_auth(&req, &ctx).await?;
+    require_auth(&req, &ctx).await?;
     let id = ctx.param("id")
         .ok_or_else(|| worker::Error::RustError("Missing id parameter".to_string()))?;
     
-    let d1 = ctx.env.d1("DB")?;
-    let db = D1Database::new(d1);
+    let db = database_from_ctx(&ctx)?;
     
     db.delete_lap(id.to_string())
         .await

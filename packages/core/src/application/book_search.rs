@@ -1,16 +1,15 @@
 use crate::domain::isbn::parse_isbn;
 use crate::domain::Book;
-use crate::ports::{Clock, HttpClient};
+use crate::ports::HttpClient;
 
 use quick_xml::events::Event;
 use quick_xml::name::QName;
 use quick_xml::reader::Reader;
 
 /// Application service: Search for books by ISBN using NDL API
-pub async fn search_book_by_isbn<C: HttpClient, K: Clock>(
+pub async fn search_book_by_isbn<C: HttpClient>(
     isbn: &str,
     client: &C,
-    clock: &K,
 ) -> Result<Vec<Book>, String> {
     // parse_isbn returns canonical ISBN-13 as u64
     let isbn_num = parse_isbn(isbn)?;
@@ -23,7 +22,7 @@ pub async fn search_book_by_isbn<C: HttpClient, K: Clock>(
         );
         dbg!("Querying NDL API URL: {}", &url);
         let text = client.get_text(&url).await?;
-        let books = parse_response(&text, clock)?;
+        let books = parse_response(&text)?;
         Ok(books)
     };
 
@@ -61,7 +60,7 @@ pub async fn search_book_by_isbn<C: HttpClient, K: Clock>(
     Ok(Vec::new())
 }
 
-fn parse_response(response: &str, clock: &impl Clock) -> Result<Vec<Book>, String> {
+fn parse_response(response: &str) -> Result<Vec<Book>, String> {
     let mut reader = Reader::from_str(response);
     reader.config_mut().trim_text(true);
 
@@ -77,7 +76,7 @@ fn parse_response(response: &str, clock: &impl Clock) -> Result<Vec<Book>, Strin
                 ))
             }
             Ok(Event::Start(e)) if e.name().as_ref() == b"record" => {
-                books.push(parse_record(&mut reader, clock)?);
+                books.push(parse_record(&mut reader)?);
             }
             Ok(Event::Eof) => break,
 
@@ -173,7 +172,7 @@ fn normalize_author(raw: &str) -> String {
     joined
 }
 
-fn parse_record(reader: &mut Reader<&[u8]>, clock: &impl Clock) -> Result<Book, String> {
+fn parse_record(reader: &mut Reader<&[u8]>) -> Result<Book, String> {
     let mut buf = Vec::new();
     let mut title = String::new();
     let mut series_title: Option<String> = None;
@@ -277,20 +276,13 @@ fn parse_record(reader: &mut Reader<&[u8]>, clock: &impl Clock) -> Result<Book, 
         year,
         page_count,
         image_url,
-        created_at: clock.now_rfc3339(),
+        created_at: None,
     })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    struct TestClock;
-    impl Clock for TestClock {
-        fn now_rfc3339(&self) -> String {
-            "1970-01-01T00:00:00Z".to_string()
-        }
-    }
 
     #[test]
     fn parse_response_parses_basic_record() {
@@ -315,8 +307,7 @@ mod tests {
   </records>
 </searchRetrieveResponse>
 "#;
-        let clock = TestClock;
-        let books = parse_response(xml, &clock).unwrap();
+        let books = parse_response(xml).unwrap();
         assert_eq!(books.len(), 1);
         let b = &books[0];
         assert_eq!(b.title, "サンプルタイトル");
@@ -328,7 +319,7 @@ mod tests {
         assert_eq!(b.page_count, 203);
         // ISBN 4102130225 -> ISBN-13 9784102130223 (starts with 978)
         assert!(b.isbn.to_string().starts_with("978"));
-        assert_eq!(b.created_at, "1970-01-01T00:00:00Z");
+        assert!(b.created_at.is_none());
     }
 
     #[test]

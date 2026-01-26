@@ -1,5 +1,4 @@
 use worker::*;
-use serde_json;
 use chrono::{Duration, Utc};
 use uuid::Uuid;
 
@@ -9,6 +8,35 @@ use crate::models::{User, Session};
 pub struct SessionManager;
 
 impl SessionManager {
+    pub async fn create_session_from_ctx(
+        ctx: &RouteContext<()>,
+        user_id: &str,
+    ) -> Result<String> {
+        let d1 = ctx.env.d1("DB")?;
+        Self::create_session(&d1, user_id).await
+    }
+
+    pub async fn get_session_from_ctx(
+        ctx: &RouteContext<()>,
+        session_id: &str,
+    ) -> Result<Option<Session>> {
+        let d1 = ctx.env.d1("DB")?;
+        Self::get_session(&d1, session_id).await
+    }
+
+    pub async fn delete_session_from_ctx(
+        ctx: &RouteContext<()>,
+        session_id: &str,
+    ) -> Result<()> {
+        let d1 = ctx.env.d1("DB")?;
+        Self::delete_session(&d1, session_id).await
+    }
+
+    pub async fn cleanup_expired_sessions_from_ctx(ctx: &RouteContext<()>) -> Result<()> {
+        let d1 = ctx.env.d1("DB")?;
+        Self::cleanup_expired_sessions(&d1).await
+    }
+
     /// セッションを作成してD1に保存
     pub async fn create_session(d1: &worker::D1Database, user_id: &str) -> Result<String> {
         let session_id = Uuid::new_v4().to_string();
@@ -93,6 +121,33 @@ impl SessionManager {
 pub struct UserManager;
 
 impl UserManager {
+    pub async fn get_user_by_google_id_from_ctx(
+        ctx: &RouteContext<()>,
+        google_id: &str,
+    ) -> Result<Option<User>> {
+        let d1 = ctx.env.d1("DB")?;
+        Self::get_user_by_google_id(&d1, google_id).await
+    }
+
+    pub async fn get_user_by_id_from_ctx(
+        ctx: &RouteContext<()>,
+        user_id: &str,
+    ) -> Result<Option<User>> {
+        let d1 = ctx.env.d1("DB")?;
+        Self::get_user_by_id(&d1, user_id).await
+    }
+
+    pub async fn upsert_user_from_ctx(
+        ctx: &RouteContext<()>,
+        google_id: &str,
+        email: &str,
+        name: Option<&str>,
+        picture_url: Option<&str>,
+    ) -> Result<User> {
+        let d1 = ctx.env.d1("DB")?;
+        Self::upsert_user(&d1, google_id, email, name, picture_url).await
+    }
+
     /// Google IDでユーザーを取得
     pub async fn get_user_by_google_id(d1: &worker::D1Database, google_id: &str) -> Result<Option<User>> {
         let stmt = d1
