@@ -24,41 +24,54 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 
--- Books table
-CREATE TABLE IF NOT EXISTS books (
+-- Remove old books table (destructive migration)
+DROP TABLE IF EXISTS books;
+
+-- Books master (shared bibliographic data from NDL)
+CREATE TABLE IF NOT EXISTS books_master (
     isbn INTEGER PRIMARY KEY NOT NULL,
     title TEXT NOT NULL,
     series_title TEXT,
     authors TEXT NOT NULL,           -- JSON array stored as TEXT
-    publisher TEXT NOT NULL,
-    year INTEGER NOT NULL,
-    page_count INTEGER NOT NULL,
-    image_url TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    user_id TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    publisher TEXT,
+    year INTEGER,
+    page_count INTEGER,
+    image_url TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_books_user_id ON books(user_id);
+CREATE INDEX IF NOT EXISTS idx_books_master_isbn ON books_master(isbn);
 
--- Reading logs table
+-- User-owned books (per-user ownership/metadata)
+CREATE TABLE IF NOT EXISTS user_books (
+    id TEXT PRIMARY KEY NOT NULL,    -- ULID
+    user_id TEXT NOT NULL,
+    isbn INTEGER NOT NULL,
+    added_at TEXT NOT NULL,
+    status TEXT,
+    rating INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (isbn) REFERENCES books_master(isbn) ON DELETE CASCADE,
+    UNIQUE (user_id, isbn)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_books_user_id ON user_books(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_books_isbn ON user_books(isbn);
+
+-- Reading logs: belong to user_books (ownership)
 CREATE TABLE IF NOT EXISTS reading_logs (
     id TEXT PRIMARY KEY NOT NULL,    -- ULID
-    isbn INTEGER NOT NULL,
+    user_book_id TEXT NOT NULL,      -- references user_books(id) (ULID)
     created_at TEXT NOT NULL,
     session_duration_sec INTEGER NOT NULL,
     page_start INTEGER NOT NULL,
     page_end INTEGER NOT NULL,
     rating INTEGER,
-    user_id TEXT NOT NULL,
-    FOREIGN KEY (isbn) REFERENCES books(isbn) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_book_id) REFERENCES user_books(id) ON DELETE CASCADE
 );
 
 -- Indexes for reading_logs
-CREATE INDEX IF NOT EXISTS idx_reading_logs_isbn ON reading_logs(isbn);
+CREATE INDEX IF NOT EXISTS idx_reading_logs_user_book_id ON reading_logs(user_book_id);
 CREATE INDEX IF NOT EXISTS idx_reading_logs_created_at ON reading_logs(created_at);
-CREATE INDEX IF NOT EXISTS idx_reading_logs_user_id ON reading_logs(user_id);
 
 -- Laps table
 CREATE TABLE IF NOT EXISTS laps (

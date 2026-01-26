@@ -13,19 +13,16 @@ impl D1Database {
         Self { db }
     }
 
+    /// Ensure book metadata exists in books_master and create user_books entry for user
     pub async fn add_book_with_user(&self, book: Book, user_id: &str) -> Result<(), DbError> {
+        // upsert into books_master (insert if not exists)
         let authors_json = serde_json::to_string(&book.authors)
             .map_err(|e| DbError::Query(format!("Failed to serialize authors: {}", e)))?;
 
-        let created_at = book
-            .created_at
-            .clone()
-            .filter(|s| !s.is_empty())
-            .unwrap_or_else(|| Utc::now().to_rfc3339());
-
+        // Insert into books_master if missing
         let stmt = self
             .db
-            .prepare("INSERT INTO books (isbn, title, series_title, authors, publisher, year, page_count, image_url, created_at, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+            .prepare("INSERT OR IGNORE INTO books_master (isbn, title, series_title, authors, publisher, year, page_count, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
             .bind(&[
                 book.isbn.to_string().into(),
                 book.title.into(),
@@ -35,16 +32,38 @@ impl D1Database {
                 book.year.to_string().into(),
                 book.page_count.to_string().into(),
                 book.image_url.into(),
-                created_at.into(),
-                user_id.into(),
             ])
-            .map_err(|e| DbError::Query(format!("Failed to bind parameters: {:?}", e)))?;
+            .map_err(|e| DbError::Query(format!("Failed to bind parameters for books_master: {:?}", e)))?;
+
+        stmt.run()
+            .await
+            .map_err(|e| DbError::Query(format!("Failed to insert into books_master: {:?}", e)))?;
+
+        // Insert into user_books (fail on unique if already owned)
+        let user_book_id = ulid::Ulid::new().to_string();
+        let added_at = Utc::now().to_rfc3339();
+
+        let stmt = self
+            .db
+            .prepare("INSERT INTO user_books (id, user_id, isbn, added_at) VALUES (?, ?, ?, ?)")
+            .bind(&[
+                user_book_id.into(),
+                user_id.into(),
+                book.isbn.to_string().into(),
+                added_at.into(),
+            ])
+            .map_err(|e| {
+                DbError::Query(format!("Failed to bind parameters for user_books: {:?}", e))
+            })?;
 
         stmt.run().await.map_err(|e| {
             if e.to_string().contains("UNIQUE") {
-                DbError::UniqueConstraint(format!("Book with ISBN {} already exists", book.isbn))
+                DbError::UniqueConstraint(format!(
+                    "User {} already has ISBN {}",
+                    user_id, book.isbn
+                ))
             } else {
-                DbError::Query(format!("Failed to insert book: {:?}", e))
+                DbError::Query(format!("Failed to insert user_books: {:?}", e))
             }
         })?;
 
@@ -56,25 +75,55 @@ impl D1Database {
         log: ReadingLog,
         user_id: &str,
     ) -> Result<String, DbError> {
+        // Ensure user_book exists
+        let isbn = log.isbn;
+        let mut stmt = self
+            .db
+            .prepare("SELECT id FROM user_books WHERE user_id = ? AND isbn = ? LIMIT 1");
+
+        stmt = stmt
+            .bind(&[user_id.into(), isbn.to_string().into()])
+            .map_err(|e| DbError::Query(format!("Failed to bind select user_books: {:?}", e)))?;
+
+        let result = stmt
+            .all()
+            .await
+            .map_err(|e| DbError::Query(format!("Failed to query user_books: {:?}", e)))?;
+
+        let rows = result
+            .results::<serde_json::Value>()
+            .map_err(|e| DbError::Query(format!("Failed to parse user_books results: {:?}", e)))?;
+
+        let user_book_id = if let Some(row) = rows.into_iter().next() {
+            row.get("id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .ok_or_else(|| DbError::Query("Failed to read user_book id".to_string()))?
+        } else {
+            return Err(DbError::Query(format!(
+                "No user_book found for user_id {} and isbn {}",
+                user_id, isbn
+            )));
+        };
+
+        // insert reading log with reference to user_book_id
         let id = log
             .id
             .clone()
             .unwrap_or_else(|| ulid::Ulid::new().to_string());
 
-        let stmt = self
-            .db
-            .prepare("INSERT INTO reading_logs (id, isbn, created_at, session_duration_sec, page_start, page_end, rating, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+        let mut stmt = self.db.prepare("INSERT INTO reading_logs (id, user_book_id, created_at, session_duration_sec, page_start, page_end, rating) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        stmt = stmt
             .bind(&[
                 id.clone().into(),
-                log.isbn.to_string().into(),
+                user_book_id.into(),
                 log.created_at.into(),
                 log.session_duration_sec.to_string().into(),
                 log.page[0].to_string().into(),
                 log.page[1].to_string().into(),
                 log.rating.map(|r| r.to_string()).unwrap_or_default().into(),
-                user_id.into(),
             ])
-            .map_err(|e| DbError::Query(format!("Failed to bind parameters: {:?}", e)))?;
+            .map_err(|e| DbError::Query(format!("Failed to bind insert reading_logs: {:?}", e)))?;
 
         stmt.run()
             .await
@@ -175,98 +224,269 @@ impl D1Database {
         }
         clause
     }
-}
 
-impl D1Database {
-    pub async fn find_books(&self, query: QueryBuilder) -> Result<Vec<Book>, DbError> {
-        let (where_clause, params) = self.build_where_clause(&query);
-        let limit_offset = self.apply_limit_offset(&query);
-        let sql = format!("SELECT * FROM books{}{}", where_clause, limit_offset);
+    /// Upsert book metadata into books_master
+    pub async fn upsert_books_master(&self, book: &Book) -> Result<(), DbError> {
+        let authors_json = serde_json::to_string(&book.authors)
+            .map_err(|e| DbError::Query(format!("Failed to serialize authors: {}", e)))?;
 
-        let mut stmt = self.db.prepare(&sql);
-
-        for param in params {
-            stmt = stmt
-                .bind(&[param.into()])
-                .map_err(|e| DbError::Query(format!("Failed to bind parameter: {:?}", e)))?;
-        }
-
-        let result = stmt
-            .all()
-            .await
-            .map_err(|e| DbError::Query(format!("Failed to query books: {:?}", e)))?;
-
-        let books: Vec<Book> = result
-            .results::<serde_json::Value>()
-            .map_err(|e| DbError::Query(format!("Failed to parse results: {:?}", e)))?
-            .into_iter()
-            .filter_map(|row| {
-                Some(Book {
-                    isbn: row.get("isbn")?.as_u64()?,
-                    title: row.get("title")?.as_str()?.to_string(),
-                    series_title: row
-                        .get("series_title")
-                        .and_then(|v| v.as_str())
-                        .and_then(|s| {
-                            if s.is_empty() {
-                                None
-                            } else {
-                                Some(s.to_string())
-                            }
-                        }),
-                    authors: serde_json::from_str(row.get("authors")?.as_str()?).ok()?,
-                    publisher: row.get("publisher")?.as_str()?.to_string(),
-                    year: row.get("year")?.as_u64()? as u32,
-                    page_count: row.get("page_count")?.as_u64()? as u32,
-                    image_url: row.get("image_url")?.as_str()?.to_string(),
-                    created_at: row
-                        .get("created_at")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                        .filter(|s| !s.is_empty()),
-                })
-            })
-            .collect();
-
-        Ok(books)
-    }
-
-    pub async fn delete_books(&self, query: QueryBuilder) -> Result<(), DbError> {
-        let (where_clause, params) = self.build_where_clause(&query);
-        let sql = format!("DELETE FROM books{}", where_clause);
-
-        let mut stmt = self.db.prepare(&sql);
-
-        for param in params {
-            stmt = stmt
-                .bind(&[param.into()])
-                .map_err(|e| DbError::Query(format!("Failed to bind parameter: {:?}", e)))?;
-        }
+        let stmt = self
+            .db
+            .prepare("INSERT OR IGNORE INTO books_master (isbn, title, series_title, authors, publisher, year, page_count, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            .bind(&[
+                book.isbn.to_string().into(),
+                book.title.clone().into(),
+                book.series_title.clone().unwrap_or_default().into(),
+                authors_json.into(),
+                book.publisher.clone().into(),
+                book.year.to_string().into(),
+                book.page_count.to_string().into(),
+                book.image_url.clone().into(),
+            ])
+            .map_err(|e| DbError::Query(format!("Failed to bind parameters for upsert books_master: {:?}", e)))?;
 
         stmt.run()
             .await
-            .map_err(|e| DbError::Query(format!("Failed to delete books: {:?}", e)))?;
-
+            .map_err(|e| DbError::Query(format!("Failed to upsert books_master: {:?}", e)))?;
         Ok(())
     }
 
-    pub async fn find_reading_logs(&self, query: QueryBuilder) -> Result<Vec<ReadingLog>, DbError> {
-        let (where_clause, params) = self.build_where_clause(&query);
+    pub async fn find_books(&self, query: QueryBuilder) -> Result<Vec<Book>, DbError> {
+        // If query contains user_id filter, join user_books -> books_master to return only user's books
+        let mut user_id_opt: Option<String> = None;
+        let mut isbn_opt: Option<u64> = None;
+        for f in &query.filters {
+            if let Filter::Eq(field, ref val) = f {
+                if field == "user_id" {
+                    if let FilterValue::String(s) = val.clone() {
+                        user_id_opt = Some(s);
+                    }
+                }
+                if field == "isbn" {
+                    if let FilterValue::U64(n) = val.clone() {
+                        isbn_opt = Some(n);
+                    }
+                }
+            }
+        }
+
         let limit_offset = self.apply_limit_offset(&query);
-        let sql = format!("SELECT * FROM reading_logs{}{}", where_clause, limit_offset);
+
+        if let Some(user_id) = user_id_opt {
+            let mut clauses = vec!["ub.user_id = ?".to_string()];
+            let mut params = vec![user_id.clone()];
+            if let Some(isbn) = isbn_opt {
+                clauses.push("bm.isbn = ?".to_string());
+                params.push(isbn.to_string());
+            }
+            let where_clause = format!(" WHERE {}", clauses.join(" AND "));
+            let sql = format!(
+                "SELECT bm.* FROM books_master bm INNER JOIN user_books ub ON ub.isbn = bm.isbn{}{}",
+                where_clause, limit_offset
+            );
+
+            let mut stmt = self.db.prepare(&sql);
+            for p in params {
+                stmt = stmt
+                    .bind(&[p.into()])
+                    .map_err(|e| DbError::Query(format!("Failed to bind parameter: {:?}", e)))?;
+            }
+            let result = stmt
+                .all()
+                .await
+                .map_err(|e| DbError::Query(format!("Failed to query joined books: {:?}", e)))?;
+
+            let books: Vec<Book> = result
+                .results::<serde_json::Value>()
+                .map_err(|e| DbError::Query(format!("Failed to parse results: {:?}", e)))?
+                .into_iter()
+                .filter_map(|row| {
+                    Some(Book {
+                        isbn: row.get("isbn")?.as_u64()?,
+                        title: row.get("title")?.as_str()?.to_string(),
+                        series_title: row.get("series_title").and_then(|v| v.as_str()).and_then(
+                            |s| {
+                                if s.is_empty() {
+                                    None
+                                } else {
+                                    Some(s.to_string())
+                                }
+                            },
+                        ),
+                        authors: serde_json::from_str(row.get("authors")?.as_str()?).ok()?,
+                        publisher: row.get("publisher")?.as_str()?.to_string(),
+                        year: row.get("year")?.as_u64()? as u32,
+                        page_count: row.get("page_count")?.as_u64()? as u32,
+                        image_url: row.get("image_url")?.as_str()?.to_string(),
+                        created_at: None,
+                    })
+                })
+                .collect();
+
+            Ok(books)
+        } else {
+            // No user filter - return from books_master
+            let sql = format!("SELECT * FROM books_master{}", limit_offset);
+            let stmt = self.db.prepare(&sql);
+            let result = stmt
+                .all()
+                .await
+                .map_err(|e| DbError::Query(format!("Failed to query books_master: {:?}", e)))?;
+
+            let books: Vec<Book> = result
+                .results::<serde_json::Value>()
+                .map_err(|e| DbError::Query(format!("Failed to parse results: {:?}", e)))?
+                .into_iter()
+                .filter_map(|row| {
+                    Some(Book {
+                        isbn: row.get("isbn")?.as_u64()?,
+                        title: row.get("title")?.as_str()?.to_string(),
+                        series_title: row.get("series_title").and_then(|v| v.as_str()).and_then(
+                            |s| {
+                                if s.is_empty() {
+                                    None
+                                } else {
+                                    Some(s.to_string())
+                                }
+                            },
+                        ),
+                        authors: serde_json::from_str(row.get("authors")?.as_str()?).ok()?,
+                        publisher: row.get("publisher")?.as_str()?.to_string(),
+                        year: row.get("year")?.as_u64()? as u32,
+                        page_count: row.get("page_count")?.as_u64()? as u32,
+                        image_url: row.get("image_url")?.as_str()?.to_string(),
+                        created_at: None,
+                    })
+                })
+                .collect();
+
+            Ok(books)
+        }
+    }
+
+    pub async fn delete_books(&self, query: QueryBuilder) -> Result<(), DbError> {
+        // If user_id is present, delete from user_books only; otherwise delete from books_master
+        let mut user_id_opt: Option<String> = None;
+        let mut isbn_opt: Option<u64> = None;
+        for f in &query.filters {
+            if let Filter::Eq(field, ref val) = f {
+                if field == "user_id" {
+                    if let FilterValue::String(s) = val.clone() {
+                        user_id_opt = Some(s);
+                    }
+                }
+                if field == "isbn" {
+                    if let FilterValue::U64(n) = val.clone() {
+                        isbn_opt = Some(n);
+                    }
+                }
+            }
+        }
+
+        if let Some(user_id) = user_id_opt {
+            // delete from user_books
+            let mut clauses = vec!["user_id = ?".to_string()];
+            let mut params = vec![user_id.clone()];
+            if let Some(isbn) = isbn_opt {
+                clauses.push("isbn = ?".to_string());
+                params.push(isbn.to_string());
+            }
+            let where_clause = format!(" WHERE {}", clauses.join(" AND "));
+            let sql = format!("DELETE FROM user_books{}", where_clause);
+
+            let mut stmt = self.db.prepare(&sql);
+            for p in params {
+                stmt = stmt
+                    .bind(&[p.into()])
+                    .map_err(|e| DbError::Query(format!("Failed to bind parameter: {:?}", e)))?;
+            }
+
+            stmt.run()
+                .await
+                .map_err(|e| DbError::Query(format!("Failed to delete user_books: {:?}", e)))?;
+
+            Ok(())
+        } else {
+            // delete from books_master
+            let (where_clause, params) = self.build_where_clause(&query);
+            let sql = format!("DELETE FROM books_master{}", where_clause);
+
+            let mut stmt = self.db.prepare(&sql);
+
+            for param in params {
+                stmt = stmt
+                    .bind(&[param.into()])
+                    .map_err(|e| DbError::Query(format!("Failed to bind parameter: {:?}", e)))?;
+            }
+
+            stmt.run()
+                .await
+                .map_err(|e| DbError::Query(format!("Failed to delete books_master: {:?}", e)))?;
+
+            Ok(())
+        }
+    }
+
+    pub async fn find_reading_logs(&self, query: QueryBuilder) -> Result<Vec<ReadingLog>, DbError> {
+        // Build query conditions manually, joining reading_logs -> user_books to obtain isbn and filter by user_id if provided
+        let mut user_id_opt: Option<String> = None;
+        let mut isbn_opt: Option<u64> = None;
+        let mut id_opt: Option<String> = None;
+        for f in &query.filters {
+            if let Filter::Eq(field, ref val) = f {
+                if field == "user_id" {
+                    if let FilterValue::String(s) = val.clone() {
+                        user_id_opt = Some(s);
+                    }
+                }
+                if field == "isbn" {
+                    if let FilterValue::U64(n) = val.clone() {
+                        isbn_opt = Some(n);
+                    }
+                }
+                if field == "id" {
+                    if let FilterValue::String(s) = val.clone() {
+                        id_opt = Some(s);
+                    }
+                }
+            }
+        }
+
+        let mut clauses = Vec::new();
+        let mut params: Vec<String> = Vec::new();
+
+        if let Some(user_id) = user_id_opt.clone() {
+            clauses.push("ub.user_id = ?".to_string());
+            params.push(user_id);
+        }
+        if let Some(isbn) = isbn_opt {
+            clauses.push("ub.isbn = ?".to_string());
+            params.push(isbn.to_string());
+        }
+        if let Some(id) = id_opt {
+            clauses.push("rl.id = ?".to_string());
+            params.push(id);
+        }
+
+        let where_clause = if clauses.is_empty() {
+            String::new()
+        } else {
+            format!(" WHERE {}", clauses.join(" AND "))
+        };
+        let limit_offset = self.apply_limit_offset(&query);
+
+        let sql = format!("SELECT rl.id as id, ub.isbn as isbn, rl.created_at, rl.session_duration_sec, rl.page_start, rl.page_end, rl.rating FROM reading_logs rl JOIN user_books ub ON rl.user_book_id = ub.id{}{}", where_clause, limit_offset);
 
         let mut stmt = self.db.prepare(&sql);
-
-        for param in params {
+        for p in params {
             stmt = stmt
-                .bind(&[param.into()])
+                .bind(&[p.into()])
                 .map_err(|e| DbError::Query(format!("Failed to bind parameter: {:?}", e)))?;
         }
 
-        let result = stmt
-            .all()
-            .await
-            .map_err(|e| DbError::Query(format!("Failed to query reading logs: {:?}", e)))?;
+        let result = stmt.all().await.map_err(|e| {
+            DbError::Query(format!("Failed to query reading logs (joined): {:?}", e))
+        })?;
 
         let logs: Vec<ReadingLog> = result
             .results::<serde_json::Value>()
@@ -291,22 +511,68 @@ impl D1Database {
     }
 
     pub async fn delete_reading_logs(&self, query: QueryBuilder) -> Result<(), DbError> {
-        let (where_clause, params) = self.build_where_clause(&query);
-        let sql = format!("DELETE FROM reading_logs{}", where_clause);
-
-        let mut stmt = self.db.prepare(&sql);
-
-        for param in params {
-            stmt = stmt
-                .bind(&[param.into()])
-                .map_err(|e| DbError::Query(format!("Failed to bind parameter: {:?}", e)))?;
+        // If user_id filter present, ensure deletion is scoped to that user's reading logs
+        let mut user_id_opt: Option<String> = None;
+        let mut id_opt: Option<String> = None;
+        for f in &query.filters {
+            if let Filter::Eq(field, ref val) = f {
+                if field == "user_id" {
+                    if let FilterValue::String(s) = val.clone() {
+                        user_id_opt = Some(s);
+                    }
+                }
+                if field == "id" {
+                    if let FilterValue::String(s) = val.clone() {
+                        id_opt = Some(s);
+                    }
+                }
+            }
         }
 
-        stmt.run()
-            .await
-            .map_err(|e| DbError::Query(format!("Failed to delete reading logs: {:?}", e)))?;
+        if let Some(user_id) = user_id_opt {
+            let mut clauses = vec!["ub.user_id = ?".to_string()];
+            let mut params = vec![user_id.clone()];
+            if let Some(id) = id_opt {
+                clauses.push("rl.id = ?".to_string());
+                params.push(id);
+            }
+            let where_clause = format!(" WHERE {}", clauses.join(" AND "));
+            let sql = format!(
+                "DELETE FROM reading_logs WHERE id IN (SELECT rl.id FROM reading_logs rl JOIN user_books ub ON rl.user_book_id = ub.id{} )",
+                where_clause
+            );
 
-        Ok(())
+            let mut stmt = self.db.prepare(&sql);
+            for p in params {
+                stmt = stmt
+                    .bind(&[p.into()])
+                    .map_err(|e| DbError::Query(format!("Failed to bind parameter: {:?}", e)))?;
+            }
+
+            stmt.run()
+                .await
+                .map_err(|e| DbError::Query(format!("Failed to delete reading logs: {:?}", e)))?;
+
+            Ok(())
+        } else {
+            // Fallback: delete by id or other filters directly on reading_logs
+            let (where_clause, params) = self.build_where_clause(&query);
+            let sql = format!("DELETE FROM reading_logs{}", where_clause);
+
+            let mut stmt = self.db.prepare(&sql);
+
+            for param in params {
+                stmt = stmt
+                    .bind(&[param.into()])
+                    .map_err(|e| DbError::Query(format!("Failed to bind parameter: {:?}", e)))?;
+            }
+
+            stmt.run()
+                .await
+                .map_err(|e| DbError::Query(format!("Failed to delete reading logs: {:?}", e)))?;
+
+            Ok(())
+        }
     }
 
     pub async fn find_laps(&self, reading_log: ReadingLog) -> Result<Vec<Lap>, DbError> {

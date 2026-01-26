@@ -108,6 +108,14 @@ pub async fn search_books(mut req: Request, _ctx: RouteContext<()>) -> Result<Re
         }
     }
 
+    // upsert into shared master
+    let db = database_from_ctx(&_ctx)?;
+    for book in books.iter() {
+        db.upsert_books_master(book)
+            .await
+            .map_err(|e| Error::RustError(format!("Failed to upsert master book: {:?}", e)))?;
+    }
+
     Response::from_json(&books)
 }
 
