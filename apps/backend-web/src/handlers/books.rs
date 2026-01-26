@@ -1,8 +1,10 @@
+use bookie_core::application::book_search::search_book_by_isbn;
 use bookie_core::domain::{Book, Isbn};
 use bookie_core::ports::{Filter, FilterValue, QueryBuilder};
 use bookie_core::DatabasePort;
 use worker::*;
 
+use crate::adapters::{FetchClient, WorkerClock};
 use crate::db::D1Database;
 use crate::middleware::require_auth;
 use crate::utils::errors::handle_db_error;
@@ -111,9 +113,14 @@ pub async fn search_books(mut req: Request, _ctx: RouteContext<()>) -> Result<Re
     
     let search_req: SearchRequest = req.json().await?;
     
-    // TODO: NDL API実装 (HttpClientとClockアダプターが必要)
-    // 現時点ではプレースホルダー
-    Response::error("NDL API search not yet implemented", 501)
+    // NDL API implementation using HttpClient and Clock adapters
+    let client = FetchClient::new();
+    let clock = WorkerClock;
+    
+    match search_book_by_isbn(&search_req.isbn, &client, &clock).await {
+        Ok(books) => Response::from_json(&books),
+        Err(e) => Response::error(format!("NDL API search failed: {}", e), 500),
+    }
 }
 
 /// POST /api/isbn/parse - ISBN文字列をパース

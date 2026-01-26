@@ -1,3 +1,4 @@
+mod adapters;
 mod db;
 mod handlers;
 mod middleware;
