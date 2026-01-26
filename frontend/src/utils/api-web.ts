@@ -33,21 +33,6 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
 // Book API
 // ============================================================
 
-export const parseISBN = async (input: string): Promise<number | null> => {
-  try {
-    const response = await fetchWithCredentials(`${API_BASE}/api/isbn/parse`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input }),
-    });
-    const result = await handleResponse<{ isbn: number }>(response);
-    return result.isbn;
-  } catch (error) {
-    console.error("Failed to parse ISBN", error);
-    return null;
-  }
-};
-
 export const searchBooksByISBN = async (isbn: string): Promise<Book[]> => {
   const digits = isbn.replace(/\D/g, "");
   if (!digits) {
