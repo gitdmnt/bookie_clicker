@@ -26,7 +26,7 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
     const errorText = await response.text();
     throw new Error(errorText || `HTTP ${response.status}`);
   }
-  if (response.status === 204) {
+  if (response.status === 204 || (await response.text()).length === 0) {
     // No Content
     return undefined as unknown as T;
   }
