@@ -15,6 +15,8 @@ pub async fn add_book(mut req: Request, ctx: RouteContext<()>) -> Result<Respons
 
     let book: Book = req.json().await?;
 
+    dbg!(format!("add_book request body: isbn = {}", book.isbn));
+
     let db = database_from_ctx(&ctx)?;
     db.add_book_with_user(book, &user.id)
         .await

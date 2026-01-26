@@ -12,7 +12,8 @@ pub async fn search_book_by_isbn<C: HttpClient>(
     client: &C,
 ) -> Result<Vec<Book>, String> {
     // parse_isbn returns canonical ISBN-13 as u64
-    let isbn_num = parse_isbn(isbn)?;
+    let isbn_num = parse_isbn(isbn)
+        .map_err(|e| format!("Failed to parse ISBN before search'{}': {}", isbn, e))?;
     let isbn_13 = isbn_num.to_string();
 
     let try_query = async |query_isbn: &str| -> Result<Vec<Book>, String> {
@@ -221,11 +222,21 @@ fn parse_record(reader: &mut Reader<&[u8]>) -> Result<Book, String> {
                     let first_part = raw.split(';').next().unwrap_or("");
                     let digits_str = extract_digits(first_part);
                     page_count = digits_str.parse::<u32>().unwrap_or(0);
-                } else if matches_tag(name.as_slice(), &[b"dc:identifier", b"dcterms:identifier"]) {
-                    let raw = text_of_element(reader, name.as_slice())?;
-                    let digits = extract_digits(&raw);
-                    if digits.len() >= 10 && digits.len() <= 13 && digits.len() >= isbn_str.len() {
-                        isbn_str = digits;
+                } else if name.as_slice() == b"dcterms:identifier" {
+                    // Only accept identifiers explicitly typed as ISBN by rdf:datatype.
+                    let attr = e
+                        .attributes()
+                        .flatten()
+                        .find(|a| a.key.as_ref() == b"rdf:datatype");
+
+                    if let Some(attr) = attr {
+                        if attr.value.as_ref() == b"http://ndl.go.jp/dcndl/terms/ISBN" {
+                            let raw = text_of_element(reader, name.as_slice())?;
+                            let digits = extract_digits(&raw);
+                            if parse_isbn(&digits).is_ok() {
+                                isbn_str = digits;
+                            }
+                        }
                     }
                 } else {
                     // ignore
@@ -245,18 +256,8 @@ fn parse_record(reader: &mut Reader<&[u8]>) -> Result<Book, String> {
         .filter(|s| !s.is_empty())
         .collect();
 
-    // Normalize isbn to ISBN-13 numeric if possible
-    let isbn_digits = extract_digits(&isbn_str);
-    let mut isbn_num: u64 = 0;
-    if !isbn_digits.is_empty() {
-        // If 10-digit, convert to 13 by prepending 978
-        let isbn_13 = if isbn_digits.len() == 10 {
-            format!("978{}", isbn_digits)
-        } else {
-            isbn_digits.clone()
-        };
-        isbn_num = isbn_13.parse::<u64>().unwrap_or(0);
-    }
+    let isbn_num = parse_isbn(&isbn_str)
+        .map_err(|e| format!("Failed to normalize extracted ISBN '{}': {}", isbn_str, e))?;
 
     // image_url
     let image_url = if isbn_num != 0 {
@@ -299,8 +300,24 @@ mod tests {
             <dcterms:publisher><foaf:Agent><foaf:name>出版社名</foaf:name></foaf:Agent></dcterms:publisher>
             <dcterms:issued>2001</dcterms:issued>
             <dcterms:extent>203p ; 26cm</dcterms:extent>
-            <dc:identifier>ISBN 4102130225</dc:identifier>
+            <dcterms:identifier rdf:datatype="http://ndl.go.jp/dcndl/terms/ISBN">4102130225</dcterms:identifier>
           </dcndl:BibResource>
+          <dcndl:Item rdf:about="https://ndlsearch.ndl.go.jp/books/R100000001-I13111154642218#item">
+            <dcndl:holdingAgent>
+              <foaf:Agent>
+                <foaf:name>東京都立中央図書館</foaf:name>
+                <dcndl:transcription>とうきょうとりつちゅうおうとしょかん</dcndl:transcription>
+                <dcterms:identifier rdf:datatype="http://ndl.go.jp/dcndl/terms/NDLLibCode">1311</dcterms:identifier>
+              </foaf:Agent>
+            </dcndl:holdingAgent>
+            <rdfs:seeAlso rdf:resource="https://catalog.library.metro.tokyo.lg.jp/winj/opac/switch-detail-iccap.do?bibid=1154642218"/>
+            <dcterms:identifier rdf:datatype="http://ndl.go.jp/dcndl/terms/somokuBibID">1154642218</dcterms:identifier>
+            <dcterms:identifier rdf:datatype="http://ndl.go.jp/dcndl/terms/somokuSubID">7118581389</dcterms:identifier>
+            <dcndl:callNumber>816.5-5073-2024</dcndl:callNumber>
+            <dcndl:availability>閲可/個否/協可</dcndl:availability>
+            <dcterms:description>所蔵場所 : 3FB開</dcterms:description>
+            <dcterms:description>101</dcterms:description>
+          </dcndl:Item>
         </rdf:RDF>
       </recordData>
     </record>
@@ -320,6 +337,50 @@ mod tests {
         // ISBN 4102130225 -> ISBN-13 9784102130223 (starts with 978)
         assert!(b.isbn.to_string().starts_with("978"));
         assert!(b.created_at.is_none());
+    }
+
+    #[test]
+    fn parse_response_errors_if_typed_identifier_missing() {
+        let xml = r#"
+<searchRetrieveResponse>
+  <records>
+    <record>
+      <recordData>
+        <rdf:RDF>
+          <dcndl:BibResource>
+            <dc:title><rdf:Description><rdf:value>サンプルタイトル</rdf:value></rdf:Description></dc:title>
+            <!-- no typed ISBN here -->
+          </dcndl:BibResource>
+        </rdf:RDF>
+      </recordData>
+    </record>
+  </records>
+</searchRetrieveResponse>
+"#;
+        let res = parse_response(xml);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn parse_response_errors_if_typed_identifier_invalid() {
+        let xml = r#"
+<searchRetrieveResponse>
+  <records>
+    <record>
+      <recordData>
+        <rdf:RDF>
+          <dcndl:BibResource>
+            <dc:title><rdf:Description><rdf:value>サンプルタイトル</rdf:value></rdf:Description></dc:title>
+            <dcterms:identifier rdf:datatype="http://ndl.go.jp/dcndl/terms/ISBN">1234567890</dcterms:identifier>
+          </dcndl:BibResource>
+        </rdf:RDF>
+      </recordData>
+    </record>
+  </records>
+</searchRetrieveResponse>
+"#;
+        let res = parse_response(xml);
+        assert!(res.is_err());
     }
 
     #[test]

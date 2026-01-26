@@ -68,7 +68,6 @@ const convertIsbn10ToIsbn13 = (isbn10: string): number => {
  */
 export const parseIsbn = (input: string): number | null => {
   const isbn = normalizeIsbn(input);
-
   if (isbn.length === 10) {
     validateIsbn10(isbn);
     return convertIsbn10ToIsbn13(isbn);

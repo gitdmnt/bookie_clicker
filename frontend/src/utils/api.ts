@@ -12,7 +12,6 @@ const api = isTauri() ? TauriAPI : WebAPI;
 // Book API
 // ============================================================
 
-export const parseISBN = api.parseISBN;
 export const searchBooksByISBN = api.searchBooksByISBN;
 export const scanBarcodeISBN = api.scanBarcodeISBN;
 
