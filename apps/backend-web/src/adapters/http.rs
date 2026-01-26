@@ -20,7 +20,7 @@ impl Default for FetchClient {
 #[async_trait(?Send)]
 impl HttpClient for FetchClient {
     async fn get_text(&self, url: &str) -> Result<String, String> {
-        let mut response = Fetch::Url(url.parse().map_err(|e| format!("Invalid URL: {}", e))?)
+        let response = Fetch::Url(url.parse().map_err(|e| format!("Invalid URL: {}", e))?)
             .send()
             .await
             .map_err(|e| format!("Fetch failed: {}", e))?;

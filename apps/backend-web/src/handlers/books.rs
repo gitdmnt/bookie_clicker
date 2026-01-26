@@ -113,7 +113,7 @@ pub async fn search_books(mut req: Request, _ctx: RouteContext<()>) -> Result<Re
     
     let search_req: SearchRequest = req.json().await?;
     
-    // NDL API実装 - HttpClientとClockアダプターを使用
+    // NDL API implementation using HttpClient and Clock adapters
     let client = FetchClient::new();
     let clock = WorkerClock;
     
