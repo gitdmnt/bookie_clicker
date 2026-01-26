@@ -26,12 +26,13 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
     const errorText = await response.text();
     throw new Error(errorText || `HTTP ${response.status}`);
   }
-  if (response.status === 204 || (await response.text()).length === 0) {
+  const text = await response.text();
+  if (response.status === 204 || text.length === 0) {
     // No Content
     return undefined as unknown as T;
   }
   try {
-    return JSON.parse(await response.text()) as T;
+    return JSON.parse(text) as T;
   } catch (e) {
     throw new Error("Failed to parse JSON response");
   }
