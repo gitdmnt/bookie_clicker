@@ -2,7 +2,7 @@
 import { useAuth } from "../contexts/AuthContext";
 
 export const Login = () => {
-  const { login, loginDebug } = useAuth();
+  const { login } = useAuth();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-nb-pink-50 via-white to-nb-yellow/20">
@@ -37,14 +37,6 @@ export const Login = () => {
           </svg>
           Googleでログイン
         </button>
-
-        <button
-          onClick={loginDebug}
-          className="w-full mt-4 bg-gray-100 border-2 border-dashed border-gray-400 rounded-lg p-2 text-sm font-medium hover:bg-gray-200 transition-colors"
-        >
-          [Debug] 疑似ログイン
-        </button>
-
         <p className="text-xs text-gray-500 text-center mt-4">
           ログインすることで、利用規約とプライバシーポリシーに同意したものとみなされます
         </p>
