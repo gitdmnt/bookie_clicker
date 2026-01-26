@@ -14,15 +14,15 @@ pub async fn add_laps(mut req: Request, ctx: RouteContext<()>) -> Result<Respons
         reading_log: ReadingLog,
         laps: Vec<Lap>,
     }
-    
+
     let add_req: AddLapsRequest = req.json().await?;
-    
+
     let db = database_from_ctx(&ctx)?;
-    
+
     db.add_laps_with_user(add_req.reading_log, add_req.laps, &user.id)
         .await
         .map_err(handle_db_error)?;
-    
+
     Response::ok("")
 }
 
@@ -31,18 +31,18 @@ pub async fn select_laps(req: Request, ctx: RouteContext<()>) -> Result<Response
     require_auth(&req, &ctx).await?;
     let url = req.url()?;
     let params = url.query_pairs();
-    
+
     let mut reading_log_id = None;
-    
+
     for (key, value) in params {
         if key == "reading_log_id" {
             reading_log_id = Some(value.to_string());
         }
     }
-    
+
     let log_id = reading_log_id
         .ok_or_else(|| worker::Error::RustError("Missing reading_log_id parameter".to_string()))?;
-    
+
     let reading_log = ReadingLog {
         id: Some(log_id),
         isbn: 0, // Dummy value, only ID is used
@@ -51,27 +51,26 @@ pub async fn select_laps(req: Request, ctx: RouteContext<()>) -> Result<Response
         page: [0, 0],
         rating: None,
     };
-    
+
     let db = database_from_ctx(&ctx)?;
-    
-    let laps = db.find_laps(reading_log)
-        .await
-        .map_err(handle_db_error)?;
-    
+
+    let laps = db.find_laps(reading_log).await.map_err(handle_db_error)?;
+
     Response::from_json(&laps)
 }
 
 /// DELETE /api/laps/:id - ラップを削除
 pub async fn delete_lap(req: Request, ctx: RouteContext<()>) -> Result<Response> {
     require_auth(&req, &ctx).await?;
-    let id = ctx.param("id")
+    let id = ctx
+        .param("id")
         .ok_or_else(|| worker::Error::RustError("Missing id parameter".to_string()))?;
-    
+
     let db = database_from_ctx(&ctx)?;
-    
+
     db.delete_lap(id.to_string())
         .await
         .map_err(handle_db_error)?;
-    
+
     Response::ok("")
 }

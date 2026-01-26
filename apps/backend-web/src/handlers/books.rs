@@ -20,7 +20,7 @@ pub async fn add_book(mut req: Request, ctx: RouteContext<()>) -> Result<Respons
         .await
         .map_err(handle_db_error)?;
 
-    Response::ok("")
+    Response::empty()
 }
 
 /// GET /api/books?isbn=123 - 書籍を検索
@@ -80,7 +80,7 @@ pub async fn delete_books(req: Request, ctx: RouteContext<()>) -> Result<Respons
 
     db.delete_books(query).await.map_err(handle_db_error)?;
 
-    Response::ok("")
+    Response::empty()
 }
 
 /// POST /api/books/search - NDL APIで書籍検索
