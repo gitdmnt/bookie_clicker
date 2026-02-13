@@ -31,6 +31,17 @@ export const deleteLap = api.deleteLap;
 export const exportDatabase = api.exportDatabase;
 
 // ============================================================
+// Timer Operations
+// ============================================================
+
+export const startTimer = api.startTimer;
+export const stopTimer = api.stopTimer;
+export const resetTimer = api.resetTimer;
+export const getTimer = api.getTimer;
+export const getTimerLaps = api.getTimerLaps;
+export const timerLap = api.timerLap;
+
+// ============================================================
 // Other External APIs (環境非依存)
 // ============================================================
 
@@ -43,3 +54,4 @@ export const fetchWikipediaData = async (title: string) => {
   const pages = data.query.search;
   return pages;
 };
+

@@ -186,3 +186,30 @@ export const exportDatabase = async (): Promise<string> => {
     throw error;
   }
 };
+
+// ============================================================
+// Timer Operations
+// ============================================================
+
+export const startTimer = async (): Promise<void> => {
+  await invoke<TimerTick>("timer_start");
+};
+export const stopTimer = async (): Promise<void> => {
+  await invoke<TimerTick>("timer_stop");
+};
+export const resetTimer = async (): Promise<void> => {
+  await invoke("timer_reset");
+};
+
+export const getTimer = async (): Promise<TimerTick> => {
+  return await invoke<TimerTick>("timer_get");
+};
+
+export const getTimerLaps = async (): Promise<Lap[]> => {
+  return await invoke<Lap[]>("timer_get_laps");
+};
+
+export const timerLap = async (note: string, refPage: number): Promise<Lap> => {
+  return await invoke<Lap>("timer_lap", { note, refPage });
+};
+

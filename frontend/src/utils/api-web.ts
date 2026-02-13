@@ -192,3 +192,36 @@ export const exportDatabase = async (): Promise<string> => {
   const result = await handleResponse<{ data: string }>(response);
   return result.data;
 };
+
+// ============================================================
+// Timer Operations
+// ============================================================
+
+export const startTimer = async (): Promise<void> => {
+  console.error("startTimer is called, but unimplemented yet.");
+};
+export const stopTimer = async (): Promise<void> => {
+  console.error("stopTimer is called, but unimplemented yet.");
+};
+export const resetTimer = async (): Promise<void> => {
+  console.error("resetTimer is called, but unimplemented yet.");
+};
+
+export const getTimer = async (): Promise<TimerTick> => {
+  console.error("getTimer is called, but unimplemented yet.");
+  throw new Error("タイマー機能はWeb版では未実装です");
+};
+
+export const getTimerLaps = async (): Promise<Lap[]> => {
+  console.error("getTimerLaps is called, but unimplemented yet.");
+  throw new Error("タイマー機能はWeb版では未実装です");
+};
+
+export const timerLap = async (
+  _note: string,
+  _refPage: number,
+): Promise<Lap> => {
+  console.error("timerLap is called, but unimplemented yet.");
+  throw new Error("タイマー機能はWeb版では未実装です");
+};
+

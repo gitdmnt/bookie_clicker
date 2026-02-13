@@ -1,5 +1,12 @@
-import { addLaps } from "@/utils/api";
-import { invoke } from "@tauri-apps/api/core";
+import {
+  addLaps,
+  startTimer,
+  stopTimer,
+  resetTimer,
+  getTimer,
+  getTimerLaps,
+  timerLap,
+} from "@/utils/api";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect, useRef, useState } from "react";
 
@@ -31,38 +38,36 @@ export const useLapnoteTimer = () => {
 
   // helpers to refresh time and lap notes
   const refreshTime = async () => {
-    await invoke<TimerTick>("timer_get")
-      .then((curr) => {
-        setTime({ h: curr.h, m: curr.m, s: curr.s });
-      })
-      .catch((error) => {
-        console.error("timer_get failed", error);
-      });
+    try {
+      const curr = await getTimer();
+      setTime({ h: curr.h, m: curr.m, s: curr.s });
+    } catch (error) {
+      console.error("timer_get failed", error);
+    }
   };
 
   const refreshLapnoteLogs = async () => {
-    await invoke<Lap[]>("timer_get_laps")
-      .then((res) => {
-        setLaps(res);
-        setNote("");
-        // 前回のLapのページ番号を次のデフォルト値として設定
-        if (res.length > 0) {
-          const lastLap = res[res.length - 1];
-          if (lastLap.refPage) {
-            setRefPage(lastLap.refPage);
-          }
+    try {
+      const res = await getTimerLaps();
+      setLaps(res);
+      setNote("");
+      // 前回のLapのページ番号を次のデフォルト値として設定
+      if (res.length > 0) {
+        const lastLap = res[res.length - 1];
+        if (lastLap.refPage) {
+          setRefPage(lastLap.refPage);
         }
-        textareaRef.current?.focus();
-      })
-      .catch((error) => {
-        console.error("timer_get_laps failed", error);
-      });
+      }
+      textareaRef.current?.focus();
+    } catch (error) {
+      console.error("timer_get_laps failed", error);
+    }
   };
 
   // Handlers to Start / Stop / Lap / Reset
   const handleStart = async () => {
     try {
-      await invoke<TimerTick>("timer_start").then(() => {
+      await startTimer().then(() => {
         setIsRunning(true);
         textareaRef.current?.focus();
       });
@@ -75,7 +80,7 @@ export const useLapnoteTimer = () => {
 
   const handleLap = async () => {
     try {
-      await invoke<Lap>("timer_lap", { note, refPage });
+      await timerLap(note, refPage);
       await refreshLapnoteLogs();
 
       if (!isFPUpdatedByUser) {
@@ -97,7 +102,7 @@ export const useLapnoteTimer = () => {
 
   const handleStop = async () => {
     try {
-      await invoke("timer_stop").then(() => {
+      await stopTimer().then(() => {
         setIsRunning(false); // should be false
       });
     } catch (error) {
@@ -109,7 +114,7 @@ export const useLapnoteTimer = () => {
 
   const handleReset = async () => {
     try {
-      await invoke("timer_reset").then(() => {
+      await resetTimer().then(() => {
         setIsRunning(false); // should be false
       });
     } catch (error) {
@@ -134,7 +139,7 @@ export const useLapnoteTimer = () => {
     book: Book | null,
     firstPage: number,
     lastPage: number,
-    rating: number
+    rating: number,
   ) => {
     if (!book) return;
 
@@ -224,3 +229,4 @@ export const useLapnoteTimer = () => {
     textareaEl,
   };
 };
+
