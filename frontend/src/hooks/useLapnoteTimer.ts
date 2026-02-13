@@ -6,8 +6,8 @@ import {
   getTimer,
   getTimerLaps,
   timerLap,
+  onTimerTick,
 } from "@/utils/api";
-import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect, useRef, useState } from "react";
 
 import { Temporal } from "temporal-polyfill";
@@ -161,16 +161,19 @@ export const useLapnoteTimer = () => {
 
   // Event listener
   useEffect(() => {
-    let unlisten: UnlistenFn | null = null;
+    let unlisten: (() => Promise<void> | void) | null = null;
     (async () => {
-      unlisten = await listen("timer:tick", (event) => {
-        const payload = event.payload as TimerTick;
-        setTime({ h: payload.h, m: payload.m, s: payload.s });
-        setIsRunning(payload.isRunning);
-      });
+      try {
+        unlisten = await onTimerTick((payload) => {
+          setTime({ h: payload.h, m: payload.m, s: payload.s });
+          setIsRunning(payload.isRunning);
+        });
+      } catch (e) {
+        console.error("onTimerTick registration failed", e);
+      }
     })();
     return () => {
-      unlisten?.();
+      void unlisten?.();
     };
   }, []);
 

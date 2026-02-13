@@ -225,3 +225,12 @@ export const timerLap = async (
   throw new Error("タイマー機能はWeb版では未実装です");
 };
 
+export const onTimerTick = async (
+  _cb: (tick: TimerTick) => void,
+): Promise<() => Promise<void>> => {
+  // Web 環境ではタイマーのイベントは存在しないため noop の解除関数を返す
+  return async () => {
+    /* noop */
+  };
+};
+

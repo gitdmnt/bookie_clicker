@@ -3,6 +3,7 @@
  */
 import { invoke } from "@tauri-apps/api/core";
 import { Temporal } from "temporal-polyfill";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
 
 // ============================================================
 // Book API
@@ -211,5 +212,15 @@ export const getTimerLaps = async (): Promise<Lap[]> => {
 
 export const timerLap = async (note: string, refPage: number): Promise<Lap> => {
   return await invoke<Lap>("timer_lap", { note, refPage });
+};
+
+// 新規: イベントリスナー登録をラップ
+export const onTimerTick = async (
+  cb: (tick: TimerTick) => void,
+): Promise<UnlistenFn> => {
+  const unlisten = await listen<TimerTick>("timer:tick", (event) => {
+    cb(event.payload as TimerTick);
+  });
+  return unlisten;
 };
 
