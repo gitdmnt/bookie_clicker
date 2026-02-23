@@ -11,4 +11,6 @@ agent: agent
 
 ## How to
 
-Rustコードのチェックを行う際には、`cargo clippy`を使用してください。
+- Rustコードのチェックを行う際には、`cargo clippy`を使用してください。
+- npmの代わりにbunを利用してください。
+

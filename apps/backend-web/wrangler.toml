@@ -9,7 +9,17 @@ command = "cargo install worker-build && worker-build --release"
 [[d1_databases]]
 binding = "DB"
 database_name = "bookie"
-database_id = "preview_database_id"
+# `wrangler d1 create bookie` を実行して取得した実際のIDに置き換えること
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 
 [vars]
-ENVIRONMENT = "development"
+ENVIRONMENT = "production"
+# Google OAuth クライアントID (https://console.cloud.google.com)
+GOOGLE_CLIENT_ID = "REPLACE_WITH_YOUR_GOOGLE_CLIENT_ID"
+# フロントエンドのリダイレクトURI (例: https://your-app.pages.dev/auth/callback)
+GOOGLE_REDIRECT_URI = "REPLACE_WITH_YOUR_REDIRECT_URI"
+# フロントエンドのオリジン (CORS用)
+FRONTEND_ORIGIN = "REPLACE_WITH_YOUR_FRONTEND_ORIGIN"
+
+# シークレットは wrangler secret put で設定すること:
+# wrangler secret put GOOGLE_CLIENT_SECRET

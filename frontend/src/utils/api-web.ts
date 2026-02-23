@@ -71,7 +71,7 @@ export const searchBooksByISBN = async (isbn: string): Promise<Book[]> => {
   }
 };
 
-export const scanBarcodeISBN = async (imageData: string): Promise<Book[]> => {
+export const scanBarcodeISBN = async (_imageData: string): Promise<Book[]> => {
   // Web版ではバーコードスキャン機能は未実装
   // フロントエンドで直接実装するか、サーバーサイドで実装する必要がある
   console.warn("Barcode scanning is not implemented for web backend");
