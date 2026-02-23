@@ -48,6 +48,14 @@ async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         .get_async("/api/laps", handlers::laps::select_laps)
         .delete_async("/api/laps/:id", handlers::laps::delete_lap)
         //
+        // Timer session operations
+        .post_async("/api/timer/sessions", handlers::timer::start_session)
+        .get_async("/api/timer/sessions/current", handlers::timer::get_current_session)
+        .patch_async("/api/timer/sessions/:id/stop", handlers::timer::stop_session)
+        .patch_async("/api/timer/sessions/:id/resume", handlers::timer::resume_session)
+        .post_async("/api/timer/sessions/:id/save", handlers::timer::save_session)
+        .delete_async("/api/timer/sessions", handlers::timer::reset_session)
+        //
         // Export
         .get_async("/api/export", handlers::export::export_database)
         .run(req, env)

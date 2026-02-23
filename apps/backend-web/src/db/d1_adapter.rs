@@ -631,4 +631,231 @@ impl D1Database {
 
         Ok(())
     }
+
+    // ================================================================
+    // Timer Session operations
+    // ================================================================
+
+    /// Create a new timer session for the user.
+    /// If the user already has an active (unsaved, non-stopped) session, return it instead.
+    pub async fn create_timer_session(&self, user_id: &str) -> Result<crate::models::TimerSession, DbError> {
+        // Check for existing active session (not saved and not stopped)
+        let stmt = self
+            .db
+            .prepare("SELECT id, user_id, start_time, stop_time, is_saved, created_at, updated_at FROM timer_sessions WHERE user_id = ? AND is_saved = 0 AND stop_time IS NULL LIMIT 1")
+            .bind(&[user_id.into()])
+            .map_err(|e| DbError::Query(format!("Failed to bind: {:?}", e)))?;
+
+        let result = stmt.all().await.map_err(|e| DbError::Query(format!("Failed to query: {:?}", e)))?;
+        let rows = result.results::<serde_json::Value>().map_err(|e| DbError::Query(format!("Failed to parse: {:?}", e)))?;
+
+        if let Some(row) = rows.into_iter().next() {
+            return Ok(self.parse_timer_session(&row)?);
+        }
+
+        // Create new session
+        let id = ulid::Ulid::new().to_string();
+        let now = Utc::now().to_rfc3339();
+
+        let stmt = self
+            .db
+            .prepare("INSERT INTO timer_sessions (id, user_id, start_time, is_saved, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)")
+            .bind(&[
+                id.clone().into(),
+                user_id.into(),
+                now.clone().into(),
+                now.clone().into(),
+                now.clone().into(),
+            ])
+            .map_err(|e| DbError::Query(format!("Failed to bind: {:?}", e)))?;
+
+        stmt.run().await.map_err(|e| DbError::Query(format!("Failed to insert timer_session: {:?}", e)))?;
+
+        Ok(crate::models::TimerSession {
+            id,
+            user_id: user_id.to_string(),
+            start_time: now.clone(),
+            stop_time: None,
+            is_saved: false,
+            created_at: now.clone(),
+            updated_at: now,
+        })
+    }
+
+    /// Stop a timer session (set stop_time to now).
+    pub async fn stop_timer_session(&self, session_id: &str, user_id: &str) -> Result<crate::models::TimerSession, DbError> {
+        let now = Utc::now().to_rfc3339();
+
+        let stmt = self
+            .db
+            .prepare("UPDATE timer_sessions SET stop_time = ?, updated_at = ? WHERE id = ? AND user_id = ? AND stop_time IS NULL AND is_saved = 0")
+            .bind(&[
+                now.clone().into(),
+                now.clone().into(),
+                session_id.into(),
+                user_id.into(),
+            ])
+            .map_err(|e| DbError::Query(format!("Failed to bind: {:?}", e)))?;
+
+        stmt.run().await.map_err(|e| DbError::Query(format!("Failed to update timer_session: {:?}", e)))?;
+
+        self.get_timer_session(session_id, user_id).await
+    }
+
+    /// Resume a stopped timer session (clear stop_time).
+    pub async fn resume_timer_session(&self, session_id: &str, user_id: &str) -> Result<crate::models::TimerSession, DbError> {
+        let now = Utc::now().to_rfc3339();
+
+        let stmt = self
+            .db
+            .prepare("UPDATE timer_sessions SET stop_time = NULL, updated_at = ? WHERE id = ? AND user_id = ? AND is_saved = 0")
+            .bind(&[
+                now.into(),
+                session_id.into(),
+                user_id.into(),
+            ])
+            .map_err(|e| DbError::Query(format!("Failed to bind: {:?}", e)))?;
+
+        stmt.run().await.map_err(|e| DbError::Query(format!("Failed to update timer_session: {:?}", e)))?;
+
+        self.get_timer_session(session_id, user_id).await
+    }
+
+    /// Get a specific timer session by id and user.
+    pub async fn get_timer_session(&self, session_id: &str, user_id: &str) -> Result<crate::models::TimerSession, DbError> {
+        let stmt = self
+            .db
+            .prepare("SELECT id, user_id, start_time, stop_time, is_saved, created_at, updated_at FROM timer_sessions WHERE id = ? AND user_id = ?")
+            .bind(&[session_id.into(), user_id.into()])
+            .map_err(|e| DbError::Query(format!("Failed to bind: {:?}", e)))?;
+
+        let result = stmt.all().await.map_err(|e| DbError::Query(format!("Failed to query: {:?}", e)))?;
+        let rows = result.results::<serde_json::Value>().map_err(|e| DbError::Query(format!("Failed to parse: {:?}", e)))?;
+
+        let row = rows.into_iter().next().ok_or(DbError::NotFound)?;
+        self.parse_timer_session(&row)
+    }
+
+    /// Get the current (unsaved) timer session for the user.
+    pub async fn get_current_timer_session(&self, user_id: &str) -> Result<Option<crate::models::TimerSession>, DbError> {
+        let stmt = self
+            .db
+            .prepare("SELECT id, user_id, start_time, stop_time, is_saved, created_at, updated_at FROM timer_sessions WHERE user_id = ? AND is_saved = 0 ORDER BY created_at DESC LIMIT 1")
+            .bind(&[user_id.into()])
+            .map_err(|e| DbError::Query(format!("Failed to bind: {:?}", e)))?;
+
+        let result = stmt.all().await.map_err(|e| DbError::Query(format!("Failed to query: {:?}", e)))?;
+        let rows = result.results::<serde_json::Value>().map_err(|e| DbError::Query(format!("Failed to parse: {:?}", e)))?;
+
+        match rows.into_iter().next() {
+            Some(row) => Ok(Some(self.parse_timer_session(&row)?)),
+            None => Ok(None),
+        }
+    }
+
+    /// Mark timer session as saved and record reading_log + laps.
+    pub async fn save_timer_session(
+        &self,
+        session_id: &str,
+        user_id: &str,
+        isbn: u64,
+        first_page: u16,
+        last_page: u16,
+        rating: Option<u8>,
+        laps: Vec<Lap>,
+    ) -> Result<(String, u64), DbError> {
+        // Fetch the session
+        let session = self.get_timer_session(session_id, user_id).await?;
+        if session.is_saved {
+            return Err(DbError::Query("Session already saved".to_string()));
+        }
+
+        // Compute duration from server timestamps
+        let start = chrono::DateTime::parse_from_rfc3339(&session.start_time)
+            .map_err(|e| DbError::Query(format!("Invalid start_time: {:?}", e)))?;
+
+        let end_time_str = session.stop_time.as_deref().unwrap_or(&session.updated_at);
+        let end = chrono::DateTime::parse_from_rfc3339(end_time_str)
+            .map_err(|e| DbError::Query(format!("Invalid stop/updated_at: {:?}", e)))?;
+
+        let server_duration_sec = (end.signed_duration_since(start)).num_seconds().max(0) as u64;
+
+        // Build ReadingLog
+        let reading_log = ReadingLog {
+            id: None,
+            isbn,
+            created_at: session.start_time.clone(),
+            session_duration_sec: server_duration_sec,
+            page: [first_page, last_page],
+            rating,
+        };
+
+        let log_id = self.add_reading_log_with_user(reading_log, user_id).await?;
+
+        // Insert laps
+        for lap in laps {
+            let lap_id = lap.id.clone().unwrap_or_else(|| ulid::Ulid::new().to_string());
+            let created_at = lap.created_at.clone();
+
+            let stmt = self
+                .db
+                .prepare("INSERT INTO laps (id, reading_log_id, elapsed_ms, note, ref_page, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+                .bind(&[
+                    lap_id.into(),
+                    log_id.clone().into(),
+                    lap.elapsed_ms.to_string().into(),
+                    lap.note.unwrap_or_default().into(),
+                    lap.ref_page.map(|p| p.to_string()).unwrap_or_default().into(),
+                    created_at.into(),
+                ])
+                .map_err(|e| DbError::Query(format!("Failed to bind lap: {:?}", e)))?;
+
+            stmt.run().await.map_err(|e| DbError::Query(format!("Failed to insert lap: {:?}", e)))?;
+        }
+
+        // Mark session as saved
+        let now = Utc::now().to_rfc3339();
+        let stmt = self
+            .db
+            .prepare("UPDATE timer_sessions SET is_saved = 1, updated_at = ? WHERE id = ?")
+            .bind(&[now.into(), session_id.into()])
+            .map_err(|e| DbError::Query(format!("Failed to bind: {:?}", e)))?;
+
+        stmt.run().await.map_err(|e| DbError::Query(format!("Failed to mark session saved: {:?}", e)))?;
+
+        Ok((log_id, server_duration_sec))
+    }
+
+    /// Reset (delete) the current unsaved timer session for the user.
+    pub async fn reset_timer_session(&self, user_id: &str) -> Result<(), DbError> {
+        let stmt = self
+            .db
+            .prepare("DELETE FROM timer_sessions WHERE user_id = ? AND is_saved = 0")
+            .bind(&[user_id.into()])
+            .map_err(|e| DbError::Query(format!("Failed to bind: {:?}", e)))?;
+
+        stmt.run().await.map_err(|e| DbError::Query(format!("Failed to delete timer_sessions: {:?}", e)))?;
+
+        Ok(())
+    }
+
+    // Helper: parse a timer_sessions row
+    fn parse_timer_session(&self, row: &serde_json::Value) -> Result<crate::models::TimerSession, DbError> {
+        let get_str = |key: &str| -> Result<String, DbError> {
+            row.get(key)
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .ok_or_else(|| DbError::Query(format!("Missing field: {}", key)))
+        };
+
+        Ok(crate::models::TimerSession {
+            id: get_str("id")?,
+            user_id: get_str("user_id")?,
+            start_time: get_str("start_time")?,
+            stop_time: row.get("stop_time").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            is_saved: row.get("is_saved").and_then(|v| v.as_i64()).unwrap_or(0) != 0,
+            created_at: get_str("created_at")?,
+            updated_at: get_str("updated_at")?,
+        })
+    }
 }

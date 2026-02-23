@@ -55,4 +55,20 @@ declare global {
     s: number;
     isRunning: boolean;
   }
+
+  /** Web版タイマーセッション（バックエンド応答） */
+  export interface TimerSessionResponse {
+    id: string;
+    startTime: string; // ISO 8601
+    stopTime?: string | null;
+    durationSec?: number;
+    isRunning: boolean;
+  }
+
+  /** Web版タイマーセッション保存応答 */
+  export interface TimerSessionSaveResponse {
+    readingLogId: string;
+    sessionDurationSec: number;
+  }
 }
+

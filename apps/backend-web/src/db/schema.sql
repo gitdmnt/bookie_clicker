@@ -88,3 +88,18 @@ CREATE TABLE IF NOT EXISTS laps (
 
 -- Index for laps
 CREATE INDEX IF NOT EXISTS idx_laps_reading_log_id ON laps(reading_log_id);
+
+-- Timer sessions table (transient, for tracking start/stop timestamps)
+CREATE TABLE IF NOT EXISTS timer_sessions (
+    id TEXT PRIMARY KEY NOT NULL,           -- ULID
+    user_id TEXT NOT NULL,
+    start_time TEXT NOT NULL,               -- ISO 8601
+    stop_time TEXT,                         -- ISO 8601 (NULL = running)
+    is_saved INTEGER DEFAULT 0,             -- 0 = not saved, 1 = saved to reading_logs
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_timer_sessions_user_id ON timer_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_timer_sessions_active ON timer_sessions(user_id, is_saved);

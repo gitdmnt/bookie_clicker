@@ -224,3 +224,14 @@ export const onTimerTick = async (
   return unlisten;
 };
 
+// Tauri版ではセッション保存は addLaps で行うため、互換性のためのスタブ
+export const saveTimerSession = async (
+  _isbn: number,
+  _firstPage: number,
+  _lastPage: number,
+  _rating: number,
+  _laps: Lap[],
+): Promise<TimerSessionSaveResponse> => {
+  throw new Error("saveTimerSession is not used in Tauri environment");
+};
+

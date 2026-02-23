@@ -41,6 +41,7 @@ export const getTimer = api.getTimer;
 export const getTimerLaps = api.getTimerLaps;
 export const timerLap = api.timerLap;
 export const onTimerTick = api.onTimerTick;
+export const saveTimerSession = api.saveTimerSession;
 
 // ============================================================
 // Other External APIs (環境非依存)

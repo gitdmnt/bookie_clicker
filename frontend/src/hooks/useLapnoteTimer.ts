@@ -7,7 +7,9 @@ import {
   getTimerLaps,
   timerLap,
   onTimerTick,
+  saveTimerSession,
 } from "@/utils/api";
+import { isTauri } from "@/utils/env-detect";
 import { useEffect, useRef, useState } from "react";
 
 import { Temporal } from "temporal-polyfill";
@@ -143,20 +145,30 @@ export const useLapnoteTimer = () => {
   ) => {
     if (!book) return;
 
-    const createdAt = Temporal.Now.plainDateTimeISO();
-    const sessionDurationSec = time.h * 3600 + time.m * 60 + time.s;
+    if (isTauri()) {
+      // Tauri版: 従来通り addLaps で保存
+      const createdAt = Temporal.Now.plainDateTimeISO();
+      const sessionDurationSec = time.h * 3600 + time.m * 60 + time.s;
 
-    const readingLog: ReadingLog = {
-      isbn: book.isbn,
-      createdAt,
-      sessionDurationSec,
-      page: [firstPage, lastPage],
-      rating,
-    };
+      const readingLog: ReadingLog = {
+        isbn: book.isbn,
+        createdAt,
+        sessionDurationSec,
+        page: [firstPage, lastPage],
+        rating,
+      };
 
-    addLaps(readingLog, laps).catch((error) => {
-      console.error("Failed to save laps", error);
-    });
+      addLaps(readingLog, laps).catch((error) => {
+        console.error("Failed to save laps", error);
+      });
+    } else {
+      // Web版: saveTimerSession でバックエンドにセッション保存
+      try {
+        await saveTimerSession(book.isbn, firstPage, lastPage, rating, laps);
+      } catch (error) {
+        console.error("Failed to save timer session", error);
+      }
+    }
   };
 
   // Event listener
