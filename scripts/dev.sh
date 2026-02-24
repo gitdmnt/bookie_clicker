@@ -8,7 +8,7 @@ backend_dir="$root/apps/backend-web"
 ( cd "$frontend_dir" && bun run dev ) &
 frontend_pid=$!
 
-( cd "$backend_dir" && wrangler dev --env dev ) &
+( cd "$backend_dir" && wrangler dev --env dev --port 8787 ) &
 backend_pid=$!
 
 trap 'kill $frontend_pid $backend_pid' SIGINT SIGTERM
