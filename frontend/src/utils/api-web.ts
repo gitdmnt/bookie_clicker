@@ -219,6 +219,7 @@ const defaultTimerState: TimerLocalState = {
   laps: [],
 };
 
+// LocalStorageからタイマー状態を読み込む。エラーがあればデフォルト状態を返す。
 const loadTimerState = (): TimerLocalState => {
   try {
     const raw = localStorage.getItem(TIMER_STORAGE_KEY);
@@ -229,6 +230,7 @@ const loadTimerState = (): TimerLocalState => {
   }
 };
 
+// タイマー状態をLocalStorageに保存する
 const saveTimerState = (state: TimerLocalState) => {
   localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(state));
 };
@@ -237,27 +239,34 @@ const clearTimerState = () => {
   localStorage.removeItem(TIMER_STORAGE_KEY);
 };
 
-// internal interval id for tick
+// State; internal interval id for tick
 let _tickInterval: ReturnType<typeof setInterval> | null = null;
+// State; ティックコールバック関数。タイマー状態の変化をUIに伝えるために使用される。
 let _tickCallback: ((tick: TimerTick) => void) | null = null;
 
-const startTickLoop = () => {
-  stopTickLoop();
-  _tickInterval = setInterval(() => {
-    if (!_tickCallback) return;
-    const state = loadTimerState();
-    const elapsed = computeElapsedMs(state);
-    const totalSec = Math.floor(elapsed / 1000);
-    _tickCallback({
-      elapsed,
-      h: Math.floor(totalSec / 3600),
-      m: Math.floor((totalSec % 3600) / 60),
-      s: totalSec % 60,
-      isRunning: state.isRunning,
-    });
-  }, 200);
+const _makeTick = (state: TimerLocalState) => {
+  if (!_tickCallback) return;
+  const elapsedMs = computeElapsedMs(state);
+  const elapsedSec = Math.floor(elapsedMs / 1000);
+  _tickCallback({
+    elapsed: elapsedMs,
+    h: Math.floor(elapsedSec / 3600),
+    m: Math.floor((elapsedSec % 3600) / 60),
+    s: elapsedSec % 60,
+    isRunning: state.isRunning,
+  });
 };
 
+// 200msごとにLocalStorageからタイマー状態を読み込み、
+// コールバックとして経過時間を渡すループを開始する。
+// 状態の変更はstartTimer/stopTimer内で行われる。
+const startTickLoop = () => {
+  stopTickLoop();
+  const timerState = loadTimerState();
+  _tickInterval = setInterval(() => _makeTick(timerState), 200);
+};
+
+// タイマーのティックループを停止する。startTimer/stopTimer内で呼び出される。
 const stopTickLoop = () => {
   if (_tickInterval !== null) {
     clearInterval(_tickInterval);
@@ -276,11 +285,12 @@ const computeElapsedMs = (state: TimerLocalState): number => {
 export const startTimer = async (): Promise<void> => {
   const state = loadTimerState();
 
-  // If already running, ignore
+  // すでに実行中のセッションがあれば何もしない
   if (state.isRunning && state.sessionId) return;
 
-  // If we have a stopped session, resume it
-  if (state.sessionId && !state.isRunning) {
+  // 停止したセッションがあれば再開する
+  if (!state.isRunning && state.sessionId) {
+    // backendに再開を通知
     try {
       await fetchWithCredentials(
         `${API_BASE}/api/timer/sessions/${state.sessionId}/resume`,
@@ -289,15 +299,18 @@ export const startTimer = async (): Promise<void> => {
     } catch (e) {
       console.error("Failed to resume session on backend", e);
     }
-    state.localStartTimestamp = Date.now();
+
+    // ローカル状態を更新してティックループ開始
+    state.localStartTimestamp = Temporal.Now.instant().epochMilliseconds;
     state.isRunning = true;
     saveTimerState(state);
     startTickLoop();
     return;
   }
 
-  // Create a new session
+  // 停止中でセッションもない場合は新規作成
   try {
+    // セッション作成APIを呼び出し、サーバー側で生成したセッションIDと開始時刻を受け取る。
     const response = await fetchWithCredentials(
       `${API_BASE}/api/timer/sessions`,
       { method: "POST" },
@@ -307,7 +320,7 @@ export const startTimer = async (): Promise<void> => {
     const newState: TimerLocalState = {
       sessionId: data.id,
       serverStartTime: data.startTime,
-      localStartTimestamp: Date.now(),
+      localStartTimestamp: Temporal.Now.instant().epochMilliseconds,
       accumulatedMs: 0,
       isRunning: true,
       laps: [],
@@ -321,19 +334,23 @@ export const startTimer = async (): Promise<void> => {
 };
 
 export const stopTimer = async (): Promise<void> => {
+  // タイマーStateをLocalStorageから読み込む。
   const state = loadTimerState();
+
+  // セッションがなければ何もしない
   if (!state.sessionId) return;
 
-  // Accumulate elapsed
+  // タイマーが実行中であれば、経過時間をaccumulatedMsに加算して停止状態にする。
   if (state.isRunning && state.localStartTimestamp !== null) {
-    state.accumulatedMs += Date.now() - state.localStartTimestamp;
+    state.accumulatedMs +=
+      Temporal.Now.instant().epochMilliseconds - state.localStartTimestamp;
   }
   state.localStartTimestamp = null;
   state.isRunning = false;
   saveTimerState(state);
   stopTickLoop();
 
-  // Notify backend
+  // バックエンドに停止を通知
   try {
     await fetchWithCredentials(
       `${API_BASE}/api/timer/sessions/${state.sessionId}/stop`,
@@ -343,7 +360,7 @@ export const stopTimer = async (): Promise<void> => {
     console.error("Failed to stop session on backend", e);
   }
 
-  // Emit one final tick
+  // 停止後のティックを発行してUIを更新
   if (_tickCallback) {
     const elapsed = computeElapsedMs(state);
     const totalSec = Math.floor(elapsed / 1000);
@@ -358,8 +375,10 @@ export const stopTimer = async (): Promise<void> => {
 };
 
 export const resetTimer = async (): Promise<void> => {
+  // UI更新のループを停止する。
   stopTickLoop();
 
+  // backendにセッション削除を通知してからローカル状態をクリアする。
   const state = loadTimerState();
   if (state.sessionId) {
     // Delete on backend
@@ -374,7 +393,7 @@ export const resetTimer = async (): Promise<void> => {
 
   clearTimerState();
 
-  // Emit zero tick
+  // UIをリセット後の状態に更新
   if (_tickCallback) {
     _tickCallback({ elapsed: 0, h: 0, m: 0, s: 0, isRunning: false });
   }
