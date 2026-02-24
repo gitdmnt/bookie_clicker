@@ -114,7 +114,10 @@ async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
             "/api/timer/sessions/:id/resume",
             handlers::timer::resume_session,
         )
-        .post_async("/api/timer/sessions/:id/save", handlers::timer::save_session)
+        .post_async(
+            "/api/timer/sessions/:id/save",
+            handlers::timer::save_session,
+        )
         .delete_async("/api/timer/sessions", handlers::timer::reset_session)
         //
         // Export
