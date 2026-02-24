@@ -7,13 +7,61 @@ mod utils;
 
 use worker::*;
 
+/// CORSヘッダーをレスポンスに付与する純粋関数
+fn add_cors_headers(mut response: Response, origin: &str) -> Result<Response> {
+    let headers = response.headers_mut();
+    headers.set("Access-Control-Allow-Origin", origin)?;
+    headers.set("Access-Control-Allow-Credentials", "true")?;
+    headers.set(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    )?;
+    headers.set(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, Cookie",
+    )?;
+    Ok(response)
+}
+
+/// リクエストの Origin が許可されたものかを検証する純粋関数
+fn is_allowed_origin(request_origin: &str, allowed_origin: &str) -> bool {
+    request_origin == allowed_origin
+}
+
+/// OPTIONSプリフライトリクエストへのレスポンスを生成する純粋関数
+fn preflight_response(origin: &str) -> Result<Response> {
+    let response = Response::empty()?.with_status(204);
+    add_cors_headers(response, origin)
+}
+
 #[event(fetch)]
 async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     console_error_panic_hook::set_once();
 
+    // FRONTEND_ORIGIN 環境変数から許可オリジンを取得
+    let allowed_origin = env
+        .var("FRONTEND_ORIGIN")
+        .map(|v| v.to_string())
+        .unwrap_or_default();
+
+    // リクエストの Origin ヘッダーを取得
+    let request_origin = req
+        .headers()
+        .get("Origin")
+        .unwrap_or(None)
+        .unwrap_or_default();
+
+    // OPTIONSプリフライトリクエストを早期リターン
+    if req.method() == Method::Options {
+        if is_allowed_origin(&request_origin, &allowed_origin) {
+            return preflight_response(&allowed_origin);
+        }
+        return Response::empty()?.with_status(204).into_ok();
+    }
+
     let router = Router::new();
 
-    router
+    let response = router
         //
         // Health check
         .get("/", |_, _| Response::ok("Bookie API Server"))
@@ -50,14 +98,40 @@ async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         //
         // Timer session operations
         .post_async("/api/timer/sessions", handlers::timer::start_session)
-        .get_async("/api/timer/sessions/current", handlers::timer::get_current_session)
-        .patch_async("/api/timer/sessions/:id/stop", handlers::timer::stop_session)
-        .patch_async("/api/timer/sessions/:id/resume", handlers::timer::resume_session)
+        .get_async(
+            "/api/timer/sessions/current",
+            handlers::timer::get_current_session,
+        )
+        .patch_async(
+            "/api/timer/sessions/:id/stop",
+            handlers::timer::stop_session,
+        )
+        .patch_async(
+            "/api/timer/sessions/:id/resume",
+            handlers::timer::resume_session,
+        )
         .post_async("/api/timer/sessions/:id/save", handlers::timer::save_session)
         .delete_async("/api/timer/sessions", handlers::timer::reset_session)
         //
         // Export
         .get_async("/api/export", handlers::export::export_database)
         .run(req, env)
-        .await
+        .await?;
+
+    // 許可オリジンからのリクエストにCORSヘッダーを付与
+    if is_allowed_origin(&request_origin, &allowed_origin) {
+        add_cors_headers(response, &allowed_origin)
+    } else {
+        Ok(response)
+    }
+}
+
+trait IntoOk {
+    fn into_ok(self) -> Result<Response>;
+}
+
+impl IntoOk for Response {
+    fn into_ok(self) -> Result<Response> {
+        Ok(self)
+    }
 }
