@@ -10,7 +10,7 @@ command = "cargo install worker-build && worker-build --release"
 binding = "DB"
 database_name = "bookie"
 # `wrangler d1 create bookie` を実行して取得した実際のIDに置き換えること
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "1d1fa696-695e-4b82-a77a-fdc359c17f81"
 
 [vars]
 ENVIRONMENT = "production"
