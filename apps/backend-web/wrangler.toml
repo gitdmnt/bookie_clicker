@@ -15,11 +15,26 @@ database_id = "1d1fa696-695e-4b82-a77a-fdc359c17f81"
 [vars]
 ENVIRONMENT = "production"
 # Google OAuth クライアントID (https://console.cloud.google.com)
-GOOGLE_CLIENT_ID = "REPLACE_WITH_YOUR_GOOGLE_CLIENT_ID"
+GOOGLE_CLIENT_ID = "971629838346-4hhc8e5n1n17vl1kal3lt0sstsmop110.apps.googleusercontent.com"
 # フロントエンドのリダイレクトURI (例: https://your-app.pages.dev/auth/callback)
-GOOGLE_REDIRECT_URI = "REPLACE_WITH_YOUR_REDIRECT_URI"
-# フロントエンドのオリジン (CORS用)
-FRONTEND_ORIGIN = "https://bookie-clicker.pages.dev"
+GOOGLE_REDIRECT_URI = "https://bookie-clicker.pages.dev/auth/callback"
+# フロントエンドのオリジン (CORS用、カンマ区切りで複数指定可)
+FRONTEND_ORIGINS = "https://bookie-clicker.pages.dev"
 
 # シークレットは wrangler secret put で設定すること:
 # wrangler secret put GOOGLE_CLIENT_SECRET
+
+# ローカル開発用設定 (wrangler dev で使用)
+[env.dev]
+name = "bookie-backend-web"
+
+[env.dev.vars]
+ENVIRONMENT = "development"
+GOOGLE_CLIENT_ID = "971629838346-4hhc8e5n1n17vl1kal3lt0sstsmop110.apps.googleusercontent.com"
+GOOGLE_REDIRECT_URI = "http://localhost:1430/auth/callback"
+FRONTEND_ORIGINS = "http://localhost:1430,http://localhost:5173"
+
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "bookie"
+database_id = "1d1fa696-695e-4b82-a77a-fdc359c17f81"

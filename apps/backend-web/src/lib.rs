@@ -24,8 +24,12 @@ fn add_cors_headers(mut response: Response, origin: &str) -> Result<Response> {
 }
 
 /// リクエストの Origin が許可されたものかを検証する純粋関数
-fn is_allowed_origin(request_origin: &str, allowed_origin: &str) -> bool {
-    request_origin == allowed_origin
+/// FRONTEND_ORIGINS はカンマ区切りで複数指定可能
+fn is_allowed_origin(request_origin: &str, allowed_origins: &str) -> bool {
+    allowed_origins
+        .split(',')
+        .map(str::trim)
+        .any(|o| o == request_origin)
 }
 
 /// OPTIONSプリフライトリクエストへのレスポンスを生成する純粋関数
@@ -38,9 +42,9 @@ fn preflight_response(origin: &str) -> Result<Response> {
 async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     console_error_panic_hook::set_once();
 
-    // FRONTEND_ORIGIN 環境変数から許可オリジンを取得
-    let allowed_origin = env
-        .var("FRONTEND_ORIGIN")
+    // FRONTEND_ORIGINS 環境変数から許可オリジン一覧を取得（カンマ区切り）
+    let allowed_origins = env
+        .var("FRONTEND_ORIGINS")
         .map(|v| v.to_string())
         .unwrap_or_default();
 
@@ -53,15 +57,15 @@ async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
 
     // OPTIONSプリフライトリクエストを早期リターン
     if req.method() == Method::Options {
-        if is_allowed_origin(&request_origin, &allowed_origin) {
-            return preflight_response(&allowed_origin);
+        if is_allowed_origin(&request_origin, &allowed_origins) {
+            return preflight_response(&request_origin);
         }
         return Response::empty()?.with_status(204).into_ok();
     }
 
     let router = Router::new();
 
-    let response = router
+    let router_result = router
         //
         // Health check
         .get("/", |_, _| Response::ok("Bookie API Server"))
@@ -116,11 +120,18 @@ async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         // Export
         .get_async("/api/export", handlers::export::export_database)
         .run(req, env)
-        .await?;
+        .await;
+
+    // ルーター処理中のエラーも含め、全レスポンスにCORSヘッダーを付与する
+    // `.await?` を使わず、Errの場合も500レスポンスに変換してCORSヘッダーを付ける
+    let response = match router_result {
+        Ok(resp) => resp,
+        Err(e) => Response::error(e.to_string(), 500)?,
+    };
 
     // 許可オリジンからのリクエストにCORSヘッダーを付与
-    if is_allowed_origin(&request_origin, &allowed_origin) {
-        add_cors_headers(response, &allowed_origin)
+    if is_allowed_origin(&request_origin, &allowed_origins) {
+        add_cors_headers(response, &request_origin)
     } else {
         Ok(response)
     }
