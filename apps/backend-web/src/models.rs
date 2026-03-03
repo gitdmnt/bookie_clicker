@@ -38,6 +38,7 @@ impl Session {
 
 /// Google ID Token の Claims
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct GoogleIdToken {
     pub sub: String, // Google user ID
     pub email: String,

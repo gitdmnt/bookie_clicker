@@ -124,6 +124,7 @@ async fn exchange_code_for_token(
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct TokenResponse {
     access_token: String,
     id_token: String,
@@ -198,4 +199,135 @@ pub async fn extract_user_from_request(req: &Request, ctx: &RouteContext<()>) ->
         .ok_or_else(|| Error::RustError("User not found".to_string()))?;
 
     Ok(user)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ========================================
+    // base64_decode のユニットテスト
+    // ========================================
+
+    #[test]
+    fn base64_decode_valid_input() {
+        // "hello" を URL-safe Base64 (no pad) でエンコードしたもの
+        let encoded = "aGVsbG8";
+        let result = base64_decode(encoded);
+        assert_eq!(result, Ok("hello".to_string()));
+    }
+
+    #[test]
+    fn base64_decode_empty_input() {
+        let result = base64_decode("");
+        assert_eq!(result, Ok("".to_string()));
+    }
+
+    #[test]
+    fn base64_decode_invalid_base64() {
+        let result = base64_decode("!!!invalid!!!");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Base64 decode error"));
+    }
+
+    #[test]
+    fn base64_decode_json_payload() {
+        // {"sub":"123","email":"test@example.com"} のBase64URL
+        use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+        let json = r#"{"sub":"123","email":"test@example.com"}"#;
+        let encoded = URL_SAFE_NO_PAD.encode(json.as_bytes());
+        let result = base64_decode(&encoded);
+        assert_eq!(result, Ok(json.to_string()));
+    }
+
+    // ========================================
+    // decode_id_token のユニットテスト
+    // ========================================
+
+    /// テスト用のJWTを構築するヘルパー
+    fn build_test_jwt(payload_json: &str) -> String {
+        use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+        let header = URL_SAFE_NO_PAD.encode(b"{}");
+        let payload = URL_SAFE_NO_PAD.encode(payload_json.as_bytes());
+        let signature = URL_SAFE_NO_PAD.encode(b"fake-sig");
+        format!("{}.{}.{}", header, payload, signature)
+    }
+
+    #[test]
+    fn decode_id_token_valid() {
+        let payload = r#"{
+            "sub": "google-user-id-123",
+            "email": "user@example.com",
+            "name": "Test User",
+            "picture": "https://example.com/photo.jpg",
+            "iss": "accounts.google.com",
+            "aud": "client-id",
+            "exp": 9999999999
+        }"#;
+        let jwt = build_test_jwt(payload);
+        let result = decode_id_token(&jwt);
+        assert!(result.is_ok());
+        let token = result.unwrap();
+        assert_eq!(token.sub, "google-user-id-123");
+        assert_eq!(token.email, "user@example.com");
+        assert_eq!(token.name, Some("Test User".to_string()));
+        assert_eq!(
+            token.picture,
+            Some("https://example.com/photo.jpg".to_string())
+        );
+    }
+
+    #[test]
+    fn decode_id_token_minimal_fields() {
+        let payload = r#"{
+            "sub": "user-456",
+            "email": "min@example.com",
+            "iss": "accounts.google.com",
+            "aud": "client-id",
+            "exp": 9999999999
+        }"#;
+        let jwt = build_test_jwt(payload);
+        let result = decode_id_token(&jwt);
+        assert!(result.is_ok());
+        let token = result.unwrap();
+        assert_eq!(token.sub, "user-456");
+        assert!(token.name.is_none());
+        assert!(token.picture.is_none());
+    }
+
+    #[test]
+    fn decode_id_token_invalid_format_no_dots() {
+        let result = decode_id_token("not-a-jwt");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn decode_id_token_invalid_format_two_parts() {
+        let result = decode_id_token("header.payload");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn decode_id_token_invalid_format_four_parts() {
+        let result = decode_id_token("a.b.c.d");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn decode_id_token_invalid_json() {
+        use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+        let header = URL_SAFE_NO_PAD.encode(b"{}");
+        let payload = URL_SAFE_NO_PAD.encode(b"not json");
+        let sig = URL_SAFE_NO_PAD.encode(b"sig");
+        let jwt = format!("{}.{}.{}", header, payload, sig);
+        let result = decode_id_token(&jwt);
+        assert!(result.is_err());
+    }
+
+    // ========================================
+    // extract_session_token のユニットテスト
+    // ========================================
+    // Note: extract_session_token は worker::Request に依存するため、
+    // native target ではテストできません。
+    // ロジックの検証は結合テストで行います。
 }

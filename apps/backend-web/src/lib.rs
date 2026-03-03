@@ -149,3 +149,87 @@ impl IntoOk for Response {
         Ok(self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ========================================
+    // is_allowed_origin のユニットテスト
+    // ========================================
+
+    #[test]
+    fn allowed_origin_single_match() {
+        assert!(is_allowed_origin(
+            "https://example.com",
+            "https://example.com"
+        ));
+    }
+
+    #[test]
+    fn allowed_origin_single_no_match() {
+        assert!(!is_allowed_origin(
+            "https://evil.com",
+            "https://example.com"
+        ));
+    }
+
+    #[test]
+    fn allowed_origin_multiple_first() {
+        assert!(is_allowed_origin(
+            "https://a.com",
+            "https://a.com, https://b.com, https://c.com"
+        ));
+    }
+
+    #[test]
+    fn allowed_origin_multiple_middle() {
+        assert!(is_allowed_origin(
+            "https://b.com",
+            "https://a.com, https://b.com, https://c.com"
+        ));
+    }
+
+    #[test]
+    fn allowed_origin_multiple_last() {
+        assert!(is_allowed_origin(
+            "https://c.com",
+            "https://a.com, https://b.com, https://c.com"
+        ));
+    }
+
+    #[test]
+    fn allowed_origin_multiple_no_match() {
+        assert!(!is_allowed_origin(
+            "https://evil.com",
+            "https://a.com, https://b.com"
+        ));
+    }
+
+    #[test]
+    fn allowed_origin_empty_allowed() {
+        assert!(!is_allowed_origin("https://a.com", ""));
+    }
+
+    #[test]
+    fn allowed_origin_empty_request() {
+        assert!(!is_allowed_origin("", "https://a.com"));
+    }
+
+    #[test]
+    fn allowed_origin_trims_whitespace() {
+        assert!(is_allowed_origin(
+            "https://a.com",
+            "  https://a.com  ,  https://b.com  "
+        ));
+    }
+
+    #[test]
+    fn allowed_origin_no_partial_match() {
+        // "https://a.com" は "https://a.com.evil.com" にマッチしない
+        assert!(!is_allowed_origin(
+            "https://a.com.evil.com",
+            "https://a.com"
+        ));
+    }
+}

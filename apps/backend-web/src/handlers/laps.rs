@@ -5,6 +5,27 @@ use crate::db::database_from_ctx;
 use crate::middleware::require_auth;
 use crate::utils::errors::handle_db_error;
 
+/// URLクエリパラメータからreading_log_idを抽出する純粋関数
+fn extract_reading_log_id(query_pairs: Vec<(String, String)>) -> Option<String> {
+    query_pairs
+        .into_iter()
+        .find(|(key, _)| key == "reading_log_id")
+        .map(|(_, value)| value)
+}
+
+/// ラップ検索用のダミーReadingLogを構築する純粋関数
+/// ラップ検索にはReadingLogのIDのみが必要
+fn build_reading_log_for_laps(log_id: String) -> ReadingLog {
+    ReadingLog {
+        id: Some(log_id),
+        isbn: 0,
+        created_at: String::new(),
+        session_duration_sec: 0,
+        page: [0, 0],
+        rating: None,
+    }
+}
+
 /// POST /api/laps - ラップを追加（バッチ）
 pub async fn add_laps(mut req: Request, ctx: RouteContext<()>) -> Result<Response> {
     let user = require_auth(&req, &ctx).await?;
@@ -30,27 +51,15 @@ pub async fn add_laps(mut req: Request, ctx: RouteContext<()>) -> Result<Respons
 pub async fn select_laps(req: Request, ctx: RouteContext<()>) -> Result<Response> {
     require_auth(&req, &ctx).await?;
     let url = req.url()?;
-    let params = url.query_pairs();
+    let query_pairs: Vec<(String, String)> = url
+        .query_pairs()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect();
 
-    let mut reading_log_id = None;
-
-    for (key, value) in params {
-        if key == "reading_log_id" {
-            reading_log_id = Some(value.to_string());
-        }
-    }
-
-    let log_id = reading_log_id
+    let log_id = extract_reading_log_id(query_pairs)
         .ok_or_else(|| worker::Error::RustError("Missing reading_log_id parameter".to_string()))?;
 
-    let reading_log = ReadingLog {
-        id: Some(log_id),
-        isbn: 0, // Dummy value, only ID is used
-        created_at: String::new(),
-        session_duration_sec: 0,
-        page: [0, 0],
-        rating: None,
-    };
+    let reading_log = build_reading_log_for_laps(log_id);
 
     let db = database_from_ctx(&ctx)?;
 
@@ -73,4 +82,66 @@ pub async fn delete_lap(req: Request, ctx: RouteContext<()>) -> Result<Response>
         .map_err(handle_db_error)?;
 
     Response::ok("")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ========================================
+    // extract_reading_log_id のユニットテスト
+    // ========================================
+
+    #[test]
+    fn extract_log_id_found() {
+        let pairs = vec![("reading_log_id".to_string(), "log-123".to_string())];
+        assert_eq!(
+            extract_reading_log_id(pairs),
+            Some("log-123".to_string())
+        );
+    }
+
+    #[test]
+    fn extract_log_id_not_found() {
+        let pairs = vec![("other_key".to_string(), "value".to_string())];
+        assert_eq!(extract_reading_log_id(pairs), None);
+    }
+
+    #[test]
+    fn extract_log_id_empty_pairs() {
+        assert_eq!(extract_reading_log_id(vec![]), None);
+    }
+
+    #[test]
+    fn extract_log_id_multiple_params() {
+        let pairs = vec![
+            ("page".to_string(), "1".to_string()),
+            ("reading_log_id".to_string(), "log-456".to_string()),
+            ("limit".to_string(), "10".to_string()),
+        ];
+        assert_eq!(
+            extract_reading_log_id(pairs),
+            Some("log-456".to_string())
+        );
+    }
+
+    // ========================================
+    // build_reading_log_for_laps のユニットテスト
+    // ========================================
+
+    #[test]
+    fn build_log_for_laps_sets_id() {
+        let log = build_reading_log_for_laps("my-log-id".to_string());
+        assert_eq!(log.id, Some("my-log-id".to_string()));
+    }
+
+    #[test]
+    fn build_log_for_laps_uses_defaults() {
+        let log = build_reading_log_for_laps("id".to_string());
+        assert_eq!(log.isbn, 0);
+        assert_eq!(log.session_duration_sec, 0);
+        assert_eq!(log.page, [0, 0]);
+        assert!(log.rating.is_none());
+        assert!(log.created_at.is_empty());
+    }
 }

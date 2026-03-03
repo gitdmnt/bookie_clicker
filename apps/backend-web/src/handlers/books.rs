@@ -9,6 +9,27 @@ use crate::db::database_from_ctx;
 use crate::middleware::require_auth;
 use crate::utils::errors::handle_db_error;
 
+/// URLクエリパラメータからISBNフィルタ付きのQueryBuilderを構築する純粋関数
+fn build_isbn_filter(user_id: String, query_pairs: Vec<(String, String)>) -> QueryBuilder {
+    let mut query = QueryBuilder::new().filter(Filter::Eq(
+        "user_id".to_string(),
+        FilterValue::String(user_id),
+    ));
+
+    for (key, value) in query_pairs {
+        if key == "isbn" {
+            if let Ok(isbn) = Isbn::parse(&value) {
+                query = query.filter(Filter::Eq(
+                    "isbn".to_string(),
+                    FilterValue::U64(isbn.value()),
+                ));
+            }
+        }
+    }
+
+    query
+}
+
 /// POST /api/books - 書籍を追加
 pub async fn add_book(mut req: Request, ctx: RouteContext<()>) -> Result<Response> {
     let user = require_auth(&req, &ctx).await?;
@@ -30,26 +51,14 @@ pub async fn select_books(req: Request, ctx: RouteContext<()>) -> Result<Respons
     let user = require_auth(&req, &ctx).await?;
 
     let url = req.url()?;
-    let params = url.query_pairs();
+    let query_pairs: Vec<(String, String)> = url
+        .query_pairs()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect();
 
-    let mut query = QueryBuilder::new().filter(Filter::Eq(
-        "user_id".to_string(),
-        FilterValue::String(user.id),
-    ));
-
-    for (key, value) in params {
-        if key == "isbn" {
-            if let Ok(isbn) = Isbn::parse(&value) {
-                query = query.filter(Filter::Eq(
-                    "isbn".to_string(),
-                    FilterValue::U64(isbn.value()),
-                ));
-            }
-        }
-    }
+    let query = build_isbn_filter(user.id, query_pairs);
 
     let db = database_from_ctx(&ctx)?;
-
     let books = db.find_books(query).await.map_err(handle_db_error)?;
 
     Response::from_json(&books)
@@ -60,26 +69,14 @@ pub async fn delete_books(req: Request, ctx: RouteContext<()>) -> Result<Respons
     let user = require_auth(&req, &ctx).await?;
 
     let url = req.url()?;
-    let params = url.query_pairs();
+    let query_pairs: Vec<(String, String)> = url
+        .query_pairs()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect();
 
-    let mut query = QueryBuilder::new().filter(Filter::Eq(
-        "user_id".to_string(),
-        FilterValue::String(user.id),
-    ));
-
-    for (key, value) in params {
-        if key == "isbn" {
-            if let Ok(isbn) = Isbn::parse(&value) {
-                query = query.filter(Filter::Eq(
-                    "isbn".to_string(),
-                    FilterValue::U64(isbn.value()),
-                ));
-            }
-        }
-    }
+    let query = build_isbn_filter(user.id, query_pairs);
 
     let db = database_from_ctx(&ctx)?;
-
     db.delete_books(query).await.map_err(handle_db_error)?;
 
     Response::empty()
@@ -152,5 +149,78 @@ impl HttpClient for WorkerHttpClient {
         }
 
         resp.text().await.map_err(|e| e.to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ========================================
+    // build_isbn_filter のユニットテスト
+    // ========================================
+
+    #[test]
+    fn isbn_filter_no_params() {
+        let query = build_isbn_filter("user1".to_string(), vec![]);
+        assert_eq!(query.filters.len(), 1);
+        assert_eq!(
+            query.filters[0],
+            Filter::Eq(
+                "user_id".to_string(),
+                FilterValue::String("user1".to_string())
+            )
+        );
+    }
+
+    #[test]
+    fn isbn_filter_with_valid_isbn13() {
+        let pairs = vec![("isbn".to_string(), "9784003101018".to_string())];
+        let query = build_isbn_filter("user1".to_string(), pairs);
+        assert_eq!(query.filters.len(), 2);
+        // 最初のフィルタは user_id
+        assert_eq!(
+            query.filters[0],
+            Filter::Eq(
+                "user_id".to_string(),
+                FilterValue::String("user1".to_string())
+            )
+        );
+        // 2つ目のフィルタは isbn
+        if let Filter::Eq(field, FilterValue::U64(_)) = &query.filters[1] {
+            assert_eq!(field, "isbn");
+        } else {
+            panic!("Expected isbn filter with U64 value");
+        }
+    }
+
+    #[test]
+    fn isbn_filter_with_invalid_isbn() {
+        let pairs = vec![("isbn".to_string(), "invalid".to_string())];
+        let query = build_isbn_filter("user1".to_string(), pairs);
+        // 無効なISBNは無視されるので user_id フィルタのみ
+        assert_eq!(query.filters.len(), 1);
+    }
+
+    #[test]
+    fn isbn_filter_ignores_non_isbn_params() {
+        let pairs = vec![
+            ("page".to_string(), "1".to_string()),
+            ("limit".to_string(), "10".to_string()),
+        ];
+        let query = build_isbn_filter("user1".to_string(), pairs);
+        assert_eq!(query.filters.len(), 1);
+    }
+
+    #[test]
+    fn isbn_filter_multiple_isbn_params() {
+        // 複数ISBNが指定された場合、全て追加される
+        let pairs = vec![
+            ("isbn".to_string(), "9784003101018".to_string()),
+            ("isbn".to_string(), "9780000000002".to_string()),
+        ];
+        let query = build_isbn_filter("user1".to_string(), pairs);
+        // user_id + 有効なISBN分のフィルタ
+        assert!(query.filters.len() >= 2);
     }
 }

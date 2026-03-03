@@ -5,6 +5,31 @@ use crate::db::database_from_ctx;
 use crate::middleware::require_auth;
 use crate::utils::errors::handle_db_error;
 
+/// セッション保存リクエストの入力ラップ情報
+#[derive(serde::Deserialize, Debug, Clone)]
+#[cfg_attr(test, derive(PartialEq))]
+struct LapInput {
+    #[serde(rename = "elapsedMs")]
+    elapsed_ms: u64,
+    note: String,
+    #[serde(rename = "refPage")]
+    ref_page: u32,
+}
+
+/// LapInput のリストをドメイン Lap のリストに変換する純粋関数
+fn convert_lap_inputs(inputs: Vec<LapInput>, created_at: &str) -> Vec<Lap> {
+    inputs
+        .into_iter()
+        .map(|l| Lap {
+            id: None,
+            elapsed_ms: l.elapsed_ms,
+            note: Some(l.note),
+            ref_page: Some(l.ref_page),
+            created_at: created_at.to_string(),
+        })
+        .collect()
+}
+
 /// POST /api/timer/sessions - タイマーセッションを開始（または既存の進行中セッションを返す）
 pub async fn start_session(_req: Request, ctx: RouteContext<()>) -> Result<Response> {
     let user = require_auth(&_req, &ctx).await?;
@@ -157,30 +182,11 @@ pub async fn save_session(mut req: Request, ctx: RouteContext<()>) -> Result<Res
         laps: Vec<LapInput>,
     }
 
-    #[derive(serde::Deserialize)]
-    struct LapInput {
-        #[serde(rename = "elapsedMs")]
-        elapsed_ms: u64,
-        note: String,
-        #[serde(rename = "refPage")]
-        ref_page: u32,
-    }
-
     let save_req: SaveRequest = req.json().await?;
 
     // Convert LapInput to domain Lap
     let now = chrono::Utc::now().to_rfc3339();
-    let laps: Vec<Lap> = save_req
-        .laps
-        .into_iter()
-        .map(|l| Lap {
-            id: None,
-            elapsed_ms: l.elapsed_ms,
-            note: Some(l.note),
-            ref_page: Some(l.ref_page),
-            created_at: now.clone(),
-        })
-        .collect();
+    let laps = convert_lap_inputs(save_req.laps, &now);
 
     let db = database_from_ctx(&ctx)?;
 
@@ -295,5 +301,66 @@ mod tests {
         let start = "2026-02-23T10:00:00+09:00"; // JST
         let stop = "2026-02-23T02:00:00+00:00";  // UTC (same instant as 11:00 JST)
         assert_eq!(compute_duration(start, Some(stop)), 3600); // 1 hour
+    }
+
+    // ========================================
+    // convert_lap_inputs のユニットテスト
+    // ========================================
+
+    #[test]
+    fn convert_empty_inputs() {
+        let laps = convert_lap_inputs(vec![], "2026-01-01T00:00:00+00:00");
+        assert!(laps.is_empty());
+    }
+
+    #[test]
+    fn convert_single_lap_input() {
+        let inputs = vec![LapInput {
+            elapsed_ms: 60000,
+            note: "第1章".to_string(),
+            ref_page: 10,
+        }];
+        let laps = convert_lap_inputs(inputs, "2026-01-01T00:00:00+00:00");
+        assert_eq!(laps.len(), 1);
+        assert!(laps[0].id.is_none());
+        assert_eq!(laps[0].elapsed_ms, 60000);
+        assert_eq!(laps[0].note, Some("第1章".to_string()));
+        assert_eq!(laps[0].ref_page, Some(10));
+        assert_eq!(laps[0].created_at, "2026-01-01T00:00:00+00:00");
+    }
+
+    #[test]
+    fn convert_multiple_lap_inputs() {
+        let inputs = vec![
+            LapInput {
+                elapsed_ms: 30000,
+                note: "はじめに".to_string(),
+                ref_page: 5,
+            },
+            LapInput {
+                elapsed_ms: 90000,
+                note: "第1章".to_string(),
+                ref_page: 20,
+            },
+        ];
+        let laps = convert_lap_inputs(inputs, "2026-03-01T12:00:00+09:00");
+        assert_eq!(laps.len(), 2);
+        assert_eq!(laps[0].elapsed_ms, 30000);
+        assert_eq!(laps[1].elapsed_ms, 90000);
+        // 全て同じ created_at を持つ
+        assert_eq!(laps[0].created_at, laps[1].created_at);
+    }
+
+    // ========================================
+    // LapInput のデシリアライズテスト
+    // ========================================
+
+    #[test]
+    fn lap_input_deserializes_from_camel_case() {
+        let json = r#"{"elapsedMs": 5000, "note": "テスト", "refPage": 42}"#;
+        let input: LapInput = serde_json::from_str(json).unwrap();
+        assert_eq!(input.elapsed_ms, 5000);
+        assert_eq!(input.note, "テスト");
+        assert_eq!(input.ref_page, 42);
     }
 }

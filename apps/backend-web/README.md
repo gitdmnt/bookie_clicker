@@ -54,6 +54,17 @@ wrangler deploy
 
 ## API エンドポイント
 
+### ヘルスチェック
+
+- `GET /` - API サーバー確認
+- `GET /health` - ヘルスチェック
+
+### 認証
+
+- `POST /api/auth/google/callback` - Google OAuthコールバック
+- `GET /api/auth/me` - 現在のユーザー取得
+- `POST /api/auth/logout` - ログアウト
+
 ### 書籍操作
 
 - `POST /api/books` - 書籍を追加
@@ -78,24 +89,38 @@ wrangler deploy
 
 - `GET /api/export` - データベース全体をエクスポート
 
+### タイマーセッション操作
+
+- `POST /api/timer/sessions` - タイマーセッション開始
+- `GET /api/timer/sessions/current` - 現在の未保存セッションを取得
+- `PATCH /api/timer/sessions/:id/stop` - セッション停止
+- `PATCH /api/timer/sessions/:id/resume` - セッション再開
+- `POST /api/timer/sessions/:id/save` - セッション保存（reading_log + laps 作成）
+- `DELETE /api/timer/sessions` - 未保存セッションをリセット
+
 ## アーキテクチャ
 
 ```
 src/
-├── lib.rs              # Worker entry point, Router setup
+├── lib.rs              # Worker entry point, Router setup, CORS
+├── middleware.rs        # 認証ミドルウェア (require_auth)
+├── models.rs           # ドメインモデル (User, Session, TimerSession, GoogleIdToken)
+├── session.rs          # セッション・ユーザー管理 (SessionManager, UserManager)
 ├── db/
-│   ├── mod.rs
-│   ├── d1_adapter.rs   # DatabasePort implementation for D1
-│   └── schema.sql      # D1 table definitions
+│   ├── mod.rs          # database_from_ctx ヘルパー
+│   ├── d1_adapter.rs   # D1 DatabasePort 実装
+│   └── schema.sql      # D1 テーブル定義
 ├── handlers/
 │   ├── mod.rs
-│   ├── books.rs        # Book CRUD handlers
-│   ├── reading_logs.rs # ReadingLog CRUD handlers
-│   ├── laps.rs         # Lap CRUD handlers
-│   └── export.rs       # Export handler
+│   ├── auth.rs         # 認証ハンドラ (Google OAuth, セッション)
+│   ├── books.rs        # Book CRUD ハンドラ
+│   ├── reading_logs.rs # ReadingLog CRUD ハンドラ
+│   ├── laps.rs         # Lap CRUD ハンドラ
+│   ├── timer.rs        # タイマーセッション管理ハンドラ
+│   └── export.rs       # エクスポートハンドラ
 └── utils/
     ├── mod.rs
-    └── errors.rs       # Error handling utilities
+    └── errors.rs       # エラー変換ヘルパー
 ```
 
 ### 設計原則
@@ -176,15 +201,32 @@ VITE_API_BASE_URL=https://your-worker.workers.dev
 - ✅ エラーハンドリング
 - ✅ エクスポート機能
 - ✅ フロントエンド抽象化レイヤー
+- ✅ Google OAuth 認証・認可
+- ✅ セッション管理（Bearer Token方式）
+- ✅ CORS設定（FRONTEND_ORIGINS 環境変数対応）
+- ✅ タイマーセッション管理
+- ✅ NDL API 検索実装（WorkerHttpClient アダプター）
+- ✅ ユニットテスト（67テスト）
+- ✅ 純粋関数への切り出しリファクタリング
+
+### テスト
+
+テスト戦略の詳細は [`docs/BACKEND_WEB_TESTING.md`](../../docs/BACKEND_WEB_TESTING.md) を参照。
+
+```bash
+# ユニットテスト
+cargo test
+
+# Clippy チェック
+cargo clippy -- -D warnings
+```
 
 ### TODO
 
-- ⬜ NDL API 検索実装（HttpClient + Clock アダプター）
-- ⬜ CORS設定
-- ⬜ 認証・認可
 - ⬜ レート制限
-- ⬜ 統合テスト
+- ⬜ wrangler dev --local を使用した結合テスト自動化
 
 ## ライセンス
 
 このプロジェクトのライセンスについては、リポジトリルートのLICENSEファイルを参照してください。
+

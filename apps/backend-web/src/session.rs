@@ -32,6 +32,7 @@ impl SessionManager {
         Self::delete_session(&d1, session_id).await
     }
 
+    #[allow(dead_code)]
     pub async fn cleanup_expired_sessions_from_ctx(ctx: &RouteContext<()>) -> Result<()> {
         let d1 = ctx.env.d1("DB")?;
         Self::cleanup_expired_sessions(&d1).await
@@ -101,6 +102,7 @@ impl SessionManager {
     }
     
     /// 期限切れセッションを削除（クリーンアップ）
+    #[allow(dead_code)]
     pub async fn cleanup_expired_sessions(d1: &worker::D1Database) -> Result<()> {
         let now = Utc::now().to_rfc3339();
         
@@ -121,6 +123,7 @@ impl SessionManager {
 pub struct UserManager;
 
 impl UserManager {
+    #[allow(dead_code)]
     pub async fn get_user_by_google_id_from_ctx(
         ctx: &RouteContext<()>,
         google_id: &str,

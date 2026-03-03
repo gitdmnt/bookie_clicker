@@ -650,7 +650,7 @@ impl D1Database {
         let rows = result.results::<serde_json::Value>().map_err(|e| DbError::Query(format!("Failed to parse: {:?}", e)))?;
 
         if let Some(row) = rows.into_iter().next() {
-            return Ok(self.parse_timer_session(&row)?);
+            return self.parse_timer_session(&row);
         }
 
         // Create new session
@@ -754,6 +754,7 @@ impl D1Database {
     }
 
     /// Mark timer session as saved and record reading_log + laps.
+    #[allow(clippy::too_many_arguments)]
     pub async fn save_timer_session(
         &self,
         session_id: &str,
