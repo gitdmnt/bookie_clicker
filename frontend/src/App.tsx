@@ -6,7 +6,6 @@ import { Bookshelf } from "./pages/bookshelf";
 import { Lapnote } from "./pages/lapnote";
 import { Stats } from "./pages/stats";
 import { Logbook } from "./pages/logbook";
-import { Debug } from "./pages/Debug";
 import { Login } from "./pages/Login";
 import { AuthCallback } from "./pages/AuthCallback";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -19,9 +18,8 @@ const MainApp = () => {
     <Bookshelf book={book} setBook={setBook} setPage={setPage} />,
     <Logbook book={book} />,
     <Stats />,
-    <Debug />,
   ];
-  const icons = ["📝", "📚", "📒", "📊", "🐞"];
+  const icons = ["📝", "📚", "📒", "📊"];
   return (
     <div className="min-h-screen bg-gradient-to-br from-nb-pink-50 via-white to-nb-yellow/20 flex flex-col">
       {pages[page]}
@@ -50,3 +48,4 @@ function App() {
 }
 
 export default App;
+

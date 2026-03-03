@@ -4,21 +4,28 @@
 import { Temporal } from "temporal-polyfill";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
+const SESSION_TOKEN_KEY = "bookie_session_token";
 
 // ============================================================
 // Helper Functions
 // ============================================================
 
+/// localStorage からセッショントークンを取得する純粋関数
+const getSessionToken = (): string | null =>
+  localStorage.getItem(SESSION_TOKEN_KEY);
+
+/// Authorization: Bearer ヘッダー付きで fetch する関数
+/// Cookie方式はクロスオリジン（pages.dev → workers.dev）で動作しないため Bearer Token を使用
 const fetchWithCredentials = (
   input: RequestInfo | URL,
   init: RequestInit = {},
 ): Promise<Response> => {
+  const token = getSessionToken();
   const headers = new Headers(init.headers);
-  return fetch(input, {
-    ...init,
-    headers,
-    credentials: "include",
-  });
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  return fetch(input, { ...init, headers });
 };
 
 const handleResponse = async <T>(response: Response): Promise<T> => {

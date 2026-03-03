@@ -15,6 +15,30 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const REDIRECT_URI = `${window.location.origin}/auth/callback`;
 
+// セッショントークンの localStorage キー
+const SESSION_TOKEN_KEY = "bookie_session_token";
+
+/// セッショントークンを localStorage から取得する純粋関数
+const getSessionToken = (): string | null =>
+  localStorage.getItem(SESSION_TOKEN_KEY);
+
+/// セッショントークンを localStorage から削除する関数
+const clearSessionToken = (): void =>
+  localStorage.removeItem(SESSION_TOKEN_KEY);
+
+/// Authorization ヘッダー付きの fetch ラッパー
+const fetchWithAuth = (
+  url: string,
+  init: RequestInit = {},
+): Promise<Response> => {
+  const token = getSessionToken();
+  const headers = new Headers(init.headers);
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  return fetch(url, { ...init, headers });
+};
+
 interface User {
   id: string;
   google_id: string;
@@ -29,7 +53,6 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: () => Promise<void>;
-  loginDebug: () => void;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -48,14 +71,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const checkAuth = async () => {
     try {
-      // サーバーにセッションIDを送信し、認証状態を確認。ユーザー情報を取得する。
-      const response = await fetch(`${API_BASE}/api/auth/me`, {
-        credentials: "include", // Cookie送信
-      });
+      // localStorageのセッショントークンをAuthorizationヘッダーで送信
+      const token = getSessionToken();
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await fetchWithAuth(`${API_BASE}/api/auth/me`);
 
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
+      } else {
+        // トークンが無効・期限切れなら削除
+        clearSessionToken();
       }
     } catch (error) {
       console.error("Auth check failed", error);
@@ -85,24 +115,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     window.location.href = authUrl;
   };
 
-  const loginDebug = () => {
-    setUser({
-      id: "debug-user-123",
-      email: "debug@example.com",
-      name: "デバッグユーザー",
-      pictureUrl: "https://github.com/identicons/debug.png",
-      google_id: "debug-google-id",
-      createdAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString(),
-    });
-    setIsLoading(false);
-  };
-
   const logout = async () => {
-    await fetch(`${API_BASE}/api/auth/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
+    const token = getSessionToken();
+    if (token) {
+      await fetchWithAuth(`${API_BASE}/api/auth/logout`, { method: "POST" });
+      clearSessionToken();
+    }
     setUser(null);
   };
 
@@ -112,7 +130,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         isLoading,
         login,
-        loginDebug,
         logout,
         isAuthenticated: !!user,
       }}
@@ -127,7 +144,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 /// - user: 認証されたユーザー情報
 /// - isLoading: 認証状態の読み込み中フラグ
 /// - login: Google OAuthログインを開始する関数
-/// - loginDebug: デバッグ用のログイン関数
 /// - logout: ログアウト関数
 /// - isAuthenticated: 認証済みフラグ
 export const useAuth = () => {
@@ -156,3 +172,4 @@ function base64UrlEncode(buffer: Uint8Array): string {
     .replace(/\//g, "_")
     .replace(/=/g, "");
 }
+

@@ -33,22 +33,19 @@ pub async fn google_callback(mut req: Request, ctx: RouteContext<()>) -> Result<
     // 4. セッション作成
     let session_token = SessionManager::create_session_from_ctx(&ctx, &user.id).await?;
 
-    // 5. httpOnly Cookie でセッショントークン返却
+    // 5. セッショントークンをJSONレスポンスで返す
+    // Cookie方式はクロスオリジン（pages.dev → workers.dev）では
+    // SameSite/Partitioned制限により動作しないため、Bearer Token方式を採用
     #[derive(Serialize)]
     struct LoginResponse {
         user: User,
+        session_token: String,
     }
 
-    let mut response = Response::from_json(&LoginResponse { user })?;
-
-    // Cookie設定
-    let cookie = format!(
-        "session={}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age={}",
+    let response = Response::from_json(&LoginResponse {
+        user,
         session_token,
-        60 * 60 * 24 * 7 // 7日間
-    );
-
-    response.headers_mut().set("Set-Cookie", &cookie)?;
+    })?;
 
     Ok(response)
 }
@@ -64,14 +61,7 @@ pub async fn logout(req: Request, ctx: RouteContext<()>) -> Result<Response> {
     if let Some(session_token) = extract_session_token(&req) {
         let _ = SessionManager::delete_session_from_ctx(&ctx, &session_token).await;
     }
-
-    let mut response = Response::ok("")?;
-    response.headers_mut().set(
-        "Set-Cookie",
-        "session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0",
-    )?;
-
-    Ok(response)
+    Response::ok("")
 }
 
 // ============================================================
@@ -171,17 +161,14 @@ fn base64_decode(input: &str) -> std::result::Result<String, String> {
 }
 
 /// リクエストからセッショントークンを抽出
-/// セッショントークンはフロントエンドから送られてくるCookieの "session" に格納されていると想定
+/// Authorization: Bearer <token> ヘッダーから取得する
 pub fn extract_session_token(req: &Request) -> Option<String> {
-    let cookie_header = req.headers().get("Cookie").ok()??;
-
-    for cookie in cookie_header.split(';') {
-        let cookie = cookie.trim();
-        if let Some(value) = cookie.strip_prefix("session=") {
-            return Some(value.to_string());
+    // Authorization: Bearer <token> ヘッダーから取得
+    if let Ok(Some(auth_header)) = req.headers().get("Authorization") {
+        if let Some(token) = auth_header.strip_prefix("Bearer ") {
+            return Some(token.to_string());
         }
     }
-
     None
 }
 

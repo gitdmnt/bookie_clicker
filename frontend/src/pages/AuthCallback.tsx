@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
+const SESSION_TOKEN_KEY = "bookie_session_token";
 
 export const AuthCallback = () => {
   const navigate = useNavigate();
@@ -40,11 +41,13 @@ export const AuthCallback = () => {
       const response = await fetch(`${API_BASE}/api/auth/google/callback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ code, code_verifier: codeVerifier }),
       });
 
       if (response.ok) {
+        const data = await response.json();
+        // セッショントークンを localStorage に保存
+        localStorage.setItem(SESSION_TOKEN_KEY, data.session_token);
         sessionStorage.removeItem("pkce_code_verifier");
         navigate("/"); // ログイン成功、ホームへ
       } else {
@@ -67,3 +70,4 @@ export const AuthCallback = () => {
     </div>
   );
 };
+
