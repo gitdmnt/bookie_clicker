@@ -1,65 +1,9 @@
-import { Temporal } from "temporal-polyfill";
-
-interface TopBook {
-  book: Book;
-  totalSessions: number;
-  totalReadingTime: number;
-  pagesRead: number;
-}
-
-const formatTime = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-};
-
-const bookStats = (
-  books: Book[],
-  allLogs: { readingLog: ReadingLog; laps: Lap[] }[],
-) => {
-  return books.map((book) => {
-    const bookLogs = allLogs.filter(
-      ({ readingLog }) => readingLog.isbn === book.isbn,
-    );
-
-    const totalSessions = bookLogs.length;
-    const totalReadingTime = bookLogs.reduce(
-      (sum, { readingLog }) => sum + readingLog.sessionDurationSec,
-      0,
-    );
-    const pagesRead =
-      bookLogs.length > 0
-        ? Math.max(...bookLogs.map(({ readingLog }) => readingLog.page[1]))
-        : 0;
-    const totalMemos = bookLogs.reduce(
-      (sum, { laps }) =>
-        sum +
-        laps.filter((lap) => lap.note && lap.note.trim().length > 0).length,
-      0,
-    );
-    const lastRead =
-      bookLogs.length > 0
-        ? bookLogs.sort((a, b) =>
-            Temporal.PlainDateTime.compare(
-              b.readingLog.createdAt,
-              a.readingLog.createdAt,
-            ),
-          )[0].readingLog.createdAt
-        : null;
-    const progressPercentage =
-      book.pageCount > 0 ? Math.round((pagesRead / book.pageCount) * 100) : 0;
-
-    return {
-      book,
-      totalSessions,
-      totalReadingTime,
-      pagesRead,
-      totalMemos,
-      lastRead,
-      progressPercentage,
-    };
-  });
-};
+import {
+  calculateBookStats,
+  getTopBooksByReadingTime,
+  formatSecondsToHM,
+  type BookStats,
+} from "@/utils/stats-helpers";
 
 export const TopBooksRanking = ({
   books,
@@ -68,10 +12,8 @@ export const TopBooksRanking = ({
   books: Book[];
   allLogs: { readingLog: ReadingLog; laps: Lap[] }[];
 }) => {
-  const stats = bookStats(books, allLogs);
-  const topBooks = [...stats]
-    .sort((a, b) => b.totalReadingTime - a.totalReadingTime)
-    .slice(0, 3);
+  const stats = calculateBookStats(books, allLogs);
+  const topBooks = getTopBooksByReadingTime(stats, 3);
 
   if (topBooks.length === 0) {
     return null;
@@ -108,7 +50,7 @@ export const TopBooksRanking = ({
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-lg font-black text-nb-purple">
-                  {formatTime(item.totalReadingTime)}
+                  {formatSecondsToHM(item.totalReadingTime).formatted}
                 </span>
                 <span className="text-xs font-semibold text-gray-500">
                   ({item.totalSessions}セッション・{item.pagesRead}ページ)
@@ -122,4 +64,5 @@ export const TopBooksRanking = ({
   );
 };
 
-export type { TopBook };
+export type { BookStats as TopBook };
+

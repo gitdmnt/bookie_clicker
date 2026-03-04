@@ -9,7 +9,10 @@ import { selectLaps, selectReadingLogs } from "@/utils/api";
 import { ReadingPaceChart } from "@/components/statistics/ReadingPaceChart";
 import { SessionFrequencyChart } from "@/components/statistics/SessionFrequencyChart";
 import { TopSessionsRanking } from "@/components/statistics/TopSessionsRanking";
-import { Temporal } from "temporal-polyfill";
+import {
+  calculateLogbookStatistics,
+  generateTopSessions,
+} from "@/utils/stats-helpers";
 
 interface ReadingLogToDisplay {
   readingLog: ReadingLog;
@@ -57,25 +60,10 @@ export const Logbook = ({ book }: { book: Book | null }) => {
   }, [book]);
 
   // 統計情報の計算
-  const statistics = useMemo(() => {
-    const totalSessions = logs.length;
-    const totalReadingTime = logs.reduce(
-      (sum, { readingLog }) => sum + readingLog.sessionDurationSec,
-      0,
-    );
-    const pagesRead =
-      logs.length > 0
-        ? Math.max(...logs.map(({ readingLog }) => readingLog.page[1]))
-        : 0;
-    const totalPages = book?.pageCount || 0;
-
-    return {
-      totalSessions,
-      totalReadingTime,
-      pagesRead,
-      totalPages,
-    };
-  }, [logs, book]);
+  const statistics = useMemo(
+    () => calculateLogbookStatistics(logs, book),
+    [logs, book],
+  );
 
   // 週間読書ペースデータ
   const paceData = useMemo(() => generateReadingPaceData(logs), [logs]);
@@ -87,19 +75,7 @@ export const Logbook = ({ book }: { book: Book | null }) => {
   );
 
   // トップセッションデータ
-  const topSessions = useMemo(() => {
-    const sessions = logs
-      .map(({ readingLog }) => ({
-        date: Temporal.PlainDate.from(
-          readingLog.createdAt.toString(),
-        ).toString(),
-        duration: readingLog.sessionDurationSec,
-        pages: readingLog.page[1] - readingLog.page[0],
-      }))
-      .sort((a, b) => b.duration - a.duration)
-      .slice(0, 5);
-    return sessions;
-  }, [logs]);
+  const topSessions = useMemo(() => generateTopSessions(logs, 5), [logs]);
 
   // 全てのラップを集約してソート
   const sortedLaps = useMemo(() => {
@@ -148,3 +124,4 @@ export const Logbook = ({ book }: { book: Book | null }) => {
     </main>
   );
 };
+

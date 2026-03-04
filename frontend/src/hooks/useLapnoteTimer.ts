@@ -10,6 +10,11 @@ import {
   saveTimerSession,
 } from "@/utils/api";
 import { isTauri } from "@/utils/env-detect";
+import {
+  computeFirstPage,
+  computeLastPage,
+  stopwatchTimeToSeconds,
+} from "@/utils/stats-helpers";
 import { useEffect, useRef, useState } from "react";
 
 import { Temporal } from "temporal-polyfill";
@@ -86,15 +91,11 @@ export const useLapnoteTimer = () => {
       await refreshLapnoteLogs();
 
       if (!isFPUpdatedByUser) {
-        const smallestPage = laps.reduce((min, lap) => {
-          return lap.refPage < min ? lap.refPage : min;
-        }, refPage);
+        const smallestPage = computeFirstPage(laps, refPage);
         setFirstPage(smallestPage);
       }
       if (!isLPUpdatedByUser) {
-        const largestPage = laps.reduce((max, lap) => {
-          return lap.refPage > max ? lap.refPage : max;
-        }, refPage);
+        const largestPage = computeLastPage(laps, refPage);
         setLastPage(largestPage);
       }
     } catch (error) {
@@ -148,7 +149,7 @@ export const useLapnoteTimer = () => {
     if (isTauri()) {
       // Tauri版: 従来通り addLaps で保存
       const createdAt = Temporal.Now.plainDateTimeISO();
-      const sessionDurationSec = time.h * 3600 + time.m * 60 + time.s;
+      const sessionDurationSec = stopwatchTimeToSeconds(time);
 
       const readingLog: ReadingLog = {
         isbn: book.isbn,

@@ -1,4 +1,5 @@
 import { StatsCard } from "@/components/ui/StatsCard";
+import { calculateTotalMemos } from "@/utils/stats-helpers";
 
 export const TotalMemos = ({
   color,
@@ -13,13 +14,9 @@ export const TotalMemos = ({
     <StatsCard
       color={color}
       emoji={emoji}
-      value={allLogs.reduce(
-        (sum, { laps }) =>
-          sum +
-          laps.filter((lap) => lap.note && lap.note.trim().length > 0).length,
-        0,
-      )}
+      value={calculateTotalMemos(allLogs)}
       title="総メモ数"
     />
   );
 };
+

@@ -10,6 +10,7 @@ import {
   useEffect,
   ReactNode,
 } from "react";
+import { generateCodeVerifier, generateCodeChallenge } from "@/utils/pkce";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -152,24 +153,5 @@ export const useAuth = () => {
   return context;
 };
 
-// PKCE ヘルパー関数
-function generateCodeVerifier(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return base64UrlEncode(array);
-}
-
-async function generateCodeChallenge(verifier: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(verifier);
-  const hash = await crypto.subtle.digest("SHA-256", data);
-  return base64UrlEncode(new Uint8Array(hash));
-}
-
-function base64UrlEncode(buffer: Uint8Array): string {
-  return btoa(String.fromCharCode(...buffer))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
-}
+// PKCE ヘルパー関数は utils/pkce.ts に切り出し済み
 

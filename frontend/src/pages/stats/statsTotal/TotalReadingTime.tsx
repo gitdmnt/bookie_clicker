@@ -1,4 +1,8 @@
 import { StatsCard } from "@/components/ui/StatsCard";
+import {
+  calculateTotalReadingTimeSec,
+  formatSecondsToHM,
+} from "@/utils/stats-helpers";
 
 export const TotalReadingTime = ({
   color,
@@ -9,19 +13,16 @@ export const TotalReadingTime = ({
   emoji: string;
   allLogs: { readingLog: ReadingLog; laps: Lap[] }[];
 }) => {
-  const totalSeconds = allLogs.reduce(
-    (sum, { readingLog }) => sum + readingLog.sessionDurationSec,
-    0,
-  );
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const totalSeconds = calculateTotalReadingTimeSec(allLogs);
+  const { formatted } = formatSecondsToHM(totalSeconds);
 
   return (
     <StatsCard
       color={color}
       emoji={emoji}
-      value={`${hours}h ${minutes}m`}
+      value={formatted}
       title="総読書時間"
     />
   );
 };
+

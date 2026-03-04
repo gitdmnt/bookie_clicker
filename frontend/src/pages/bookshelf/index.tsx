@@ -6,6 +6,7 @@ import { BookshelfHeader } from "./BookshelfHeader";
 import { EmptyState } from "./EmptyState";
 import { searchBooksByISBN, addBook } from "@/utils/api";
 import { parseIsbn } from "@/utils/isbn";
+import { filterBooks } from "@/utils/stats-helpers";
 
 type BookListResult =
   | { status: "idle" }
@@ -29,21 +30,10 @@ export const Bookshelf = ({
     status: "idle",
   });
 
-  const filteredBooks = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return books;
-    }
-    const match = searchTerm.trim().toLowerCase();
-    return books.filter((book) => {
-      const titleMatch = book.title.toLowerCase().includes(match);
-      const authorMatch = (book.authors ?? []).some((author) =>
-        author.toLowerCase().includes(match),
-      );
-      const publisherMatch = book.publisher?.toLowerCase().includes(match);
-      const yearMatch = String(book.year ?? "").includes(match);
-      return titleMatch || authorMatch || publisherMatch || yearMatch;
-    });
-  }, [books, searchTerm]);
+  const filteredBooks = useMemo(
+    () => filterBooks(books, searchTerm),
+    [books, searchTerm],
+  );
 
   // ISBN検索のフォールバック処理
   useEffect(() => {
@@ -175,3 +165,4 @@ export const Bookshelf = ({
     </main>
   );
 };
+

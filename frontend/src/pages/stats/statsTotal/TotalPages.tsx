@@ -1,4 +1,5 @@
 import { StatsCard } from "@/components/ui/StatsCard";
+import { calculateTotalPages } from "@/utils/stats-helpers";
 
 export const TotalPages = ({
   color,
@@ -9,10 +10,7 @@ export const TotalPages = ({
   emoji: string;
   allLogs: { readingLog: ReadingLog; laps: Lap[] }[];
 }) => {
-  const totalReadPages = allLogs.reduce((sum, { readingLog }) => {
-    const [start, end] = readingLog.page;
-    return sum + (end - start);
-  }, 0);
+  const totalReadPages = calculateTotalPages(allLogs);
 
   return (
     <StatsCard
@@ -23,3 +21,4 @@ export const TotalPages = ({
     />
   );
 };
+
